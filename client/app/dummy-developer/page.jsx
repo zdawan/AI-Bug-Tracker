@@ -57,7 +57,7 @@ export default function DeveloperPage() {
               type="submit"
               className="w-full py-3 px-4 rounded-2xl bg-black text-white font-semibold text-lg shadow-lg hover:opacity-90 transition"
             >
-              Continue →
+              Continue
             </button>
           </form>
         </div>

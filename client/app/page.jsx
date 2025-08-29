@@ -57,7 +57,7 @@ export default function HomePage() {
             {/* Role Cards */}
             <div className="grid md:grid-cols-2 gap-12 max-w-5xl w-full">
               {/* User Card */}
-              <Link href="/tester">
+              <Link href="/tester/url">
                 <div className="p-16  bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
                   <h2 className="text-3xl font-bold mb-2">Tester / User</h2>
                   <p className="text-gray-700 mb-8 text-lg">
@@ -71,7 +71,7 @@ export default function HomePage() {
               </Link>
 
               {/* Admin Card */}
-              <Link href="/admin">
+              <Link href="/admin/login">
                 <div className="p-16 bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
                   <h2 className="text-3xl font-bold mb-2">Developer</h2>
                   <p className="text-gray-700 mb-8 text-lg">

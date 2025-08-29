@@ -30,8 +30,8 @@ export default function TesterPage() {
       return;
     }
 
-    // Navigate to /user with URL as query param
-    router.push(`/user?url=${encodeURIComponent(url)}`);
+    // ✅ Navigate to /url-bug-report instead of /user
+    router.push(`/tester/url-bug-report?url=${encodeURIComponent(url)}`);
   };
 
   return (
@@ -43,7 +43,6 @@ export default function TesterPage() {
   bg-gradient-to-br from-blue-50 to-purple-100 
   px-6 relative overflow-hidden "
     >
-      {/* Gradient glow rising from bottom */}
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2 
     w-[160vw] h-[160vw] 
@@ -84,7 +83,6 @@ export default function TesterPage() {
         </form>
       </div>
 
-      {/* Toasts */}
       <ToastContainer position="top-right" autoClose={3000} />
     </main>
   );
