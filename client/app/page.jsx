@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import AdminDashboard from "./components/AdminDashboard";
+import AssignedTickets from "./admin/assigned/page";
 import BugForm from "./components/BugForm";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -92,11 +92,11 @@ export default function HomePage() {
               onClick={() => setShowTracker(false)}
               className="self-start px-4 py-2 rounded-xl  bg-gray-200 text-gray-800 hover:bg-gray-300 transition"
             >
-              ← Back to Landing
+              Back to Landing
             </button>
 
             {/* User/Tester's BugForm */}
-            {role === "user" ? <BugForm /> : <AdminDashboard />}
+            {role === "user" ? <BugForm /> : <AssignedTickets />}
           </div>
         )}
       </div>

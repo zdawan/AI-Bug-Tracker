@@ -79,7 +79,7 @@ export default function AdminLogin() {
           />
           <button
             type="submit"
-            className="py-3 rounded-xl bg-black text-white font-semibold text-lg shadow-lg hover:opacity-90 transition"
+            className="py-3 rounded-xl bg-black text-white font-semibold text-lg shadow-lg cursor-pointer hover:bg-blue-600 hover:opacity-90 transition"
           >
             Login
           </button>
