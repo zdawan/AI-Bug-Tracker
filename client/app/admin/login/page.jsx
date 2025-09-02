@@ -65,7 +65,7 @@ export default function AdminLogin() {
           </span>
         </h1>
         <p className="text-center text-gray-600 mb-6">
-          Use your organization email to.
+          Use your organization email to
           <br />
           access the assigned url's.
         </p>

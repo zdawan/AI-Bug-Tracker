@@ -34,6 +34,14 @@ export default function UserPage() {
         {testUrl && (
           <div className="mb-6 p-4 bg-white outline-1 outline-orange-600 rounded-xl text-center text-gray-800">
             Testing on: <span className="font-semibold">{testUrl}</span>
+            <a
+              href={testUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 text-black font-medium underline transition"
+            >
+              Preview
+            </a>
           </div>
         )}
 
