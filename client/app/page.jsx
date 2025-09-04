@@ -57,31 +57,32 @@ export default function HomePage() {
             {/* Role Cards */}
             <div className="grid md:grid-cols-2 gap-12 max-w-5xl w-full">
               {/* User Card */}
-              <Link href="/tester/url">
-                <div className="p-16  bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
-                  <h2 className="text-3xl font-bold mb-2">Tester / User</h2>
-                  <p className="text-gray-700 mb-8 text-lg">
-                    Submit bugs, get AI insights, and preview UI snapshots
-                    instantly.
-                  </p>
+
+              <div className="p-16  bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
+                <h2 className="text-3xl font-bold mb-2">Tester / User</h2>
+                <p className="text-gray-700 mb-8 text-lg">
+                  Submit bugs, get AI insights, and preview UI snapshots
+                  instantly.
+                </p>
+                <Link href="/tester/url">
                   <button className="mx-auto px-12 py-4 cursor-pointer hover:bg-amber-600 transition-all rounded-3xl bg-black text-white font-semibold text-lg">
                     Enter as Tester
                   </button>
-                </div>
-              </Link>
+                </Link>
+              </div>
 
               {/* Admin Card */}
-              <Link href="/admin/login">
-                <div className="p-16 bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
-                  <h2 className="text-3xl font-bold mb-2">Developer</h2>
-                  <p className="text-gray-700 mb-8 text-lg">
-                    Manage submitted bugs and track progress.
-                  </p>
+              <div className="p-16 bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
+                <h2 className="text-3xl font-bold mb-2">Developer</h2>
+                <p className="text-gray-700 mb-8 text-lg">
+                  Manage submitted bugs and track progress.
+                </p>
+                <Link href="/admin/login">
                   <button className="mx-auto px-12 py-4 cursor-pointer  rounded-3xl  hover:bg-blue-600 bg-black text-white font-semibold text-lg">
                     Enter as Developer
                   </button>
-                </div>
-              </Link>
+                </Link>
+              </div>
             </div>
           </>
         ) : (
