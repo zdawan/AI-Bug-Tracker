@@ -6,6 +6,7 @@ import {
 } from "../services/nlpService.js";
 import { findDuplicateBug } from "../services/duplicateCheckService.js";
 
+
 export const createBug = async (req, res) => {
   try {
     const { title, description, reporterEmail, testUrl } = req.body;

@@ -16,6 +16,7 @@ app.use(express.json());
 app.use("/api/bugs", bugRoutes);
 app.use("/api/developers", developerRoutes);
 
+
 // Connect to MongoDB
 connectDB();
 
