@@ -9,6 +9,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [screenshot, setScreenshot] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,31 +21,29 @@ export default function BugForm({ onBugCreated, testUrl }) {
       });
       return;
     }
-    if (!email) {
-      toast.error("Please provide e-mail", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
 
     try {
       setLoading(true);
-      const res = await axios.post("http://localhost:5000/api/bugs", {
-        title,
-        description,
-        reporterEmail: email || undefined,
-        testUrl: testUrl || undefined,
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      if (email) formData.append("reporterEmail", email);
+      if (testUrl) formData.append("testUrl", testUrl);
+      if (screenshot) formData.append("screenshot", screenshot);
+
+      const res = await axios.post("http://localhost:5000/api/bugs", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success("Bug reported successfully!", {
         position: "top-right",
-        autoClose: 3000, // progress bar will run
+        autoClose: 3000,
       });
 
       setTitle("");
       setDescription("");
       setEmail("");
+      setScreenshot(null);
 
       if (onBugCreated) onBugCreated(res.data);
     } catch (err) {
@@ -53,7 +52,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
         err.response?.data?.error || "Failed to submit bug. Try again.",
         {
           position: "top-right",
-          autoClose: 3000, // progress bar runs
+          autoClose: 3000,
         }
       );
     } finally {
@@ -127,6 +126,19 @@ export default function BugForm({ onBugCreated, testUrl }) {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black bg-white shadow-sm"
+          />
+        </div>
+
+        {/* Screenshot */}
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Screenshot (optional)
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setScreenshot(e.target.files[0])}
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black bg-white shadow-sm"
           />
         </div>
