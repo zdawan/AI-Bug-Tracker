@@ -28,8 +28,8 @@ export default function AssignedTickets() {
     return <p className="text-center mt-20">Please login first</p>;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col items-center py-12 px-4 font-sans relative">
-      <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-10 max-w-5xl w-full">
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col items-center py-12 px-6 font-sans relative">
+      <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-10 max-w-7xl w-full">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           Welcome, {developer.name}
         </h1>
@@ -46,30 +46,38 @@ export default function AssignedTickets() {
         {bugs.length === 0 ? (
           <p className="text-gray-500">No bugs reported yet 🎉</p>
         ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="p-3">Title</th>
-                <th className="p-3">Test URL</th>
-                <th className="p-3">Severity</th>
-                <th className="p-3">Reports</th>
-                <th className="p-3">Created At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bugs.map((bug) => (
-                <tr key={bug._id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{bug.title}</td>
-                  <td className="p-3">{bug.testUrl}</td>
-                  <td className="p-3">{bug.severity}</td>
-                  <td className="p-3">{bug.reports}</td>
-                  <td className="p-3">
-                    {new Date(bug.createdAt).toLocaleDateString()}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="text-left border-b">
+                  <th className="p-4">Title</th>
+                  <th className="p-4">Test URL</th>
+                  <th className="p-4">Severity</th>
+                  <th className="p-4">Reports</th>
+                  <th className="p-4">Latest Report</th>
+                  <th className="p-4">Screenshots</th>
+                  <th className="p-4">Code</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {bugs.map((bug) => (
+                  <tr key={bug._id} className="border-b hover:bg-gray-50">
+                    <td className="p-4">{bug.title}</td>
+                    <td className="p-4">{bug.testUrl}</td>
+                    <td className="p-4">{bug.severity}</td>
+                    <td className="p-4">{bug.reports}</td>
+                    <td className="p-4">
+                      {new Date(bug.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="p-4">Not Included</td>
+                    <td className="p-4 text-blue-600 font-medium cursor-pointer underline">
+                      Source Code
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </main>
