@@ -70,8 +70,14 @@ export default function AssignedTickets() {
                       {new Date(bug.createdAt).toLocaleDateString()}
                     </td>
                     <td className="p-4">Not Included</td>
-                    <td className="p-4 text-blue-600 font-medium cursor-pointer underline">
-                      Source Code
+                    <td className="p-4">
+                      <a
+                        href="vscode://"
+                        className="p-4 text-blue-600
+                        font-medium cursor-pointer underline"
+                      >
+                        Source Code
+                      </a>
                     </td>
                   </tr>
                 ))}
