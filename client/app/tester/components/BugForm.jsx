@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -8,7 +8,10 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
+  const [screenshot, setScreenshot] = useState(null); // ✅ screenshot state
   const [loading, setLoading] = useState(false);
+
+  const fileInputRef = useRef(null); // for resetting file upload after successful submitting
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,9 +22,8 @@ export default function BugForm({ onBugCreated, testUrl }) {
         autoClose: 3000,
       });
       return;
-    }
-    if (!email) {
-      toast.error("Please provide e-mail", {
+    } else if (!email || !screenshot) {
+      toast.error("Please provide email and screenshot", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -30,21 +32,33 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
     try {
       setLoading(true);
-      const res = await axios.post("http://localhost:5000/api/bugs", {
-        title,
-        description,
-        reporterEmail: email || undefined,
-        testUrl: testUrl || undefined,
+
+      // ✅ FormData for file uploads
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      if (email) formData.append("reporterEmail", email);
+      if (testUrl) formData.append("testUrl", testUrl);
+      if (screenshot) formData.append("screenshot", screenshot);
+
+      const res = await axios.post("http://localhost:5000/api/bugs", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success("Bug reported successfully!", {
         position: "top-right",
-        autoClose: 3000, // progress bar will run
+        autoClose: 3000,
       });
 
+      // Reset fields
       setTitle("");
       setDescription("");
       setEmail("");
+      setScreenshot(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = null;
+      }
 
       if (onBugCreated) onBugCreated(res.data);
     } catch (err) {
@@ -53,7 +67,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
         err.response?.data?.error || "Failed to submit bug. Try again.",
         {
           position: "top-right",
-          autoClose: 3000, // progress bar runs
+          autoClose: 3000,
         }
       );
     } finally {
@@ -62,22 +76,21 @@ export default function BugForm({ onBugCreated, testUrl }) {
   };
 
   return (
-    <div className=" relative w-full max-w-xl mx-auto mt-12">
-      {/* Gradient glow behind card */}
+    <div className="relative w-full max-w-xl mx-auto mt-12">
+      {/* Gradient glow */}
       <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-pink-300/40 via-purple-300/40 to-blue-300/40 blur-2xl opacity-70"></div>
 
       {/* Card */}
       <form
         onSubmit={handleSubmit}
         className="relative bg-white/70 backdrop-blur-md shadow-2xl rounded-3xl p-8 border border-white/30"
+        encType="multipart/form-data" // ✅ important
       >
         {/* Heading */}
         <h2 className="text-center md:text-5xl mb-6 leading-tight">
-          <span className="text-4xl font-bold text-center mb-6 text-gray-900">
-            Report
-          </span>{" "}
+          <span className="text-4xl font-semibold text-gray-900">Report</span>{" "}
           <span
-            className="text-5xl  font-extralight italic text-gray-900"
+            className="text-5xl font-extralight italic text-gray-900"
             style={{ fontFamily: "Times New Roman, Times, serif" }}
           >
             Bug
@@ -99,7 +112,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
             placeholder="e.g. Login button not working"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black bg-white shadow-sm"
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
           />
         </div>
 
@@ -112,13 +125,13 @@ export default function BugForm({ onBugCreated, testUrl }) {
             placeholder="Describe what happened..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black bg-white shadow-sm"
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
             rows="4"
           ></textarea>
         </div>
 
         {/* Email */}
-        <div className="mb-8">
+        <div className="mb-5">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Your Email <span className="text-pink-500">*</span>
           </label>
@@ -127,17 +140,30 @@ export default function BugForm({ onBugCreated, testUrl }) {
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black bg-white shadow-sm"
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
           />
         </div>
 
-        {/* Button */}
+        {/* Screenshot Upload */}
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Screenshot <span className="text-pink-500">*</span>
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setScreenshot(e.target.files[0])}
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
+          />
+        </div>
+
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 rounded-2xl bg-black text-white font-semibold text-lg shadow-lg hover:bg-black cursor-pointer transition disabled:opacity-50"
+          className="w-full py-3 px-4 rounded-2xl cursor-pointer bg-black text-white font-semibold text-lg shadow-lg hover:bg-gray-800 transition disabled:opacity-50"
         >
-          {loading ? "Submitting..." : "Submit "}
+          {loading ? "Submitting..." : "Submit"}
         </button>
       </form>
     </div>

@@ -77,9 +77,9 @@ export default function AssignedTickets() {
                   <th className="p-4">Test URL</th>
                   <th className="p-4">Severity</th>
                   <th className="p-4">Reports</th>
-                  <th className="p-4">Latest Report</th>
+                  <th className="p-4">Rec. Report</th>
                   <th className="p-4">Screenshots</th>
-                  <th className="p-6">Code</th>
+                  <th className="p-8">Code</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,7 +90,7 @@ export default function AssignedTickets() {
                       className="p-4 text-blue-600 font-medium cursor-pointer underline"
                       onClick={() => setSelectedBug(bug)}
                     >
-                      View Now
+                      View
                     </td>
                     <td className="p-4">{bug.testUrl}</td>
                     <td className="p-4 flex items-center gap-2">
@@ -114,7 +114,7 @@ export default function AssignedTickets() {
                         href="vscode://"
                         className="p-4 text-blue-600 font-medium cursor-pointer underline"
                       >
-                        Source Code
+                        Open
                       </a>
                     </td>
                   </tr>
