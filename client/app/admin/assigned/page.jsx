@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { Pencil } from "lucide-react"; // ✅ npm install lucide-react
+import { CheckCircle, Pencil } from "lucide-react"; // ✅ npm install lucide-react
 
 export default function AssignedTickets() {
   const [developer, setDeveloper] = useState(null);
@@ -10,11 +10,24 @@ export default function AssignedTickets() {
   const [selectedBug, setSelectedBug] = useState(null);
   const [editBug, setEditBug] = useState(null); // ✅ For editing severity
   const [newSeverity, setNewSeverity] = useState("Medium");
+  const [resolveBug, setResolveBug] = useState(null); // ✅ For resolving bugs
   const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem("developer");
     router.push("/admin/login");
+  };
+
+  const handleResolve = async (bugId) => {
+    try {
+      await axios.patch(`http://localhost:5000/api/bugs/${bugId}/resolve`);
+      setBugs((prev) =>
+        prev.map((b) => (b._id === bugId ? { ...b, status: "Closed" } : b))
+      );
+      setResolveBug(null);
+    } catch (err) {
+      console.error("Error resolving bug:", err);
+    }
   };
 
   useEffect(() => {
@@ -73,12 +86,13 @@ export default function AssignedTickets() {
               <thead>
                 <tr className="text-left border-b">
                   <th className="p-4">Title</th>
-                  <th className="p-4">Details</th>
+                  <th className="p-4">Desc</th>
                   <th className="p-4">Test URL</th>
                   <th className="p-4">Severity</th>
                   <th className="p-4">Reports</th>
                   <th className="p-4">Rec. Report</th>
                   <th className="p-4">Screenshots</th>
+                  <th className="p-4">Resolve</th>
                   <th className="p-8">Code</th>
                 </tr>
               </thead>
@@ -109,6 +123,22 @@ export default function AssignedTickets() {
                       {new Date(bug.createdAt).toLocaleDateString()}
                     </td>
                     <td className="p-4">Not Included</td>
+                    {/* ✅ New Resolved Section */}
+                    <td className="p-4 text-center">
+                      {bug.status === "Closed" ? (
+                        <CheckCircle
+                          className="text-green-600 mx-auto"
+                          size={20}
+                        />
+                      ) : (
+                        <button
+                          onClick={() => setResolveBug(bug)}
+                          className="text-blue-600 underline cursor-pointer"
+                        >
+                          Mark
+                        </button>
+                      )}
+                    </td>
                     <td className="p-4">
                       <a
                         href="vscode://"
@@ -139,6 +169,29 @@ export default function AssignedTickets() {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {resolveBug && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Mark bug as resolved?</h2>
+            <p className="text-gray-600 mb-6">{resolveBug.title}</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setResolveBug(null)}
+                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg cursor-pointer"
+              >
+                No
+              </button>
+              <button
+                onClick={() => handleResolve(resolveBug._id)}
+                className="px-4 py-2 bg-green-700 cursor-pointer text-white rounded-lg hover:bg-green-800"
+              >
+                Yes
+              </button>
+            </div>
           </div>
         </div>
       )}

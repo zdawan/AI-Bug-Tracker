@@ -22,8 +22,8 @@ export default function BugForm({ onBugCreated, testUrl }) {
         autoClose: 3000,
       });
       return;
-    } else if (!email || !screenshot) {
-      toast.error("Please provide email and screenshot", {
+    } else if (!email) {
+      toast.error("Please provide email", {
         position: "top-right",
         autoClose: 3000,
       });
