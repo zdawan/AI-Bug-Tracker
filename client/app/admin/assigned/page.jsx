@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { CheckCircle, Pencil } from "lucide-react"; // ✅ npm install lucide-react
+import { CheckCircle, Pencil, Info } from "lucide-react"; // ✅ npm install lucide-react
 
 export default function AssignedTickets() {
   const [developer, setDeveloper] = useState(null);
@@ -90,9 +90,24 @@ export default function AssignedTickets() {
                   <th className="p-4">Test URL</th>
                   <th className="p-4">Severity</th>
                   <th className="p-4">Reports</th>
-                  <th className="p-4">Rec. Report</th>
+                  <th className="p-4">Date</th>
                   <th className="p-4">Screenshots</th>
-                  <th className="p-4">Resolve</th>
+                  <th className="p-4 relative">
+                    <div className="flex items-center justify-start gap-2">
+                      <span>Resolve</span>
+                      <div className="relative group">
+                        <Info
+                          size={16}
+                          className="text-red-500 cursor-pointer hover:text-gray-700"
+                        />
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-900 text-white text-xs rounded-lg px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-64 text-center shadow-lg">
+                          This is a one-time action and cannot be revoked.
+                          Please verify the bug before marking as resolved.
+                        </span>
+                      </div>
+                    </div>
+                  </th>
+
                   <th className="p-8">Code</th>
                 </tr>
               </thead>
@@ -139,6 +154,7 @@ export default function AssignedTickets() {
                         </button>
                       )}
                     </td>
+                    {/* ✅ New Code Link Section */}
                     <td className="p-4">
                       <a
                         href="vscode://"
