@@ -107,7 +107,6 @@ export default function AssignedTickets() {
                       </div>
                     </div>
                   </th>
-
                   <th className="p-8">Code</th>
                 </tr>
               </thead>

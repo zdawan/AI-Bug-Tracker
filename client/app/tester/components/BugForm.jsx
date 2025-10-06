@@ -147,7 +147,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
         {/* Screenshot Upload */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Screenshot <span className="text-pink-500">*</span>
+            Screenshot (optional)
           </label>
           <input
             type="file"
