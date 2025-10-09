@@ -206,12 +206,14 @@ export default function AssignedTickets() {
                 id="sendMail"
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 onChange={(e) => (resolveBug.sendMail = e.target.checked)}
+                disabled
               />
               <label
                 htmlFor="sendMail"
                 className="ml-2 text-gray-700 text-sm cursor-pointer select-none"
               >
-                Send mail to tester
+                Send mail to tester{" "}
+                <span className="text-red-600">(Coming Soon)</span>
               </label>
             </div>
 
