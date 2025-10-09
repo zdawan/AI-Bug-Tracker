@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { CheckCircle, Pencil, Info } from "lucide-react"; // ✅ npm install lucide-react
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function AssignedTickets() {
   const [developer, setDeveloper] = useState(null);
@@ -18,15 +20,18 @@ export default function AssignedTickets() {
     router.push("/admin/login");
   };
 
-  const handleResolve = async (bugId) => {
+  const handleResolve = async (bugId, sendMail = false) => {
     try {
-      await axios.patch(`http://localhost:5000/api/bugs/${bugId}/resolve`);
+      await axios.patch(`http://localhost:5000/api/bugs/${bugId}/resolve`, {
+        sendMail, // include this in the body
+      });
       setBugs((prev) =>
         prev.map((b) => (b._id === bugId ? { ...b, status: "Closed" } : b))
       );
-      setResolveBug(null);
     } catch (err) {
-      console.error("Error resolving bug:", err);
+      console.error(err);
+    } finally {
+      setResolveBug(null);
     }
   };
 
@@ -193,6 +198,23 @@ export default function AssignedTickets() {
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Mark bug as resolved?</h2>
             <p className="text-gray-600 mb-6">{resolveBug.title}</p>
+
+            {/* ✅ Checkbox to send email */}
+            <div className="flex items-center mb-6">
+              <input
+                type="checkbox"
+                id="sendMail"
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                onChange={(e) => (resolveBug.sendMail = e.target.checked)}
+              />
+              <label
+                htmlFor="sendMail"
+                className="ml-2 text-gray-700 text-sm cursor-pointer select-none"
+              >
+                Send mail to tester
+              </label>
+            </div>
+
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setResolveBug(null)}
@@ -201,7 +223,9 @@ export default function AssignedTickets() {
                 No
               </button>
               <button
-                onClick={() => handleResolve(resolveBug._id)}
+                onClick={() =>
+                  handleResolve(resolveBug._id, resolveBug.sendMail)
+                }
                 className="px-4 py-2 bg-green-700 cursor-pointer text-white rounded-lg hover:bg-green-800"
               >
                 Yes
