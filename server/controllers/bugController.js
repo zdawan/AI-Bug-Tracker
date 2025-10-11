@@ -22,6 +22,19 @@ export const createBug = async (req, res) => {
     const duplicate = await findDuplicateBug(summary, title, testUrl);
 
     if (duplicate) {
+      // 🟢 NEW: check if bug is already resolved (Closed)
+      if (duplicate.status === "Closed") {
+        return res.status(400).json({
+          message: `This bug has already been resolved. Please verify the fix before reporting again.`,
+          resolvedInfo: {
+            id: duplicate._id,
+            title: duplicate.title,
+            resolvedAt: duplicate.updatedAt,
+            severity: duplicate.severity,
+          },
+        });
+      }
+
       duplicate.reports += 1;
 
       // Escalate severity dynamically
@@ -91,4 +104,3 @@ export const resolveBug = async (req, res) => {
     res.status(500).json({ error: "Failed to resolve bug" });
   }
 };
-
