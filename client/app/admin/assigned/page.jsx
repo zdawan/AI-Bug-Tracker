@@ -197,20 +197,20 @@ export default function AssignedTickets() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Mark bug as resolved?</h2>
-            <p className="text-gray-600 mb-6">{resolveBug.title}</p>
+            <p className="text-gray-600 mb-6">Bug: {resolveBug.title}</p>
 
             {/* ✅ Checkbox to send email */}
             <div className="flex items-center mb-6">
               <input
                 type="checkbox"
                 id="sendMail"
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 border-gray-300  cursor-pointer  rounded focus:ring-blue-500"
                 onChange={(e) => (resolveBug.sendMail = e.target.checked)}
                 disabled
               />
               <label
                 htmlFor="sendMail"
-                className="ml-2 text-gray-700 text-sm cursor-pointer select-none"
+                className="ml-2 text-gray-700 text-sm select-none"
               >
                 Send mail to tester{" "}
                 <span className="text-red-600">(Coming Soon)</span>
