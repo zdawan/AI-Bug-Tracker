@@ -64,7 +64,9 @@ export default function BugForm({ onBugCreated, testUrl }) {
     } catch (err) {
       console.error(err);
       toast.error(
-        err.response?.data?.error || "Failed to submit bug. Try again.",
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Failed to submit bug. Try again.",
         {
           position: "top-right",
           autoClose: 3000,
