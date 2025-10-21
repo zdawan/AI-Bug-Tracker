@@ -1,5 +1,5 @@
 import express from "express";
-import { createBug, resolveBug} from "../controllers/bugController.js";
+import { createBug, resolveBug } from "../controllers/bugController.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
