@@ -66,7 +66,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
       toast.error(
         err.response?.data?.message ||
           err.response?.data?.error ||
-          "Failed to submit bug. Try again.",
+          "Failed to submit bug. Try again later.",
         {
           position: "top-right",
           autoClose: 3000,
