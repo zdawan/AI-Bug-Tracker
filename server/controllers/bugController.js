@@ -5,6 +5,7 @@ import {
   predictSeverity,
 } from "../services/nlpService.js";
 import { findDuplicateBug } from "../services/duplicateCheckService.js";
+import { sendEmail } from "../utils/sendMail.js";
 
 export const createBug = async (req, res) => {
   try {
@@ -89,6 +90,7 @@ export const createBug = async (req, res) => {
 export const resolveBug = async (req, res) => {
   try {
     const { id } = req.params;
+    const { sendMail } = req.body;
     const bug = await Bug.findById(id);
 
     if (!bug) {
@@ -97,6 +99,25 @@ export const resolveBug = async (req, res) => {
 
     bug.status = "Closed";
     await bug.save();
+    if (sendMail && bug.reporters?.length > 0) {
+      const subject = `✅ Bug Resolved: ${bug.title}`;
+      const text = `
+        Hello Tester,
+        
+        The bug you reported has been marked as resolved:
+        Title: ${bug.title}
+        URL: ${bug.testUrl || "N/A"}
+        Severity: ${bug.severity}
+
+        Description:
+        ${bug.description}
+
+        Thank you for helping improve the system!
+        
+        - Bug Tracker AI System
+      `;
+      await sendEmail(bug.reporters.join(","), subject, text);
+    }
 
     res.status(200).json({ message: "Bug marked as resolved", bug });
   } catch (error) {

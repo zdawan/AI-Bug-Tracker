@@ -5,7 +5,7 @@ const HF_API_KEY = process.env.HF_API_KEY;
 // Generic helper for API calls
 async function callHuggingFace(model, input) {
   const res = await fetch(
-    `https://api-inference.huggingface.co/models/${model}`,
+    `https://router.huggingface.co/hf-inference/models/${model}`,
     {
       method: "POST",
       headers: {
@@ -59,12 +59,12 @@ export async function predictSeverity(description, reports = 0) {
     parameters: { candidate_labels: labels },
   });
 
-  let severity = data.labels?.[0] || "Medium";
+  const severity = data.labels?.[0] || "Medium";
 
-  // Cap severity at Medium if reports < 3
-  if (reports < 7 && severity === "High") {
-    severity = "Medium";
-  }
+  // // Cap severity at Medium if reports < 3
+  // if (reports < 5 && severity === "High") {
+  //   severity = "High";
+  // }
 
   return severity;
 }
