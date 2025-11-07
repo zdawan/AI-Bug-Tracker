@@ -211,6 +211,28 @@ export default function AssignedTickets() {
             <h2 className="text-xl font-bold mb-4">Mark bug as resolved?</h2>
             <p className="text-gray-600 mb-6">Bug: {resolveBug.title}</p>
 
+            {/* ⚠️ Alert Box */}
+            <div className="flex items-start gap-3 bg-red-50 border border-red-300 text-red-700 text-sm rounded-lg p-3 mb-6">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-5 h-5 mt-0.5 text-red-600 flex-shrink-0"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v3m0 4h.01m-6.938 4h13.856c1.054 0 1.62-1.144 1.05-2.05L13.05 4.05a1.2 1.2 0 00-2.1 0L4.032 17.95c-.57.906-.004 2.05 1.05 2.05z"
+                />
+              </svg>
+              <span>
+                This is a one-time action and cannot be revoked. Please verify
+                the bug before marking it as resolved.
+              </span>
+            </div>
+
             {/* ✅ Checkbox to send email */}
             <div className="flex items-center mb-6">
               <input
@@ -220,7 +242,7 @@ export default function AssignedTickets() {
                 onChange={(e) => setSendMail(e.target.checked)}
                 className="w-4 h-4 gap-2"
               />
-              <label htmlFor="sendMail" className="text-gray-700 gap-2">
+              <label htmlFor="sendMail" className="text-gray-700 gap-2 ml-2">
                 Send mail to tester
               </label>
             </div>
@@ -233,9 +255,10 @@ export default function AssignedTickets() {
                 No
               </button>
               <button
-                onClick={() =>
-                  handleResolve(resolveBug._id, resolveBug.sendMail)
-                }
+                onClick={() => {
+                  handleResolve(resolveBug._id, sendMail);
+                  setResolveBug(null); // ✅ close popup immediately after Yes
+                }}
                 className="px-4 py-2 bg-green-700 cursor-pointer text-white rounded-lg hover:bg-green-800"
               >
                 Yes
