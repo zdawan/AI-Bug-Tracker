@@ -1,10 +1,11 @@
-import express from "express";
 import dotenv from "dotenv";
+import express from "express";
 import path from "path";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import bugRoutes from "./routes/bugRoutes.js";
 import developerRoutes from "./routes/developerRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // Routes
 app.use("/api/bugs", bugRoutes);
 app.use("/api/developers", developerRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Connect to MongoDB
 connectDB();
