@@ -26,11 +26,31 @@ export const getBugsForDeveloper = async (req, res) => {
     const dev = await Developer.findById(req.params.id);
     if (!dev) return res.status(404).json({ error: "Developer not found" });
 
-    const bugs = await Bug.find({ testUrl: { $in: dev.assignedUrls } }).sort({
-      createdAt: -1,
+    // Developer assigned base URLs (example: ["https://app.base44.com"])
+    const assignedBases = dev.assignedUrls.map((url) => {
+      try {
+        return new URL(url).origin; // extract only the base/origin
+      } catch {
+        return url;
+      }
     });
-    res.json(bugs);
+
+    // Fetch all bugs
+    const allBugs = await Bug.find().sort({ createdAt: -1 });
+
+    // Filter bugs by matching base URL (IGNORES PATH)
+    const filtered = allBugs.filter((b) => {
+      try {
+        const bugBase = new URL(b.testUrl).origin;
+        return assignedBases.includes(bugBase);
+      } catch {
+        return false;
+      }
+    });
+
+    res.json(filtered);
   } catch (err) {
+    console.error("Developer bug fetch error:", err);
     res.status(500).json({ error: err.message });
   }
 };
