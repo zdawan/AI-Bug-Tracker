@@ -1,12 +1,40 @@
 "use client";
 import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import BugForm from "../components/BugForm";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function UserPage() {
   const searchParams = useSearchParams();
-  const testUrl = searchParams.get("url"); // Read ?url=... from query
+  const fullUrl = searchParams.get("url") || "";
+
+  const [base, setBase] = useState("");
+  const [path, setPath] = useState("");
+  const [finalUrl, setFinalUrl] = useState(fullUrl);
+
+  // Popup state
+  const [showPopup, setShowPopup] = useState(false);
+  const [tempPath, setTempPath] = useState("");
+
+  // Extract base + path
+  useEffect(() => {
+    try {
+      const u = new URL(fullUrl);
+      setBase(u.origin);
+      setPath(u.pathname);
+      setFinalUrl(fullUrl);
+    } catch (e) {
+      console.log("Invalid URL", e);
+    }
+  }, [fullUrl]);
+
+  const applyPathChange = () => {
+    const cleanedPath = tempPath.startsWith("/") ? tempPath : "/" + tempPath;
+    setPath(cleanedPath);
+    setFinalUrl(base + cleanedPath);
+    setShowPopup(false);
+  };
 
   return (
     <main
@@ -15,7 +43,6 @@ export default function UserPage() {
       [background-size:24px_24px]
       bg-gradient-to-br from-blue-50 to-purple-100 overflow-hidden"
     >
-      {/* Big gradient glow rising from bottom */}
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2
         w-[160vw] h-[160vw]
@@ -31,23 +58,72 @@ export default function UserPage() {
       <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="relative z-10 max-w-3xl mx-auto">
-        {testUrl && (
+        {base && (
           <div className="mb-6 p-4 bg-white outline-1 outline-orange-600 rounded-xl text-center text-gray-800">
-            Testing on: <span className="font-semibold">{testUrl}</span>
+            Testing on:{" "}
+            <span className="font-semibold">
+              {base}
+              {path}
+            </span>
             <a
-              href={testUrl}
+              href={finalUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-2 text-black font-medium underline transition"
             >
               Preview
             </a>
+            {/* EDIT BUTTON */}
+            <button
+              onClick={() => {
+                setTempPath(path);
+                setShowPopup(true);
+              }}
+              className="ml-2 px-4 py-1 bg-orange-500 text-white rounded-md"
+            >
+              Edit
+            </button>
           </div>
         )}
 
-        {/* Pass testUrl into BugForm */}
-        <BugForm testUrl={testUrl} />
+        <BugForm testUrl={finalUrl} />
       </div>
+
+      {/* POPUP MODAL */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-80 shadow-lg text-center">
+            <h2 className="text-lg font-semibold mb-4">Edit Path</h2>
+
+            <div className="text-gray-600 text-sm mb-2">Base URL</div>
+            <div className="p-2 bg-gray-100 rounded mb-4 text-sm">{base}</div>
+
+            <input
+              type="text"
+              value={tempPath}
+              onChange={(e) => setTempPath(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
+              placeholder="/about"
+            />
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowPopup(false)}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={applyPathChange}
+                className="px-4 py-2 bg-orange-600 text-white rounded"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
