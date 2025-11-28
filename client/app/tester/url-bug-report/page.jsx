@@ -59,7 +59,7 @@ export default function UserPage() {
 
       <div className="relative z-10 max-w-3xl mx-auto">
         {base && (
-          <div className="mb-6 p-4 bg-white outline-1 outline-orange-600 rounded-xl text-center text-gray-800">
+          <div className="mb-6 p-4 bg-white outline-1 outline-orange-600 rounded-xl text-center cursor-pointer text-gray-800">
             Testing on:{" "}
             <span className="font-semibold">
               {base}
@@ -79,7 +79,7 @@ export default function UserPage() {
                 setTempPath(path);
                 setShowPopup(true);
               }}
-              className="ml-2 px-4 py-1 bg-orange-500 text-white rounded-md"
+              className="ml-2 px-4 py-1 bg-orange-500 cursor-pointer text-white rounded-md"
             >
               Edit
             </button>
@@ -106,17 +106,17 @@ export default function UserPage() {
               placeholder="/about"
             />
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end  gap-3">
               <button
                 onClick={() => setShowPopup(false)}
-                className="px-4 py-2 bg-gray-200 rounded"
+                className="px-4 py-2 bg-gray-200 cursor-pointer rounded"
               >
                 Cancel
               </button>
 
               <button
                 onClick={applyPathChange}
-                className="px-4 py-2 bg-orange-600 text-white rounded"
+                className="px-4 py-2 bg-orange-600 cursor-pointer text-white rounded"
               >
                 Apply
               </button>
