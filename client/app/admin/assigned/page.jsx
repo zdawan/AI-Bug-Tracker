@@ -81,16 +81,25 @@ export default function AssignedTickets() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col items-center py-12 px-6 font-sans relative">
-      <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-10 max-w-7xl w-full">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+      <div
+        className="
+          bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl
+          px-12 py-14
+          max-w-[95%]
+          w-full
+          min-h-[85vh]
+          flex flex-col gap-10
+        "
+      >
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Welcome, {developer.name}
         </h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-600 mb-4">
           You are assigned to bugs for: {developer.assignedUrls.join(", ")}
         </p>
         <button
           onClick={handleLogout}
-          className="px-4 py-2 bg-red-400 text-white rounded-xl cursor-pointer hover:bg-red-600"
+          className="px-4 py-2 bg-red-400 text-white rounded-xl cursor-pointer max-w-[10%] hover:bg-red-600"
         >
           Logout
         </button>
@@ -104,6 +113,7 @@ export default function AssignedTickets() {
                 <tr className="text-left border-b">
                   <th className="p-4">Title</th>
                   <th className="p-4">Desc</th>
+                  <th className="p-4">Category</th>
                   <th className="p-4">Test URL</th>
                   <th className="p-4">Severity</th>
                   <th className="p-4">Reports</th>
@@ -136,6 +146,29 @@ export default function AssignedTickets() {
                       onClick={() => setSelectedBug(bug)}
                     >
                       View
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className="px-3 py-1 rounded-full text-white text-xs font-semibold"
+                        style={{
+                          backgroundColor:
+                            bug.category === "UI Bug"
+                              ? "#3b82f6"
+                              : bug.category === "Backend Bug"
+                              ? "#6366f1"
+                              : bug.category === "Security Bug"
+                              ? "#ef4444"
+                              : bug.category === "Performance Bug"
+                              ? "#f59e0b"
+                              : bug.category === "Database Bug"
+                              ? "#0d9488"
+                              : bug.category === "Developer Error"
+                              ? "#6b7280"
+                              : "#9ca3af",
+                        }}
+                      >
+                        {bug.category || "General Bug"}
+                      </span>
                     </td>
                     <td className="p-4">{bug.testUrl}</td>
                     <td className="p-4 flex items-center gap-2">
