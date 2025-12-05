@@ -112,7 +112,7 @@ export default function AssignedTickets() {
               <thead>
                 <tr className="text-left border-b">
                   <th className="p-4">Title</th>
-                  <th className="p-4">Desc</th>
+                  <th className="p-4">Detail</th>
                   <th className="p-4">Category</th>
                   <th className="p-4">Test URL</th>
                   <th className="p-4">Severity</th>

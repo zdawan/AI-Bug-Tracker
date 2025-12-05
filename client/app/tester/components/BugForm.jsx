@@ -102,13 +102,19 @@ export default function BugForm({ onBugCreated, testUrl }) {
           websiteUrl: testUrl,
         });
 
+        // NEW: Handle duplicate case
+        if (res.data.duplicate) {
+          toast.info(res.data.message || "No new bugs found on this page.");
+          return; // ⛔ STOP — do NOT autofill
+        }
+
+        // Normal AI behavior (new bug found)
         const { aiTitle, aiDescription, screenshotBase64, fileUrl } = res.data;
 
         setTitle(aiTitle || "");
         setDescription(aiDescription || "");
-        if (fileUrl) setAiSourceFileUrl(fileUrl); // includes local path "/mnt/data/BugForm.jsx"
+        if (fileUrl) setAiSourceFileUrl(fileUrl);
 
-        // If the backend returned screenshot base64, create a File and set screenshot state
         if (screenshotBase64) {
           const dataUrl = `data:image/png;base64,${screenshotBase64}`;
           const file = await dataURLToFile(dataUrl, "ai-screenshot.png");
@@ -123,6 +129,9 @@ export default function BugForm({ onBugCreated, testUrl }) {
         setLoading(false);
       }
     };
+
+
+
 
     return (
       <div className="relative w-full max-w-xl mx-auto mt-12">
