@@ -3,6 +3,7 @@ import {
   summarizeBug,
   generateTags,
   predictSeverity,
+  generateCategory, // ⭐ ADDED
 } from "../services/nlpService.js";
 import { findDuplicateBug } from "../services/duplicateCheckService.js";
 import { sendEmail } from "../utils/sendMail.js";
@@ -11,19 +12,61 @@ export const createBug = async (req, res) => {
   try {
     const { title, description, reporterEmail, testUrl } = req.body;
 
-    // ✅ Handle screenshot if uploaded
-    const screenshotPath = req.file ? `/uploads/${req.file.filename}` : null;
+    const screenshotPath = req.file ? `/uploads/${req.file.filename}` : null; 
 
-    // AI-generated fields
+    // ⭐ AI-generated fields
     const summary = await summarizeBug(description);
     const tags = await generateTags(description);
     let severity = await predictSeverity(description);
 
-    // ✅ Check for duplicates (summary + title + testUrl)
+    // ⭐ ADDED — AI PRIMARY CATEGORY
+    const category = await generateCategory(description);
+
+    // ⭐ ADDED — CATEGORY-BASED DUPLICATE CHECK
+    const categoryDuplicate = await Bug.findOne({ testUrl, category });
+
+    if (categoryDuplicate) {
+      // If duplicate category bug exists → update same one
+      categoryDuplicate.reports += 1;
+
+      if (
+        reporterEmail &&
+        !categoryDuplicate.reporters.includes(reporterEmail)
+      ) {
+        categoryDuplicate.reporters.push(reporterEmail);
+      }
+
+      if (screenshotPath) {
+        categoryDuplicate.screenshot = screenshotPath;
+      }
+
+      // escalate severity if needed
+      if (
+        categoryDuplicate.reports >= 5 &&
+        categoryDuplicate.severity === "Low"
+      ) {
+        categoryDuplicate.severity = "Medium";
+      }
+      if (
+        categoryDuplicate.reports >= 10 &&
+        categoryDuplicate.severity !== "High"
+      ) {
+        categoryDuplicate.severity = "High";
+      }
+
+      await categoryDuplicate.save();
+
+      return res.status(200).json({
+        message: "Duplicate bug for same URL + category. Updated report count.",
+        bug: categoryDuplicate,
+      });
+    }
+
+    // ⭐ ORIGINAL DUPLICATE CHECK (summary + title + testUrl)
+    // (kept exactly as you requested)
     const duplicate = await findDuplicateBug(summary, title, testUrl);
 
     if (duplicate) {
-      // 🟢 NEW: check if bug is already resolved (Closed)
       if (duplicate.status === "Closed") {
         return res.status(400).json({
           message: `This bug has already been resolved. Please verify the fix before reporting again.`,
@@ -38,7 +81,7 @@ export const createBug = async (req, res) => {
 
       duplicate.reports += 1;
 
-      // Escalate severity dynamically
+      // severity escalation logic
       if (duplicate.reports >= 5 && severity.toLowerCase() === "low") {
         severity = "Medium";
       }
@@ -46,12 +89,10 @@ export const createBug = async (req, res) => {
         severity = "High";
       }
 
-      // Track reporters uniquely
       if (reporterEmail && !duplicate.reporters.includes(reporterEmail)) {
         duplicate.reporters.push(reporterEmail);
       }
 
-      // Add screenshot if new one is provided
       if (screenshotPath) {
         duplicate.screenshot = screenshotPath;
       }
@@ -66,27 +107,30 @@ export const createBug = async (req, res) => {
       });
     }
 
-    // ✅ Create new bug if no duplicate found
+    // ⭐ CREATE NEW BUG (with CATEGORY added)
     const newBug = new Bug({
       title,
       description,
       summary,
+      category, // ⭐ ADDED HERE
       tags,
       severity,
       reporters: reporterEmail ? [reporterEmail] : [],
       reports: 1,
       testUrl,
-      screenshot: screenshotPath, // ✅ save screenshot path
+      screenshot: screenshotPath,
     });
 
     await newBug.save();
     res.status(201).json(newBug);
   } catch (error) {
+    console.error("Error creating bug:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// ✅ Resolve a bug (mark as Closed)
+// --------------------- RESOLVE BUG (unchanged) -------------------------
+
 export const resolveBug = async (req, res) => {
   try {
     const { id } = req.params;

@@ -33,22 +33,85 @@ export async function summarizeBug(description) {
 }
 
 // 🏷️ Tag generation (zero-shot classification)
+export async function generateCategory(description) {
+  const labels = [
+    "UI Bug",
+    "Backend Bug",
+    "Performance Bug",
+    "Security Bug",
+    "Database Bug",
+    "Internet Error",
+    "Developer Error",
+    "General Bug",
+  ];
+
+  try {
+    const data = await callHuggingFace(
+      "typeform/distilbert-base-uncased-mnli",
+      {
+        inputs: description,
+        parameters: { candidate_labels: labels },
+      }
+    );
+
+    console.log("HF raw category response =>", data);
+
+    // HF is returning flat array: [{label, score}, ...]
+    if (Array.isArray(data) && data.length > 0 && data[0].label) {
+      const sorted = data.sort((a, b) => b.score - a.score); // highest score wins
+      return sorted[0].label; // return best category
+    }
+
+    return "General Bug";
+  } catch (err) {
+    console.error("generateCategory ERROR:", err.message);
+    return "General Bug";
+  }
+}
+
+
+
+
+// 🏷️ Tag generation (zero-shot classification)
 export async function generateTags(description) {
   const labels = [
     "UI Bug",
-    "Backend",
-    "Database",
-    "Security",
-    "Performance",
-    "Developer",
+    "Backend Bug",
+    "Database Bug",
+    "Security Bug",
+    "Performance Bug",
+    "Developer Error",
     "Internet Error",
+    "General Bug",
   ];
-  const data = await callHuggingFace("facebook/bart-large-mnli", {
-    inputs: description,
-    parameters: { candidate_labels: labels },
-  });
-  return data.labels || [];
+
+  try {
+    const data = await callHuggingFace(
+      "typeform/distilbert-base-uncased-mnli",
+      {
+        inputs: description,
+        parameters: { candidate_labels: labels },
+      }
+    );
+
+    console.log("HF raw tags response =>", data);
+
+    // HF returns: [{label, score}, {label, score}, ...]
+    if (Array.isArray(data) && data.length > 0 && data[0].label) {
+      // Sort by score (descending)
+      const sorted = data.sort((a, b) => b.score - a.score);
+
+      // Return top 3 relevant tags (you can adjust this)
+      return sorted.slice(0, 3).map((item) => item.label);
+    }
+
+    return [];
+  } catch (err) {
+    console.error("generateTags ERROR:", err.message);
+    return [];
+  }
 }
+
 
 // 🚦 Improved Severity Prediction
 export async function predictSeverity(description, reports = 0) {

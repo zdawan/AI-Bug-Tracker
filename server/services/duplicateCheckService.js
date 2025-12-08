@@ -24,27 +24,42 @@ function keywordOverlap(text1, text2) {
  * - Title+summary similarity >= 0.5
  * - testUrl is the same
  */
-export async function findDuplicateBug(summary, title = "", testUrl = "") {
-  const bugs = await Bug.find();
 
-  // Combine title + summary for better matching
-  const combinedInput = `${title} ${summary}`;
+// ⭐ Improved Duplicate Detection (same category + same URL)
 
-  for (const bug of bugs) {
-    // ✅ Check testUrl equality
-    if (testUrl && bug.testUrl !== testUrl) {
-      continue; // different URL → skip, treat as new bug
-    }
+// ⭐ Duplicate = SAME testUrl + SAME AI category
+export async function findDuplicateBug(testUrl, category) {
+  if (!testUrl || !category) return null;
 
-    const combinedExisting = `${bug.title} ${bug.summary || ""}`;
-    const overlap = keywordOverlap(combinedInput, combinedExisting);
+  const duplicate = await Bug.findOne({
+    testUrl,
+    category,
+  });
 
-    if (overlap >= 0.5) {
-      // 50% match threshold
-      console.log(`Duplicate found (same URL + similarity score: ${overlap})`);
-      return bug;
-    }
-  }
-
-  return null; // No duplicate found
+  return duplicate || null;
 }
+
+// export async function findDuplicateBug(summary, title = "", testUrl = "") {
+//   const bugs = await Bug.find();
+
+//   // Combine title + summary for better matching
+//   const combinedInput = `${title} ${summary}`;
+
+//   for (const bug of bugs) {
+//     // ✅ Check testUrl equality
+//     if (testUrl && bug.testUrl !== testUrl) {
+//       continue; // different URL → skip, treat as new bug
+//     }
+
+//     const combinedExisting = `${bug.title} ${bug.summary || ""}`;
+//     const overlap = keywordOverlap(combinedInput, combinedExisting);
+
+//     if (overlap >= 0.5) {
+//       // 50% match threshold
+//       console.log(`Duplicate found (same URL + similarity score: ${overlap})`);
+//       return bug;
+//     }
+//   }
+
+//   return null; // No duplicate found
+// }

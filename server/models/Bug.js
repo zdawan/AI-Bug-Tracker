@@ -3,6 +3,11 @@ import mongoose from "mongoose";
 const bugSchema = new mongoose.Schema(
   {
     testUrl: { type: String },
+    category: {
+      type: String,
+      required: true,
+      default: "General Bug",
+    },
     title: { type: String, required: true },
     description: { type: String, required: true },
     summary: { type: String },
