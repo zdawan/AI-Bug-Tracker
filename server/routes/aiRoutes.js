@@ -35,23 +35,42 @@ router.post("/analyze", async (req, res) => {
 
     await browser.close();
 
-    // ⭐ AI Prompt → extract multiple bugs
-    const prompt = `
-Extract up to 5 DIFFERENT UI or functionality bugs from the webpage text.
+    // ⭐ NEW — Fetch ALL previously reported bugs for this URL
+    const existingBugs = await Bug.find({ testUrl: websiteUrl });
+    const reportedTitles = existingBugs.map((b) => b.title);
+    const reportedDescriptions = existingBugs.map((b) => b.description);
 
-Each bug must contain:
-- "title": short UI element name
-- "description": clear explanation of issue
+    // ⭐ UPDATED AI PROMPT (prevents repeat bugs)
+    const prompt = `
+You are an expert UI inspector.
+
+Extract up to 5 NEW and DIFFERENT UI or functionality bugs from the webpage text.
+
+⚠️ VERY IMPORTANT — DO NOT REPEAT BUGS:
+Below are bugs ALREADY reported for this page.
+Do NOT return anything similar.
+
+Already Reported Bug Titles:
+${reportedTitles.join("\n")}
+
+Already Reported Bug Descriptions:
+${reportedDescriptions.join("\n")}
+
+Your task:
+- Return ONLY NEW bugs not similar to the above.
+- Each bug must contain:
+  "title": short UI element name (EXACT element)
+  "description": a clear explanation of a NEW issue
 
 Return STRICT JSON ONLY:
 
 {
   "bugs": [
-    { "title": "element", "description": "issue details" }
+    { "title": "element name", "description": "issue details" }
   ]
 }
 
-Website content:
+Website Content:
 ${pageText}
 `;
 
@@ -71,7 +90,7 @@ ${pageText}
 
     const aiBugs = parsed.bugs || [];
 
-    // ⭐ Add category to each bug + mark duplicates
+    // ⭐ Process bugs — add category & duplicate flags
     const processedBugs = [];
 
     for (const bug of aiBugs) {
@@ -91,19 +110,19 @@ ${pageText}
       });
     }
 
-    // ⭐ If ALL bugs are duplicates → tell frontend
+    // ⭐ If ALL bugs are duplicates → no new bugs available
     const allDuplicates = processedBugs.every((b) => b.duplicate);
 
     if (allDuplicates) {
       return res.json({
         duplicate: true,
-        message: "No new bugs found on this page.",
+        message: "No NEW bugs found. All detected bugs are already reported.",
         bugs: processedBugs,
         screenshotBase64,
       });
     }
 
-    // ⭐ Return all bugs (frontend will choose one)
+    // ⭐ Return ALL processed bugs (frontend chooses)
     return res.json({
       duplicate: false,
       bugs: processedBugs,
@@ -111,6 +130,7 @@ ${pageText}
     });
   } catch (err) {
     console.error("AI ANALYZE ERROR:", err);
+
     if (browser) {
       try {
         await browser.close();
