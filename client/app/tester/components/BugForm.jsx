@@ -265,7 +265,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white w-full max-w-lg p-6 rounded-2xl shadow-xl">
             <h2 className="text-xl font-semibold mb-4 text-center">
-              AI Found These Bugs
+              Bugs on {testUrl}
             </h2>
 
             <div className="max-h-80 overflow-y-auto space-y-4">
@@ -287,7 +287,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
                       setShowBugPopup(false);
                       toast.success("Bug applied to form!");
                     }}
-                    className="mt-3 w-full py-2 bg-black text-white rounded-lg"
+                    className="mt-3 w-full py-2 cursor-pointer bg-orange-500 hover:bg-orange-400 text-white rounded-lg"
                   >
                     Use This Bug
                   </button>
@@ -297,7 +297,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
             <button
               onClick={() => setShowBugPopup(false)}
-              className="mt-4 w-full py-2 bg-gray-300 rounded-lg"
+              className="mt-4 w-full py-2 text-white cursor-pointer bg-black hover:bg-gray-800 rounded-lg"
             >
               Close
             </button>
