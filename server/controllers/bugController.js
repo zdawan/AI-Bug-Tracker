@@ -3,7 +3,7 @@ import {
   summarizeBug,
   generateTags,
   predictSeverity,
-  generateCategory, // ⭐ ADDED
+  generateCategory, // ⭐ AI category
 } from "../services/nlpService.js";
 import { findDuplicateBug } from "../services/duplicateCheckService.js";
 import { sendEmail } from "../utils/sendMail.js";
@@ -12,21 +12,29 @@ export const createBug = async (req, res) => {
   try {
     const { title, description, reporterEmail, testUrl } = req.body;
 
-    const screenshotPath = req.file ? `/uploads/${req.file.filename}` : null; 
+    // 📸 Screenshot handling
+    const screenshotPath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // ⭐ AI-generated fields
+    // 🧠 AI-generated fields
     const summary = await summarizeBug(description);
     const tags = await generateTags(description);
     let severity = await predictSeverity(description);
 
-    // ⭐ ADDED — AI PRIMARY CATEGORY
-    const category = await generateCategory(description);
+    // ⭐ AI CATEGORY (FIXED — always normalize to STRING)
+    const categoryResult = await generateCategory(`${title}. ${description}`);
+    const category =
+      typeof categoryResult === "string"
+        ? categoryResult
+        : categoryResult?.primary || categoryResult?.[0] || "UI Bug";
 
-    // ⭐ ADDED — CATEGORY-BASED DUPLICATE CHECK
-    const categoryDuplicate = await Bug.findOne({ testUrl, category });
+    // ⭐ CATEGORY-BASED DUPLICATE CHECK
+    const categoryDuplicate = await Bug.findOne({
+      testUrl,
+      category,
+      title,
+    });
 
     if (categoryDuplicate) {
-      // If duplicate category bug exists → update same one
       categoryDuplicate.reports += 1;
 
       if (
@@ -40,7 +48,7 @@ export const createBug = async (req, res) => {
         categoryDuplicate.screenshot = screenshotPath;
       }
 
-      // escalate severity if needed
+      // ⬆️ Escalate severity
       if (
         categoryDuplicate.reports >= 5 &&
         categoryDuplicate.severity === "Low"
@@ -63,13 +71,13 @@ export const createBug = async (req, res) => {
     }
 
     // ⭐ ORIGINAL DUPLICATE CHECK (summary + title + testUrl)
-    // (kept exactly as you requested)
     const duplicate = await findDuplicateBug(summary, title, testUrl);
 
     if (duplicate) {
       if (duplicate.status === "Closed") {
         return res.status(400).json({
-          message: `This bug has already been resolved. Please verify the fix before reporting again.`,
+          message:
+            "This bug has already been resolved. Please verify the fix before reporting again.",
           resolvedInfo: {
             id: duplicate._id,
             title: duplicate.title,
@@ -81,11 +89,10 @@ export const createBug = async (req, res) => {
 
       duplicate.reports += 1;
 
-      // severity escalation logic
-      if (duplicate.reports >= 5 && severity.toLowerCase() === "low") {
+      if (duplicate.reports >= 5 && severity === "Low") {
         severity = "Medium";
       }
-      if (duplicate.reports >= 10 && severity.toLowerCase() !== "high") {
+      if (duplicate.reports >= 10 && severity !== "High") {
         severity = "High";
       }
 
@@ -107,12 +114,12 @@ export const createBug = async (req, res) => {
       });
     }
 
-    // ⭐ CREATE NEW BUG (with CATEGORY added)
+    // ⭐ CREATE NEW BUG (NOW SAVES CORRECTLY)
     const newBug = new Bug({
       title,
       description,
       summary,
-      category, // ⭐ ADDED HERE
+      category, // ✅ ALWAYS STRING
       tags,
       severity,
       reporters: reporterEmail ? [reporterEmail] : [],
@@ -122,50 +129,53 @@ export const createBug = async (req, res) => {
     });
 
     await newBug.save();
+
     res.status(201).json(newBug);
   } catch (error) {
-    console.error("Error creating bug:", error);
+    console.error("❌ Error creating bug:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// --------------------- RESOLVE BUG (unchanged) -------------------------
+// --------------------- RESOLVE BUG (UNCHANGED) -------------------------
 
 export const resolveBug = async (req, res) => {
   try {
     const { id } = req.params;
     const { sendMail } = req.body;
-    const bug = await Bug.findById(id);
 
+    const bug = await Bug.findById(id);
     if (!bug) {
       return res.status(404).json({ error: "Bug not found" });
     }
 
     bug.status = "Closed";
     await bug.save();
+
     if (sendMail && bug.reporters?.length > 0) {
       const subject = `✅ Bug Resolved: ${bug.title}`;
       const text = `
-        Hello Tester,
-        
-        The bug you reported has been marked as resolved:
-        Title: ${bug.title}
-        URL: ${bug.testUrl || "N/A"}
-        Severity: ${bug.severity}
+Hello Tester,
 
-        Description:
-        ${bug.description}
+The bug you reported has been marked as resolved:
 
-        Thank you for helping improve the system!
-        
-        - Bug Tracker AI System
+Title: ${bug.title}
+URL: ${bug.testUrl || "N/A"}
+Severity: ${bug.severity}
+
+Description:
+${bug.description}
+
+Thank you for helping improve the system!
+
+- Bug Tracker AI System
       `;
       await sendEmail(bug.reporters.join(","), subject, text);
     }
 
     res.status(200).json({ message: "Bug marked as resolved", bug });
   } catch (error) {
-    console.error("Error resolving bug:", error);
+    console.error("❌ Error resolving bug:", error);
     res.status(500).json({ error: "Failed to resolve bug" });
   }
 };
