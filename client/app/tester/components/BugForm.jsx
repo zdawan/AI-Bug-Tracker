@@ -102,10 +102,12 @@ export default function BugForm({ onBugCreated, testUrl }) {
       setAiBugs(bugsFromAI);
 
       // Screenshot
+      let screenshotFile = null;
+
       if (res.data.screenshotBase64) {
         const dataUrl = `data:image/png;base64,${res.data.screenshotBase64}`;
-        const file = await dataURLToFile(dataUrl, "ai-screenshot.png");
-        setAiScreenshot(file);
+        screenshotFile = await dataURLToFile(dataUrl, "ai-screenshot.png");
+        setAiScreenshot(screenshotFile);
       }
 
       // Decide based on toggle
@@ -246,7 +248,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !title || !description}
             className="flex-1 py-3 px-4 rounded-2xl cursor-pointer bg-black text-white font-semibold text-lg 
               shadow-lg hover:bg-gray-800 transition disabled:opacity-50"
           >
