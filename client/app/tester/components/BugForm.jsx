@@ -255,10 +255,10 @@ export default function BugForm({ onBugCreated, testUrl }) {
             {loading ? "Submitting..." : "Submit"}
           </button>
         </div>
-        <p className="mt-2 text-xs text-gray-500">
+        {/* <p className="mt-2 text-xs text-gray-500">
           AI source file path:{" "}
           <span className="font-mono">{aiSourceFileUrl}</span>
-        </p>
+        </p> */}
       </form>
       {/* ================================================= */}
       {/*                AI BUG LIST POPUP                  */}
