@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import AssignedTickets from "./admin/assigned/page";
-import BugForm from "./components/BugForm";
+import BugForm from "./tester/components/BugForm";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Link from "next/link";
