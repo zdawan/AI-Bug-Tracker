@@ -4,6 +4,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function BugForm({ onBugCreated, testUrl }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -52,7 +54,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
       if (testUrl) formData.append("testUrl", testUrl);
       if (screenshot) formData.append("screenshot", screenshot);
 
-      const res = await axios.post("http://localhost:5000/api/bugs", formData, {
+      const res = await axios.post(`${API_URL}/api/bugs`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -89,7 +91,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
     try {
       setLoading(true);
 
-      const res = await axios.post("http://localhost:5000/api/ai/analyze", {
+      const res = await axios.post(`${API_URL}/api/ai/analyze`, {
         websiteUrl: testUrl,
       });
 
