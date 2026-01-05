@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const router = useRouter();
@@ -25,9 +27,7 @@ export default function AdminLogin() {
 
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/developers/email/${encodeURIComponent(
-          email
-        )}`
+        `${API}/api/developers/email/${encodeURIComponent(email)}`
       );
       // Save developer in local storage for session
       localStorage.setItem("developer", JSON.stringify(res.data));
