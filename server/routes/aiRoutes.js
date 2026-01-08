@@ -21,17 +21,15 @@ router.post("/analyze", async (req, res) => {
   let browser;
 
   try {
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--single-process",
       ],
-      headless: "new",
     });
-
 
     const page = await browser.newPage();
     await page.goto(websiteUrl, { waitUntil: "networkidle2", timeout: 30000 });
