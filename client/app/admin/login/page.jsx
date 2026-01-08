@@ -27,7 +27,9 @@ export default function AdminLogin() {
 
     try {
       const res = await axios.get(
-        `${API}/api/developers/email/${encodeURIComponent(email)}`
+        `http://localhost:5000/api/developers/email/${encodeURIComponent(
+          email
+        )}`
       );
       // Save developer in local storage for session
       localStorage.setItem("developer", JSON.stringify(res.data));

@@ -25,7 +25,7 @@ export default function AssignedTickets() {
 
   const handleResolve = async (bugId) => {
     try {
-      await axios.patch(`${API_URL}/api/bugs/${bugId}/resolve`, {
+      await axios.patch(`http://localhost:5000/api/bugs/${bugId}/resolve`, {
         sendMail,
       });
 
@@ -53,7 +53,7 @@ export default function AssignedTickets() {
     if (dev) {
       setDeveloper(dev);
       axios
-        .get(`${API_URL}/api/developers/${dev._id}/bugs`)
+        .get(`http://localhost:5000/api/developers/${dev._id}/bugs`)
         .then((res) => setBugs(res.data))
         .catch((err) => console.error(err));
     }
@@ -63,7 +63,7 @@ export default function AssignedTickets() {
     if (!editBug) return;
     try {
       const res = await axios.patch(
-        `${API_URL}/api/bugs/${editBug._id}/severity`,
+        `http://localhost:5000/api/bugs/${editBug._id}/severity`,
         { severity: newSeverity }
       );
       setBugs((prev) =>
