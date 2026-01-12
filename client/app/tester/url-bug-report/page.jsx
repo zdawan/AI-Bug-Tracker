@@ -89,7 +89,7 @@ function UserPageContent() {
               placeholder="/about"
             />
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowPopup(false)}
                 className="px-4 py-2 bg-gray-200 cursor-pointer rounded"
@@ -103,6 +103,9 @@ function UserPageContent() {
               >
                 Apply
               </button>
+            </div>
+            <div className="text-gray-500  text-sm mt-8">
+              New feature coming soon
             </div>
           </div>
         </div>
