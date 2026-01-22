@@ -18,11 +18,11 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 font-sans overflow-hidden">
+    <main className="relative min-h-screen bg-gradient-to-br from-white to-purple-100 font-sans overflow-hidden">
       {/* Radial dot background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(0,0,0,0.08)_1px,_transparent_1px)] [background-size:24px_24px]" />
       {/* Circular multi-color gradient */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160vw] h-[160vw] bg-[radial-gradient(circle_at_bottom,rgba(249,115,22,0.55) 0%,rgba(147,51,234,0.55) 35%,rgba(236,72,153,0.55) 40%,rgba(59,130,246,0.55) 85%,transparent 100%)] blur-3xl opacity-90" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160vw] h-[160vw] bg-[radial-gradient(circle_at_bottom,rgba(249,115,22,0.55) 0%,rgba(147,51,234,0.55) 15%,rgba(236,72,153,0.55) 20%,rgba(59,130,246,0.55) 35%,transparent 100%)] blur-3xl opacity-90" />
 
       <ToastContainer position="top-right" autoClose={3000} />
 
