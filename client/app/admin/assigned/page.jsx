@@ -119,7 +119,6 @@ export default function AssignedTickets() {
                   <th className="p-4">Severity</th>
                   <th className="p-4">Reports</th>
                   <th className="p-4">Date</th>
-                  <th className="p-4">Screenshots</th>
                   <th className="p-4 relative">
                     <div className="flex items-center justify-start gap-2">
                       <span>Resolve</span>
@@ -136,6 +135,7 @@ export default function AssignedTickets() {
                     </div>
                   </th>
                   <th className="p-8">Code</th>
+                  <th className="p-4">Screenshots</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,16 +156,16 @@ export default function AssignedTickets() {
                             bug.category === "UI Bug"
                               ? "#3b82f6"
                               : bug.category === "Backend Bug"
-                              ? "#6366f1"
-                              : bug.category === "Security Bug"
-                              ? "#ef4444"
-                              : bug.category === "Performance Bug"
-                              ? "#f59e0b"
-                              : bug.category === "Database Bug"
-                              ? "#0d9488"
-                              : bug.category === "Developer Error"
-                              ? "#6b7280"
-                              : "#9ca3af",
+                                ? "#6366f1"
+                                : bug.category === "Security Bug"
+                                  ? "#ef4444"
+                                  : bug.category === "Performance Bug"
+                                    ? "#f59e0b"
+                                    : bug.category === "Database Bug"
+                                      ? "#0d9488"
+                                      : bug.category === "Developer Error"
+                                        ? "#6b7280"
+                                        : "#9ca3af",
                         }}
                       >
                         {bug.category || "General Bug"}
@@ -187,7 +187,7 @@ export default function AssignedTickets() {
                     <td className="p-4">
                       {new Date(bug.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="p-4">Not Included</td>
+
                     {/* ✅ New Resolved Section */}
                     <td className="p-4 text-center">
                       {bug.status === "Closed" ? (
@@ -213,6 +213,7 @@ export default function AssignedTickets() {
                         Open
                       </a>
                     </td>
+                    <td className="p-4">Not Included</td>
                   </tr>
                 ))}
               </tbody>
