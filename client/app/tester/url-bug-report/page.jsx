@@ -104,7 +104,7 @@ function UserPageContent() {
                 Apply
               </button>
             </div>
-            <div className="text-gray-500  text-sm mt-8">
+            <div className="text-orange-500  text-sm mt-8">
               New feature coming soon
             </div>
           </div>

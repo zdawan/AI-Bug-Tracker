@@ -235,12 +235,14 @@ export default function AssignedTickets() {
             <p className="text-gray-700 whitespace-pre-line">
               {selectedBug.description}
             </p>
-            <button
-              onClick={() => setSelectedBug(null)}
-              className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              Close
-            </button>
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setSelectedBug(null)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -321,7 +323,7 @@ export default function AssignedTickets() {
                   setShowCodeModal(false);
                   setSelectedCode("");
                 }}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg cursor-pointer"
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer"
               >
                 Close
               </button>
