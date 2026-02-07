@@ -8,6 +8,8 @@ import "react-toastify/dist/ReactToastify.css";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AssignedTickets() {
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [selectedCode, setSelectedCode] = useState("");
   const [developer, setDeveloper] = useState(null);
   const [bugs, setBugs] = useState([]);
   const [showResolvePopup, setShowResolvePopup] = useState(false);
@@ -37,7 +39,7 @@ export default function AssignedTickets() {
 
       // update UI
       setBugs((prev) =>
-        prev.map((b) => (b._id === bugId ? { ...b, status: "Closed" } : b))
+        prev.map((b) => (b._id === bugId ? { ...b, status: "Closed" } : b)),
       );
     } catch (error) {
       console.error(error);
@@ -64,12 +66,12 @@ export default function AssignedTickets() {
     try {
       const res = await axios.patch(
         `http://localhost:5000/api/bugs/${editBug._id}/severity`,
-        { severity: newSeverity }
+        { severity: newSeverity },
       );
       setBugs((prev) =>
         prev.map((b) =>
-          b._id === editBug._id ? { ...b, severity: res.data.severity } : b
-        )
+          b._id === editBug._id ? { ...b, severity: res.data.severity } : b,
+        ),
       );
       setEditBug(null);
     } catch (err) {
@@ -206,12 +208,15 @@ export default function AssignedTickets() {
                     </td>
                     {/* ✅ New Code Link Section */}
                     <td className="p-4">
-                      <a
-                        href="vscode://"
-                        className="p-4 text-blue-600 font-medium cursor-pointer underline"
+                      <button
+                        onClick={() => {
+                          setSelectedCode("Error in fetching the code"); // assuming ("Hi") is the code string
+                          setShowCodeModal(true);
+                        }}
+                        className="text-blue-600 font-medium underline cursor-pointer"
                       >
                         Open
-                      </a>
+                      </button>
                     </td>
                     <td className="p-4">Not Included</td>
                   </tr>
@@ -297,6 +302,28 @@ export default function AssignedTickets() {
                 className="px-4 py-2 bg-green-700 cursor-pointer text-white rounded-lg hover:bg-green-800"
               >
                 Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCodeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <pre className="text-sm text-black whitespace-pre-wrap">
+              {selectedCode}
+            </pre>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowCodeModal(false);
+                  setSelectedCode("");
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>
