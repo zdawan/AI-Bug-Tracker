@@ -8,6 +8,10 @@ import "react-toastify/dist/ReactToastify.css";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AssignedTickets() {
+  const [editUrl, setEditUrl] = useState(null); // base url being edited
+  const [subPath, setSubPath] = useState("");
+  const [urlSections, setUrlSections] = useState({}); // { baseUrl: [subPaths] }
+  const [viewUrl, setViewUrl] = useState(null); // base url being viewed
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [selectedCode, setSelectedCode] = useState("");
   const [developer, setDeveloper] = useState(null);
@@ -79,6 +83,19 @@ export default function AssignedTickets() {
     }
   };
 
+  const getBugCountForUrl = (url) =>
+    bugs.filter((bug) => bug.testUrl?.startsWith(url)).length;
+
+  const getResolvedBugCountForUrl = (baseUrl) =>
+    bugs.filter(
+      (bug) => bug.status === "Closed" && bug.testUrl?.startsWith(baseUrl),
+    ).length;
+
+  const getUnresolvedBugCountForUrl = (baseUrl) =>
+    bugs.filter(
+      (bug) => bug.status !== "Closed" && bug.testUrl?.startsWith(baseUrl),
+    ).length;
+
   if (!developer)
     return <p className="text-center mt-20">Please login first</p>;
 
@@ -97,9 +114,113 @@ export default function AssignedTickets() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Welcome, {developer.name}
         </h1>
-        <p className="text-gray-600 mb-4">
-          You are assigned to bugs for: {developer.assignedUrls.join(", ")}
-        </p>
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+            Assigned Application
+          </h2>
+
+          {developer.assignedUrls.map((url, index) => (
+            <div key={index} className="grid grid-cols-3 gap-6 w-full">
+              {/* ================= LEFT CARD ================= */}
+              <div className="col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-6 py-5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 font-medium hover:underline"
+                    >
+                      {url}
+                    </a>
+
+                    <div className="text-sm text-gray-500 space-y-0.5 mt-2">
+                      <p>
+                        Total bugs:{" "}
+                        <span className="font-semibold text-gray-800">
+                          {getBugCountForUrl(url)}
+                        </span>
+                      </p>
+                      <p className="text-green-700">
+                        Resolved:{" "}
+                        <span className="font-semibold">
+                          {getResolvedBugCountForUrl(url)}
+                        </span>
+                      </p>
+                      <p className="text-yellow-700">
+                        Unresolved:{" "}
+                        <span className="font-semibold">
+                          {getUnresolvedBugCountForUrl(url)}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-4 mt-1">
+                    <button
+                      onClick={() => {
+                        setEditUrl(url);
+                        setSubPath("");
+                      }}
+                      className="flex items-center gap-1 text-gray-600 hover:text-black text-sm"
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => setViewUrl(url)}
+                      className="flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                    >
+                      <Info size={14} />
+                      View
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ================= RIGHT CARD ================= */}
+              <div className="bg-white border border-gray-200 rounded-xl px-6 py-5">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-3">
+                  Resolution Progress
+                </p>
+
+                {/* Progress Bar */}
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-green-600"
+                    style={{
+                      width: `${
+                        (getResolvedBugCountForUrl(url) /
+                          Math.max(getBugCountForUrl(url), 1)) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-xs text-gray-600 mb-2">
+                  <span>{getResolvedBugCountForUrl(url)} Resolved</span>
+                  <span>{getUnresolvedBugCountForUrl(url)} Pending</span>
+                </div>
+
+                <span
+                  className={`text-xs font-medium ${
+                    getUnresolvedBugCountForUrl(url) === 0
+                      ? "text-green-700"
+                      : "text-yellow-700"
+                  }`}
+                >
+                  {getUnresolvedBugCountForUrl(url) === 0
+                    ? "All bugs resolved 🎉"
+                    : "Action required"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <button
           onClick={handleLogout}
           className="px-4 py-2 bg-red-400 text-white rounded-xl cursor-pointer max-w-[10%] hover:bg-red-600"
@@ -361,6 +482,87 @@ export default function AssignedTickets() {
                 className="px-4 py-2 bg-green-700 cursor-pointer text-white rounded-lg hover:bg-green-800"
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editUrl && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Add Section</h2>
+
+            <p className="text-sm text-gray-500 mb-2">Base URL: {editUrl}</p>
+
+            <input
+              type="text"
+              placeholder="/bug-report"
+              value={subPath}
+              onChange={(e) => setSubPath(e.target.value)}
+              className="w-full border px-4 py-2 rounded-lg mb-4"
+            />
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setEditUrl(null)}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!subPath.startsWith("/")) {
+                    toast.error("Sub-path must start with /");
+                    return;
+                  }
+
+                  setUrlSections((prev) => ({
+                    ...prev,
+                    [editUrl]: [...(prev[editUrl] || []), subPath],
+                  }));
+
+                  toast.success("Section added");
+                  setEditUrl(null);
+                  setSubPath("");
+                }}
+                className="px-4 py-2 bg-green-700 text-white rounded-lg"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewUrl && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg">
+            <h2 className="text-xl font-bold mb-4">Available Sections</h2>
+
+            <p className="text-sm text-gray-500 mb-4">Base URL: {viewUrl}</p>
+
+            {urlSections[viewUrl]?.length > 0 ? (
+              <ul className="space-y-2">
+                {urlSections[viewUrl].map((path, idx) => (
+                  <li
+                    key={idx}
+                    className="bg-gray-100 px-4 py-2 rounded-lg font-mono"
+                  >
+                    {path}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500 text-sm">No sections added yet.</p>
+            )}
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setViewUrl(null)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+              >
+                Close
               </button>
             </div>
           </div>

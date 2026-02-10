@@ -214,7 +214,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
             type="file"
             accept="image/*"
             onChange={(e) => setScreenshot(e.target.files[0])}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm cursor-pointer"
           />
         </div>
 
