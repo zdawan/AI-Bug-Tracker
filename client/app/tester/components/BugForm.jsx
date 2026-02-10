@@ -161,7 +161,6 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
         <p className="text-center text-gray-600 mb-8">
           Found something broken? Let’s fix it together.
-          <span className="block">Your feedback makes this app lovable ❤️</span>
         </p>
 
         {/* Title */}
