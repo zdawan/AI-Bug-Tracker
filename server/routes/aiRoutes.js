@@ -2,13 +2,18 @@
 import express from "express";
 import puppeteer from "puppeteer";
 import OpenAI from "openai";
+import Groq from "groq-sdk";
 import Bug from "../models/Bug.js";
 import { generateCategory } from "../services/nlpService.js";
 
 const router = express.Router();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 router.post("/analyze", async (req, res) => {
@@ -79,8 +84,13 @@ Website Content:
 ${pageText}
 `;
 
-    const aiRes = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    // const aiRes = await openai.chat.completions.create({
+    //   model: "gpt-4o-mini",
+    //   messages: [{ role: "user", content: prompt }],
+    // });
+
+    const aiRes = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
       messages: [{ role: "user", content: prompt }],
     });
 
