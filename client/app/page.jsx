@@ -131,6 +131,10 @@ export default function HomePage() {
                 <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
                 <span>Advanced real-time collaborative debugging</span>
               </li>
+              <li className="flex items-start">
+                <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
+                <span>Advanced real-time collaborative debugging</span>
+              </li>
             </ul>
             <button
               onClick={() => setShowUpgradesModal(false)}
