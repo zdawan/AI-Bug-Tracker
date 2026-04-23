@@ -134,7 +134,7 @@ export default function HomePage() {
             </ul>
             <button
               onClick={() => setShowUpgradesModal(false)}
-              className="w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+              className="w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors cursor-pointer"
             >
               Close
             </button>
