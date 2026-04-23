@@ -10,6 +10,7 @@ export default function HomePage() {
   const [showTracker, setShowTracker] = useState(false);
   const [role, setRole] = useState("");
   const [animateCards, setAnimateCards] = useState(false);
+  const [showUpgradesModal, setShowUpgradesModal] = useState(false);
 
   useEffect(() => {
     // Trigger fade-in animation for cards
@@ -84,6 +85,16 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
+
+            {/* Future Upgrades Button */}
+            <div className="mt-16">
+              <button
+                onClick={() => setShowUpgradesModal(true)}
+                className="px-6 py-3 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer"
+              >
+                List of future upgrades
+              </button>
+            </div>
           </>
         ) : (
           // Role-based view after selection
@@ -101,6 +112,35 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {/* Future Upgrades Modal */}
+      {showUpgradesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all scale-100">
+            <h3 className="text-2xl font-bold mb-4 text-gray-900">Future Upgrades</h3>
+            <ul className="space-y-4 mb-8 text-gray-700">
+              <li className="flex items-start">
+                <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
+                <span>AI-driven automatic test case generation</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
+                <span>Seamless CI/CD pipeline integration</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
+                <span>Advanced real-time collaborative debugging</span>
+              </li>
+            </ul>
+            <button
+              onClick={() => setShowUpgradesModal(false)}
+              className="w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Animation styles */}
       <style jsx>{`
