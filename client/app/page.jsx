@@ -125,6 +125,10 @@ export default function HomePage() {
               </li>
               <li className="flex items-start">
                 <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
+                <span>Domain specific bug data for seamless integration</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
                 <span>Seamless CI/CD pipeline integration</span>
               </li>
               <li className="flex items-start">
