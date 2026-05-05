@@ -31,7 +31,7 @@ export default function AssignedTickets() {
 
   const handleResolve = async (bugId) => {
     try {
-      await axios.patch(`http://localhost:5000/api/bugs/${bugId}/resolve`, {
+      await axios.patch(`https://ai-bug-tracker-1.onrender.com/api/bugs/${bugId}/resolve`, {
         sendMail,
       });
 
@@ -59,7 +59,7 @@ export default function AssignedTickets() {
     if (dev) {
       setDeveloper(dev);
       axios
-        .get(`http://localhost:5000/api/developers/${dev._id}/bugs`)
+        .get(`https://ai-bug-tracker-1.onrender.com/api/developers/${dev._id}/bugs`)
         .then((res) => setBugs(res.data))
         .catch((err) => console.error(err));
     }
@@ -69,7 +69,7 @@ export default function AssignedTickets() {
     if (!editBug) return;
     try {
       const res = await axios.patch(
-        `http://localhost:5000/api/bugs/${editBug._id}/severity`,
+        `https://ai-bug-tracker-1.onrender.com/api/bugs/${editBug._id}/severity`,
         { severity: newSeverity },
       );
       setBugs((prev) =>
