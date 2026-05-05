@@ -7,9 +7,6 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export const metadata = {
-  title: "Admin Login | Bug Tracker",
-};
 
 export default function AssignedTickets() {
   const [editUrl, setEditUrl] = useState(null); // base url being edited
