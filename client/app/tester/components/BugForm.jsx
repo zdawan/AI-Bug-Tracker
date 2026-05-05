@@ -4,6 +4,10 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+export const metadata = {
+  title: "BugForm",
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function BugForm({ onBugCreated, testUrl }) {
