@@ -4,6 +4,10 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+export const metadata = {
+  title: "Tester | Bug Tracker",
+};
+
 export default function TesterPage() {
   const [url, setUrl] = useState("");
   const router = useRouter();
