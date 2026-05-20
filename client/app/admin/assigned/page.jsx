@@ -164,7 +164,7 @@ export default function AssignedTickets() {
                         setEditUrl(url);
                         setSubPath("");
                       }}
-                      className="flex items-center gap-1 text-gray-600 hover:text-black text-sm"
+                      className="flex items-center gap-1 text-gray-600 hover:text-black text-sm cursor-pointer"
                     >
                       <Pencil size={14} />
                       Edit
@@ -172,7 +172,7 @@ export default function AssignedTickets() {
 
                     <button
                       onClick={() => setViewUrl(url)}
-                      className="flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                      className="flex items-center gap-1 text-blue-600 hover:underline text-sm cursor-pointer"
                     >
                       <Info size={14} />
                       View
@@ -192,11 +192,10 @@ export default function AssignedTickets() {
                   <div
                     className="h-full bg-green-600"
                     style={{
-                      width: `${
-                        (getResolvedBugCountForUrl(url) /
+                      width: `${(getResolvedBugCountForUrl(url) /
                           Math.max(getBugCountForUrl(url), 1)) *
                         100
-                      }%`,
+                        }%`,
                     }}
                   />
                 </div>
@@ -207,11 +206,10 @@ export default function AssignedTickets() {
                 </div>
 
                 <span
-                  className={`text-xs font-medium ${
-                    getUnresolvedBugCountForUrl(url) === 0
+                  className={`text-xs font-medium ${getUnresolvedBugCountForUrl(url) === 0
                       ? "text-green-700"
                       : "text-yellow-700"
-                  }`}
+                    }`}
                 >
                   {getUnresolvedBugCountForUrl(url) === 0
                     ? "All bugs resolved 🎉"
