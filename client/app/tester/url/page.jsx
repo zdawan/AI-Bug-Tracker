@@ -82,7 +82,7 @@ export default function TesterPage() {
           </button>
           <p className="text-center text-gray-600 mb-6">
             <span className="font-medium">Test URL:</span>{" "}
-            https://app.base44.com/
+            https://github.com/
           </p>
         </form>
       </div>
