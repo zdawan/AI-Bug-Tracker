@@ -86,7 +86,7 @@ export default function AdminLogin() {
             Login
           </button>
           <p className="flex items-center justify-center">
-            Test mail: jnr1006262@gmail.com
+            Example mail: githubtest@gmail.com
           </p>
         </form>
       </div>
