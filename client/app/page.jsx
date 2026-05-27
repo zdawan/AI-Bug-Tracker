@@ -60,7 +60,7 @@ export default function HomePage() {
               {/* User Card */}
 
               <div className="p-16  bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
-                <h2 className="text-3xl font-bold mb-2">Tester / User</h2>
+                <h2 className="text-3xl font-bold mb-2 text-black">Tester / User</h2>
                 <p className="text-gray-700 mb-8 text-lg">
                   Submit bugs, get AI insights, and preview UI snapshots
                   instantly.
@@ -74,7 +74,7 @@ export default function HomePage() {
 
               {/* Admin Card */}
               <div className="p-16 bg-white/90 rounded-4xl shadow-2xl hover:scale-105 transform transition duration-300 text-center flex flex-col justify-between">
-                <h2 className="text-3xl font-bold mb-2">Developer</h2>
+                <h2 className="text-3xl font-bold mb-2 text-black">Developer</h2>
                 <p className="text-gray-700 mb-8 text-lg">
                   Manage submitted bugs and track progress.
                 </p>
@@ -117,7 +117,12 @@ export default function HomePage() {
       {showUpgradesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all scale-100">
-            <h3 className="text-2xl font-bold mb-4 text-gray-900">Future Upgrades</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold text-gray-900">Future Upgrades</h3>
+              <span className="px-3 py-1 text-xs font-semibold bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full shadow-sm">
+                Coming Soon
+              </span>
+            </div>
             <ul className="space-y-4 mb-8 text-gray-700">
               <li className="flex items-start">
                 <span className="text-indigo-500 mr-2 text-xl leading-none">&bull;</span>
