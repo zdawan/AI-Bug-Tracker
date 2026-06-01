@@ -208,14 +208,18 @@ export default function AssignedTickets() {
 
                 <span
                   className={`text-xs font-medium ${
-                    getUnresolvedBugCountForUrl(url) === 0
-                      ? "text-green-700"
-                      : "text-yellow-700"
+                    getBugCountForUrl(url) === 0
+                      ? "text-gray-500"
+                      : getUnresolvedBugCountForUrl(url) === 0
+                        ? "text-green-700"
+                        : "text-yellow-700"
                   }`}
                 >
-                  {getUnresolvedBugCountForUrl(url) === 0
-                    ? "All bugs resolved 🎉"
-                    : "Action required"}
+                  {getBugCountForUrl(url) === 0
+                    ? "No bugs reported"
+                    : getUnresolvedBugCountForUrl(url) === 0
+                      ? "All bugs resolved 🎉"
+                      : "Action required"}
                 </span>
               </div>
             </div>
