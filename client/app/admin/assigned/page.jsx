@@ -192,10 +192,11 @@ export default function AssignedTickets() {
                   <div
                     className="h-full bg-green-600"
                     style={{
-                      width: `${(getResolvedBugCountForUrl(url) /
+                      width: `${
+                        (getResolvedBugCountForUrl(url) /
                           Math.max(getBugCountForUrl(url), 1)) *
                         100
-                        }%`,
+                      }%`,
                     }}
                   />
                 </div>
@@ -206,10 +207,11 @@ export default function AssignedTickets() {
                 </div>
 
                 <span
-                  className={`text-xs font-medium ${getUnresolvedBugCountForUrl(url) === 0
+                  className={`text-xs font-medium ${
+                    getUnresolvedBugCountForUrl(url) === 0
                       ? "text-green-700"
                       : "text-yellow-700"
-                    }`}
+                  }`}
                 >
                   {getUnresolvedBugCountForUrl(url) === 0
                     ? "All bugs resolved 🎉"
@@ -228,7 +230,13 @@ export default function AssignedTickets() {
         </button>
 
         {bugs.length === 0 ? (
-          <p className="text-gray-500">No bugs reported yet 🎉</p>
+          <p className="text-gray-500">
+            No bugs reported yet. If any, it will be visible here.
+          </p>
+        ) : bugs.every((b) => b.status === "Closed") ? (
+          <p className="text-green-600 font-semibold text-center">
+            All bugs resolved 🎉
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
