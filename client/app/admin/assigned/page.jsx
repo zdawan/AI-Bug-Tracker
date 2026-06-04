@@ -234,7 +234,7 @@ export default function AssignedTickets() {
         </button>
 
         {bugs.length === 0 ? (
-          <p className="text-gray-500">
+          <p className="text-gray-500 justify-center flex mt-10">
             No bugs reported yet. If any, it will be visible here.
           </p>
         ) : bugs.every((b) => b.status === "Closed") ? (
