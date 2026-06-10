@@ -92,14 +92,14 @@ function UserPageContent() {
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowPopup(false)}
-                className="px-4 py-2 bg-gray-200 cursor-pointer rounded"
+                className="px-4 py-2 bg-gray-200 cursor-pointer rounded hover:opacity-90 transition"
               >
                 Cancel
               </button>
 
               <button
                 onClick={applyPathChange}
-                className="px-4 py-2 bg-orange-600 cursor-pointer text-white rounded"
+                className="px-4 py-2 bg-orange-600 cursor-pointer text-white rounded hover:opacity-90 transition"
               >
                 Apply
               </button>
