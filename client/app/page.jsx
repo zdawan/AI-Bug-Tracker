@@ -116,10 +116,10 @@ export default function HomePage() {
       {/* Future Upgrades Modal */}
       {showUpgradesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all scale-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-gray-900">Future Upgrades</h3>
-              <span className="px-3 py-1 text-xs font-semibold bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full shadow-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 transform transition-all scale-100">
+            <div className="flex items-center justify-between mb-4 gap-4 flex-nowrap w-full">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-nowrap">Future Upgrades</h3>
+              <span className="px-4 py-1.5 text-sm font-bold bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full shadow-sm whitespace-nowrap flex-shrink-0">
                 Coming Soon
               </span>
             </div>
