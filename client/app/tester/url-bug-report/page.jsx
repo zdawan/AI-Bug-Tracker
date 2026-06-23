@@ -40,32 +40,35 @@ function UserPageContent() {
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
-
       <div className="relative z-10 max-w-3xl mx-auto">
         {base && (
-          <div className="mb-6 p-4 bg-white outline-1 outline-orange-600 rounded-xl text-center cursor-pointer text-gray-800">
-            Testing on:{" "}
-            <span className="font-semibold">
-              {base}
-              {path}
-            </span>
-            <a
-              href={finalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 text-black font-medium underline transition"
-            >
-              Preview
-            </a>
-            <button
-              onClick={() => {
-                setTempPath(path);
-                setShowPopup(true);
-              }}
-              className="ml-2 px-4 py-1 bg-orange-500 cursor-pointer text-white rounded-md"
-            >
-              Edit
-            </button>
+          <div className="mb-6 p-4 bg-white outline-1 outline-orange-600 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-800">
+            <div className="text-center sm:text-left min-w-0">
+              <span className="text-gray-500 text-sm block sm:inline">Testing on: </span>
+              <span className="font-semibold break-all">
+                {base}
+                {path}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <a
+                href={finalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 text-black font-medium underline transition text-sm"
+              >
+                Preview
+              </a>
+              <button
+                onClick={() => {
+                  setTempPath(path);
+                  setShowPopup(true);
+                }}
+                className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 cursor-pointer text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                Edit
+              </button>
+            </div>
           </div>
         )}
 

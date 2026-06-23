@@ -101,18 +101,18 @@ export default function AssignedTickets() {
     return <p className="text-center mt-20">Please login first</p>;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col items-center py-12 px-6 font-sans relative">
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col items-center py-6 px-4 md:py-12 md:px-6 font-sans relative">
       <div
         className="
           bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl
-          px-12 py-14
+          px-4 py-6 sm:px-8 sm:py-10 md:px-12 md:py-14
           max-w-[95%]
           w-full
           min-h-[85vh]
           flex flex-col gap-10
         "
       >
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
           Welcome, {developer.name}
         </h1>
         <div className="mb-6">
@@ -121,16 +121,16 @@ export default function AssignedTickets() {
           </h2>
 
           {developer.assignedUrls.map((url, index) => (
-            <div key={index} className="grid grid-cols-3 gap-6 w-full">
+            <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-6">
               {/* ================= LEFT CARD ================= */}
-              <div className="col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-6 py-5">
-                <div className="flex justify-between items-start">
-                  <div>
+              <div className="col-span-1 md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 sm:px-6 sm:py-5">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                  <div className="min-w-0 flex-1">
                     <a
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-blue-600 font-medium hover:underline"
+                      className="text-blue-600 font-medium hover:underline break-all block"
                     >
                       {url}
                     </a>
@@ -158,7 +158,7 @@ export default function AssignedTickets() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-4 mt-1">
+                  <div className="flex items-center gap-4 mt-1 flex-shrink-0">
                     <button
                       onClick={() => {
                         setEditUrl(url);
@@ -182,7 +182,7 @@ export default function AssignedTickets() {
               </div>
 
               {/* ================= RIGHT CARD ================= */}
-              <div className="bg-white border border-gray-200 rounded-xl px-6 py-5">
+              <div className="col-span-1 bg-white border border-gray-200 rounded-xl px-4 py-4 sm:px-6 sm:py-5">
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-3">
                   Resolution Progress
                 </p>
@@ -192,11 +192,10 @@ export default function AssignedTickets() {
                   <div
                     className="h-full bg-green-600"
                     style={{
-                      width: `${
-                        (getResolvedBugCountForUrl(url) /
-                          Math.max(getBugCountForUrl(url), 1)) *
+                      width: `${(getResolvedBugCountForUrl(url) /
+                        Math.max(getBugCountForUrl(url), 1)) *
                         100
-                      }%`,
+                        }%`,
                     }}
                   />
                 </div>
@@ -207,13 +206,12 @@ export default function AssignedTickets() {
                 </div>
 
                 <span
-                  className={`text-xs font-medium ${
-                    getBugCountForUrl(url) === 0
-                      ? "text-gray-500"
-                      : getUnresolvedBugCountForUrl(url) === 0
-                        ? "text-green-700"
-                        : "text-yellow-700"
-                  }`}
+                  className={`text-xs font-medium ${getBugCountForUrl(url) === 0
+                    ? "text-gray-500"
+                    : getUnresolvedBugCountForUrl(url) === 0
+                      ? "text-green-700"
+                      : "text-yellow-700"
+                    }`}
                 >
                   {getBugCountForUrl(url) === 0
                     ? "No bugs reported"
@@ -228,7 +226,7 @@ export default function AssignedTickets() {
 
         <button
           onClick={handleLogout}
-          className="px-4 py-2 bg-red-400 text-white rounded-xl cursor-pointer max-w-[10%] hover:bg-red-600"
+          className="px-6 py-2.5 bg-red-400 text-white rounded-xl cursor-pointer w-fit hover:bg-red-600 transition-colors"
         >
           Logout
         </button>
