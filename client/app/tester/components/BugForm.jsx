@@ -232,13 +232,13 @@ export default function BugForm({ onBugCreated, testUrl }) {
           </label>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 mt-6">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 mt-6">
           {/* AI Analyze Button */}
           <button
             type="button"
             onClick={handleAIAnalyze}
             disabled={loading}
-            className="flex-1 py-3 px-4 cursor-pointer font-semibold rounded-2xl text-lg text-white relative overflow-hidden
+            className="w-full md:flex-1 py-3 px-4 cursor-pointer font-semibold rounded-2xl text-lg text-white relative overflow-hidden
               bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500
               before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/20 before:to-transparent
               before:-translate-x-full hover:before:translate-x-full before:transition-all before:duration-500
@@ -251,7 +251,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
           <button
             type="submit"
             disabled={loading || !title || !description}
-            className="flex-1 py-3 px-4 rounded-2xl cursor-pointer bg-black text-white font-semibold text-lg 
+            className="w-full md:flex-1 py-3 px-4 rounded-2xl cursor-pointer bg-black text-white font-semibold text-lg 
               shadow-lg hover:bg-gray-800 transition disabled:opacity-50"
           >
             {loading ? "Submitting..." : "Submit"}
