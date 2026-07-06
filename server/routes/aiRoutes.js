@@ -27,13 +27,14 @@ router.post("/analyze", async (req, res) => {
 
   try {
     browser = await puppeteer.launch({
-  headless: true,
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-  ],
-});
+      executablePath: puppeteer.executablePath(),
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
 
     const page = await browser.newPage();
     await page.goto(websiteUrl, { waitUntil: "networkidle2", timeout: 30000 });
@@ -148,7 +149,7 @@ ${pageText}
     if (browser) {
       try {
         await browser.close();
-      } catch (_) {}
+      } catch (_) { }
     }
 
     return res.status(500).json({
