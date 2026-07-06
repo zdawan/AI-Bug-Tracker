@@ -26,6 +26,7 @@ router.post("/analyze", async (req, res) => {
   let browser;
 
   try {
+    console.log("Chrome executable path:", puppeteer.executablePath());
     browser = await puppeteer.launch({
       executablePath: puppeteer.executablePath(),
       headless: true,
