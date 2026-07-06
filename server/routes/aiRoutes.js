@@ -1,7 +1,7 @@
 // routes/aiRoutes.js
 import express from "express";
-import puppeteer from "puppeteer";
-import OpenAI from "openai";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import Groq from "groq-sdk";
 import Bug from "../models/Bug.js";
 import { generateCategory } from "../services/nlpService.js";
@@ -28,13 +28,9 @@ router.post("/analyze", async (req, res) => {
   try {
     console.log("Chrome executable path:", puppeteer.executablePath());
     browser = await puppeteer.launch({
-      executablePath: puppeteer.executablePath(),
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
