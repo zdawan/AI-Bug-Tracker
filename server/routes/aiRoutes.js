@@ -26,11 +26,20 @@ router.post("/analyze", async (req, res) => {
   let browser;
 
   try {
-    console.log("Chrome executable path:", puppeteer.executablePath());
+    const executablePath = await chromium.executablePath();
+
+    console.log("Chromium executable:", executablePath);
+
     browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      executablePath,
+      args: [
+        ...chromium.args,
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+      headless: true,
+      defaultViewport: chromium.defaultViewport,
     });
 
     const page = await browser.newPage();
