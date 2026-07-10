@@ -43,7 +43,18 @@ router.post("/analyze", async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.goto(websiteUrl, { waitUntil: "networkidle2", timeout: 30000 });
+    let url = websiteUrl.trim();
+
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = `https://${url}`;
+    }
+
+    console.log("Analyzing URL:", url);
+
+    await page.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
 
     const pageText = await page.evaluate(() => document.body.innerText);
     const screenshotBuffer = await page.screenshot({ type: "png" });
