@@ -234,25 +234,18 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 mt-6">
           {/* AI Analyze Button */}
-          <div className="group relative w-full md:flex-1">
-            <button
-              type="button"
-              disabled
-              aria-describedby="ai-maintenance-tooltip"
-              className="w-full py-3 px-4 cursor-not-allowed font-semibold rounded-2xl text-lg text-white relative overflow-hidden
-                bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 opacity-50
-                shadow-[0_6px_28px_rgba(255,255,255,0.8)]"
-            >
-              AI Analyze
-            </button>
-            <span
-              id="ai-maintenance-tooltip"
-              role="status"
-              className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-sm text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-            >
-              Disabled for maintenance
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={handleAIAnalyze}
+            disabled={loading}
+            className="w-full md:flex-1 py-3 px-4 cursor-pointer font-semibold rounded-2xl text-lg text-white relative overflow-hidden
+              bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500
+              before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/20 before:to-transparent
+              before:-translate-x-full hover:before:translate-x-full before:transition-all before:duration-500
+              shadow-[0_6px_28px_rgba(255,255,255,0.8)] transition-all duration-300"
+          >
+            {loading ? "Analyzing..." : "AI Analyze"}
+          </button>
 
           {/* Submit Button */}
           <button
