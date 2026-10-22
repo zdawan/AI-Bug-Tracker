@@ -1,0 +1,337 @@
+:root {
+  --bt-loader-violet: #7161e8;
+  --bt-loader-blue: #4b8dff;
+  --bt-loader-cyan: #21b8d4;
+  --bt-loader-green: #35c99a;
+  --bt-loader-ink: #182033;
+  --bt-loader-muted: #858ba0;
+  --bt-loader-border: #e7e9f3;
+  --bt-loader-surface: #ffffff;
+}
+
+.bt-loading-screen {
+  --bt-accent: var(--bt-loader-violet);
+  --bt-accent-rgb: 113, 97, 232;
+
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--bt-loader-ink);
+  background: #fafaff;
+}
+
+.bt-loading-screen.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  min-height: 100dvh;
+  padding: 32px 20px;
+}
+
+.bt-loading-screen.is-inline {
+  position: relative;
+  min-height: 280px;
+  width: 100%;
+  border-radius: 20px;
+}
+
+.bt-loading-screen.theme-blue {
+  --bt-accent: var(--bt-loader-blue);
+  --bt-accent-rgb: 75, 141, 255;
+}
+
+.bt-loading-screen.theme-cyan {
+  --bt-accent: var(--bt-loader-cyan);
+  --bt-accent-rgb: 33, 184, 212;
+}
+
+.bt-loading-screen.theme-violet {
+  --bt-accent: var(--bt-loader-violet);
+  --bt-accent-rgb: 113, 97, 232;
+}
+
+/* ---------- Background atmosphere ---------- */
+
+.bt-loading-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  opacity: 0.32;
+
+  background-image: radial-gradient(
+    rgba(var(--bt-accent-rgb), 0.18) 1px,
+    transparent 1px
+  );
+
+  background-size: 25px 25px;
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 78%);
+}
+
+.bt-loading-glow {
+  position: absolute;
+  z-index: -2;
+  width: min(75vw, 700px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(75px);
+  pointer-events: none;
+}
+
+.bt-loading-glow-one {
+  top: -35%;
+  left: -15%;
+  background: rgba(var(--bt-accent-rgb), 0.09);
+  animation: bt-glow-drift-one 12s ease-in-out infinite alternate;
+}
+
+.bt-loading-glow-two {
+  right: -20%;
+  bottom: -45%;
+  background: rgba(75, 141, 255, 0.09);
+  animation: bt-glow-drift-two 15s ease-in-out infinite alternate;
+}
+
+/* ---------- Main composition ---------- */
+
+.bt-loading-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(100%, 420px);
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: bt-content-enter 500ms ease-out both;
+}
+
+.bt-animation-stage {
+  position: relative;
+  display: grid;
+  width: 172px;
+  height: 172px;
+  place-items: center;
+  margin-bottom: 22px;
+}
+
+/* ---------- Orbit rings ---------- */
+
+.bt-orbit {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(var(--bt-accent-rgb), 0.17);
+  border-radius: 50%;
+}
+
+.bt-orbit-outer {
+  inset: 0;
+  border-style: dashed;
+  animation: bt-orbit-rotate 18s linear infinite;
+}
+
+.bt-orbit-middle {
+  inset: 13px;
+  border-color: rgba(var(--bt-accent-rgb), 0.25);
+  animation: bt-orbit-rotate 12s linear infinite reverse;
+}
+
+.bt-orbit-inner {
+  inset: 26px;
+  border-color: rgba(var(--bt-accent-rgb), 0.11);
+}
+
+.bt-orbit-dot {
+  position: absolute;
+  top: 17px;
+  left: 17px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bt-accent);
+  box-shadow:
+    0 0 0 5px rgba(var(--bt-accent-rgb), 0.08),
+    0 0 18px rgba(var(--bt-accent-rgb), 0.45);
+}
+
+.bt-orbit-middle .bt-orbit-dot {
+  top: auto;
+  right: 9px;
+  bottom: 16px;
+  left: auto;
+  width: 6px;
+  height: 6px;
+}
+
+/* ---------- Animated bug logo ---------- */
+
+.bt-logo-tile {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 78px;
+  height: 78px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 25px;
+
+  background: linear-gradient(
+    145deg,
+    #8274f3 0%,
+    var(--bt-accent) 58%,
+    #397fe8 100%
+  );
+
+  color: #fff;
+
+  box-shadow:
+    0 18px 42px rgba(var(--bt-accent-rgb), 0.24),
+    inset 0 1px rgba(255, 255, 255, 0.4);
+
+  animation: bt-logo-breathe 3s ease-in-out infinite;
+}
+
+.bt-mark {
+  width: 49px;
+  height: 49px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.bt-logo-status {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 17px;
+  height: 17px;
+  border: 3px solid #fafaff;
+  border-radius: 50%;
+  background: var(--bt-loader-green);
+  box-shadow: 0 0 0 4px rgba(53, 201, 154, 0.12);
+}
+
+.bt-particle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--bt-accent);
+  animation: bt-particle-pulse 2.5s ease-in-out infinite;
+}
+
+.bt-particle-one {
+  top: 22px;
+  right: 32px;
+}
+
+.bt-particle-two {
+  bottom: 30px;
+  left: 18px;
+  width: 7px;
+  height: 7px;
+  animation-delay: 500ms;
+}
+
+.bt-particle-three {
+  right: 20px;
+  bottom: 42px;
+  width: 4px;
+  height: 4px;
+  animation-delay: 1s;
+}
+
+/* ---------- Brand and copy ---------- */
+
+.bt-loading-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bt-loader-ink);
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+}
+
+.bt-brand-ai {
+  background: linear-gradient(
+    105deg,
+    var(--bt-loader-blue),
+    var(--bt-accent),
+    #a45de4
+  );
+
+  background-clip: text;
+  color: transparent;
+}
+
+.bt-loading-title {
+  margin: 24px 0 0;
+  color: #242a3b;
+  font-size: clamp(16px, 3vw, 19px);
+  font-weight: 650;
+  letter-spacing: -0.35px;
+}
+
+.bt-loading-detail {
+  max-width: 330px;
+  margin: 8px 0 0;
+  color: var(--bt-loader-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ---------- Progress system ---------- */
+
+.bt-progress-region {
+  width: min(100%, 300px);
+  margin-top: 28px;
+}
+
+.bt-progress-track {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 100px;
+  background: #e8e9f4;
+}
+
+.bt-progress-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    var(--bt-loader-blue),
+    var(--bt-accent),
+    #a45de4
+  );
+}
+
+.bt-progress-fill.is-indeterminate {
+  width: 38%;
+  animation: bt-progress-sweep 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.bt-progress-fill.is-determinate {
+  transition: width 240ms ease-out;
+}
+
+.bt-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: #9297a8;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bt-loading-footnote {
+  margin: 27px 0 0;
+  color: #a1a5b5;
+  font-size: 11px;
+}
