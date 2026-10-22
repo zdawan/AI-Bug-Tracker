@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AssignedTickets from "./admin/assigned/page";
 import BugForm from "./tester/components/BugForm";
 import { ToastContainer } from "react-toastify";
@@ -9,19 +9,10 @@ import Link from "next/link";
 export default function HomePage() {
   const [showTracker, setShowTracker] = useState(false);
   const [role, setRole] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [showUpgradesModal, setShowUpgradesModal] = useState(false);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => setIsLoading(false), 900);
-    return () => clearTimeout(timeout);
-  }, []);
-
   return (
-    <main
-      aria-busy={isLoading}
-      className="relative min-h-screen bg-gradient-to-br from-white to-purple-100 font-sans overflow-hidden"
-    >
+    <main className="relative min-h-screen bg-gradient-to-br from-white to-purple-100 font-sans overflow-hidden">
       {/* Radial dot background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(0,0,0,0.08)_1px,_transparent_1px)] [background-size:24px_24px]" />
       {/* Circular multi-color gradient */}
@@ -29,22 +20,11 @@ export default function HomePage() {
 
       <ToastContainer position="top-right" autoClose={3000} />
 
-      {isLoading && (
-        <div className="home-loader" role="status" aria-live="polite">
-          <div className="loader-mark" aria-hidden="true">
-            <span>AI</span>
-          </div>
-          <div className="loader-spinner" aria-hidden="true" />
-          <p className="loader-title">Getting your workspace ready</p>
-          <p className="loader-caption">AI-Powered Bug Tracker</p>
-        </div>
-      )}
-
       <div className="relative z-10 flex flex-col items-center justify-center px-6 py-20">
         {!showTracker ? (
           <>
             {/* Hero Section */}
-            <div className="text-center mb-10 max-w-4xl animate-fadeIn">
+            <div className="text-center mb-10 max-w-4xl">
               <h1 className="text-6xl md:text-7xl font-extrabold text-gray-900 mb-4">
                 <span className="bg-gradient-to-bl from-blue-500 via-purple-500 to-orange-600 text-transparent bg-clip-text font-sans font-bold">
                   AI
@@ -163,93 +143,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
-      {/* Animation styles */}
-      <style jsx>{`
-        .home-loader {
-          position: fixed;
-          inset: 0;
-          z-index: 40;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #fff 0%, #f3e8ff 100%);
-          animation: loader-appear 300ms ease-out both;
-        }
-        .loader-mark {
-          display: grid;
-          width: 64px;
-          height: 64px;
-          place-items: center;
-          margin-bottom: 24px;
-          border-radius: 20px;
-          background: linear-gradient(135deg, #3b82f6, #9333ea 65%, #f97316);
-          box-shadow: 0 12px 30px rgb(147 51 234 / 25%);
-          color: white;
-          font-size: 24px;
-          font-weight: 800;
-          animation: mark-pulse 1.4s ease-in-out infinite;
-        }
-        .loader-spinner {
-          width: 28px;
-          height: 28px;
-          margin-bottom: 18px;
-          border: 3px solid rgb(147 51 234 / 18%);
-          border-top-color: #9333ea;
-          border-radius: 50%;
-          animation: spin 800ms linear infinite;
-        }
-        .loader-title {
-          color: #1f2937;
-          font-size: 16px;
-          font-weight: 600;
-        }
-        .loader-caption {
-          margin-top: 6px;
-          color: #6b7280;
-          font-size: 13px;
-        }
-        .animate-fadeIn {
-          animation: fadeIn 1s ease forwards;
-        }
-        @keyframes loader-appear {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        @keyframes mark-pulse {
-          50% {
-            transform: scale(1.06);
-          }
-        }
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        @keyframes fadeIn {
-          0% {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .home-loader,
-          .loader-mark,
-          .loader-spinner,
-          .animate-fadeIn {
-            animation: none;
-          }
-        }
-      `}</style>
     </main>
   );
 }
