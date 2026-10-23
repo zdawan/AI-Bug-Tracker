@@ -29,8 +29,9 @@ body {
   position: fixed;
   inset: 0 0 auto;
   z-index: 60;
-  height: 3px;
-  background: rgb(99 56 238 / 12%);
+  height: 5px;
+  background: #ddd6fe;
+  box-shadow: 0 1px 4px rgb(45 35 80 / 18%);
   pointer-events: none;
 }
 
