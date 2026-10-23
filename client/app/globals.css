@@ -25,6 +25,37 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.upgrades-tab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 40;
+  padding: 18px 14px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 14px 0 0 14px;
+  background: linear-gradient(160deg, #a044f5, #5138ed);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  writing-mode: vertical-rl;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgb(99 56 238 / 24%);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.upgrades-tab:hover {
+  transform: translate(-3px, -50%);
+  box-shadow: 0 12px 28px rgb(99 56 238 / 32%);
+}
+
+.upgrades-tab:focus-visible {
+  outline: 3px solid #c4b5fd;
+  outline-offset: -5px;
+}
+
 
 /* =========================================
    Floating SVG decorations — homepage
@@ -365,14 +396,14 @@ body {
   border-radius: 50%;
   background: #fcfaff;
   color: #8956e7;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 750;
 }
 
 .hiw-step-title {
   margin: 9px 0 0;
   color: #252337;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.5;
   letter-spacing: -0.02em;
@@ -383,7 +414,7 @@ body {
   max-width: 265px;
   margin: 5px 0 0;
   color: #697084;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -416,7 +447,7 @@ body {
   border-bottom: 1px solid #f0edf7;
   background: rgba(250, 249, 253, 0.75);
   color: #363348;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 650;
 }
 
@@ -438,7 +469,7 @@ body {
   gap: 10px;
   padding: 11px 12px;
   color: #62677a;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .hiw-input-preview {
@@ -450,7 +481,7 @@ body {
   border-radius: 7px;
   background: #fff;
   color: #777b8b;
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -487,7 +518,7 @@ body {
   border-radius: 7px;
   background: linear-gradient(110deg, #9b4df1, #6338ee);
   color: #fff;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -538,7 +569,7 @@ body {
   border-radius: 6px;
   background: #f0edfa;
   color: #5f5688;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 650;
   white-space: nowrap;
 }
@@ -607,7 +638,7 @@ body {
 .hiw-status-label {
   padding-top: 1px;
   color: #7a7d8d;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .hiw-status-label.is-current {
@@ -618,7 +649,7 @@ body {
 .hiw-status-date {
   padding-top: 1px;
   color: #999bad;
-  font-size: 9px;
+  font-size: 11px;
   text-align: right;
 }
 
@@ -692,7 +723,7 @@ body {
   gap: 9px;
   margin-top: 30px;
   color: #77758a;
-  font-size: 11px;
+  font-size: 14px;
   text-align: center;
 }
 
@@ -820,7 +851,7 @@ body {
 
   .hiw-pill {
     padding: 4px 5px;
-    font-size: 8px;
+    font-size: 10px;
   }
 
   .hiw-status-row {
