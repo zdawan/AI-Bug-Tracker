@@ -104,16 +104,6 @@ export default function HomePage() {
               </article>
             </section>
 
-            <div className="mt-16">
-              <button
-                type="button"
-                onClick={() => setShowUpgradesModal(true)}
-                className="cursor-pointer rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 px-7 py-3.5 font-medium text-white shadow-lg shadow-purple-500/20 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-300"
-              >
-                List of future upgrades
-              </button>
-            </div>
-
             {/* How It Works */}
             <HowItWorks />
           </>
@@ -131,6 +121,16 @@ export default function HomePage() {
           </section>
         )}
       </div>
+
+      {!showTracker && !showUpgradesModal && (
+        <button
+          type="button"
+          onClick={() => setShowUpgradesModal(true)}
+          className="upgrades-tab"
+        >
+          List of future upgrades
+        </button>
+      )}
 
       {/* Future upgrades modal */}
       {showUpgradesModal && (
