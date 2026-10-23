@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AssignedTickets from "./admin/assigned/page";
 import BugForm from "./tester/components/BugForm";
 import { ToastContainer } from "react-toastify";
@@ -14,9 +14,50 @@ export default function HomePage() {
   const [showTracker, setShowTracker] = useState(false);
   const [role, setRole] = useState("");
   const [showUpgradesModal, setShowUpgradesModal] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    let frameId;
+
+    const updateProgress = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        const scrollableHeight =
+          document.documentElement.scrollHeight - window.innerHeight;
+        const progress =
+          scrollableHeight > 0 ? (window.scrollY / scrollableHeight) * 100 : 0;
+
+        setScrollProgress(Math.min(100, Math.max(0, progress)));
+      });
+    };
+
+    updateProgress();
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", updateProgress);
+      window.removeEventListener("resize", updateProgress);
+    };
+  }, [showTracker]);
 
   return (
     <>
+      <div
+        className="scroll-progress"
+        role="progressbar"
+        aria-label="Page scroll progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(scrollProgress)}
+      >
+        <div
+          className="scroll-progress-fill"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
       <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-white to-purple-100 font-sans">
         {/* Background dot pattern */}
         <div

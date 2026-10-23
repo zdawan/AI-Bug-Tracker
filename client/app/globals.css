@@ -25,6 +25,21 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.scroll-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  height: 3px;
+  background: rgb(99 56 238 / 12%);
+  pointer-events: none;
+}
+
+.scroll-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #f97316);
+  transition: width 100ms linear;
+}
+
 .upgrades-tab {
   position: fixed;
   top: 50%;
