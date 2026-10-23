@@ -8,7 +8,9 @@ import "react-toastify/dist/ReactToastify.css";
 import FloatingDecorations from "./components/FloatingDecorations";
 import HowItWorks from "./components/HowItWorks";
 import WhatYouCanDo from "./components/WhatYouCanDo";
+import SiteFooter from "./components/SiteFooter";
 import Link from "next/link";
+import FAQSection from "./components/FAQSection";
 
 export default function HomePage() {
   const [showTracker, setShowTracker] = useState(false);
@@ -151,6 +153,10 @@ export default function HomePage() {
               <HowItWorks />
 
               <WhatYouCanDo />
+
+              <FAQSection />
+
+              <SiteFooter />
             </>
           ) : (
             <section className="mt-10 flex w-full max-w-6xl flex-col items-center gap-6">
