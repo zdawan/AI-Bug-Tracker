@@ -27,18 +27,16 @@ body {
 
 .upgrades-tab {
   position: fixed;
-  top: 50%;
-  right: 0;
+  right: 24px;
+  bottom: 24px;
   z-index: 40;
-  padding: 18px 14px;
-  transform: translateY(-50%);
+  padding: 14px 24px;
   border: 0;
-  border-radius: 14px 0 0 14px;
+  border-radius: 9999px;
   background: linear-gradient(160deg, #a044f5, #5138ed);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
-  writing-mode: vertical-rl;
   cursor: pointer;
   box-shadow: 0 10px 24px rgb(99 56 238 / 24%);
   transition:
@@ -47,7 +45,7 @@ body {
 }
 
 .upgrades-tab:hover {
-  transform: translate(-3px, -50%);
+  transform: translateY(-3px);
   box-shadow: 0 12px 28px rgb(99 56 238 / 32%);
 }
 

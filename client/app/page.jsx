@@ -15,6 +15,7 @@ export default function HomePage() {
   const [showUpgradesModal, setShowUpgradesModal] = useState(false);
 
   return (
+    <>
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-white to-purple-100 font-sans">
       {/* Background dot pattern */}
       <div
@@ -122,7 +123,9 @@ export default function HomePage() {
         )}
       </div>
 
-      {!showTracker && !showUpgradesModal && (
+    </main>
+
+    {!showTracker && !showUpgradesModal && (
         <button
           type="button"
           onClick={() => setShowUpgradesModal(true)}
@@ -132,7 +135,7 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Future upgrades modal */}
+    {/* Future upgrades modal */}
       {showUpgradesModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-4 backdrop-blur-sm"
@@ -188,6 +191,6 @@ export default function HomePage() {
           </section>
         </div>
       )}
-    </main>
+    </>
   );
 }
