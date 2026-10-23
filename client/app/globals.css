@@ -2008,7 +2008,7 @@ body {
   align-items: center;
   gap: 8px;
   color: #7965b6;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 750;
   letter-spacing: 0.17em;
 }
@@ -2034,7 +2034,7 @@ body {
   max-width: 340px;
   margin: 14px 0 0;
   color: #727486;
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.9;
 }
 
@@ -2066,13 +2066,13 @@ body {
 
 .faq-reassurance strong {
   color: #49435f;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .faq-reassurance small {
   color: #8c8a9c;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 /* FAQ accordion */
@@ -2110,13 +2110,13 @@ body {
 .faq-index {
   flex: 0 0 auto;
   color: #a19ab4;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 
 .faq-question-text {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.6;
   transition: color 160ms ease;
@@ -2172,7 +2172,7 @@ body {
 .faq-category {
   display: inline-block;
   color: #9485b8;
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 750;
   letter-spacing: 0.13em;
 }
@@ -2180,7 +2180,7 @@ body {
 .faq-answer-inner p {
   margin: 8px 0 0;
   color: #737487;
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.9;
 }
 
@@ -2222,7 +2222,7 @@ body {
 .faq-bottom-note p {
   margin: 0;
   color: #7b788c;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.7;
   text-align: center;
 }
@@ -2275,21 +2275,21 @@ body {
 
 .footer-brand-title {
   color: #28253b;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 750;
   letter-spacing: -0.035em;
 }
 
 .footer-brand-caption {
   color: #898698;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .footer-description {
   max-width: 365px;
   margin: 17px 0 0;
   color: #777789;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.9;
 }
 
@@ -2299,7 +2299,7 @@ body {
   gap: 8px;
   margin-top: 20px;
   color: #858295;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .footer-product-icon {
@@ -2324,7 +2324,7 @@ body {
 .footer-nav-group h3 {
   margin: 0;
   color: #888399;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 750;
   letter-spacing: 0.14em;
 }
@@ -2342,7 +2342,7 @@ body {
   align-items: center;
   gap: 6px;
   color: #5f5d71;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.6;
   text-decoration: none;
   transition: color 160ms ease;
@@ -2377,7 +2377,7 @@ body {
   max-width: 210px;
   margin: 18px 0 0;
   color: #777789;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.8;
 }
 
@@ -2387,7 +2387,7 @@ body {
   gap: 6px;
   margin-top: 15px;
   color: #7b6aab;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .footer-bottom {
@@ -2402,7 +2402,7 @@ body {
 .footer-bottom p {
   margin: 0;
   color: #9693a3;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.7;
 }
 
@@ -2415,7 +2415,7 @@ body {
   align-items: center;
   gap: 5px;
   color: #777188;
-  font-size: 10px;
+  font-size: 12px;
   text-decoration: none;
   transition: color 160ms ease;
 }
@@ -2464,7 +2464,7 @@ body {
 
   .faq-intro > p {
     max-width: 360px;
-    font-size: 12px;
+    font-size: 15px;
   }
 
   .faq-reassurance {
@@ -2482,7 +2482,7 @@ body {
   }
 
   .faq-question-text {
-    font-size: 12px;
+    font-size: 15px;
   }
 
   .faq-toggle {
@@ -2496,7 +2496,7 @@ body {
   }
 
   .faq-answer-inner p {
-    font-size: 11px;
+    font-size: 14px;
   }
 
   .faq-bottom-note {
@@ -2504,7 +2504,7 @@ body {
   }
 
   .faq-bottom-note p {
-    font-size: 10px;
+    font-size: 13px;
   }
 
   .footer-container {
