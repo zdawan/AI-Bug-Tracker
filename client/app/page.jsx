@@ -6,6 +6,7 @@ import BugForm from "./tester/components/BugForm";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FloatingDecorations from "./components/FloatingDecorations";
+import HowItWorks from "./components/HowItWorks";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -103,8 +104,7 @@ export default function HomePage() {
               </article>
             </section>
 
-            {/* Future upgrades */}
-            <div className="mt-12 sm:mt-16">
+            <div className="mt-16">
               <button
                 type="button"
                 onClick={() => setShowUpgradesModal(true)}
@@ -113,6 +113,9 @@ export default function HomePage() {
                 List of future upgrades
               </button>
             </div>
+
+            {/* How It Works */}
+            <HowItWorks />
           </>
         ) : (
           <section className="mt-10 flex w-full max-w-6xl flex-col items-center gap-6">
