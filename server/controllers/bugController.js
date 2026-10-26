@@ -179,3 +179,40 @@ Thank you for helping improve the system!
     res.status(500).json({ error: "Failed to resolve bug" });
   }
 };
+
+
+export const getBugsByReporter = async (req, res) => {
+  try {
+    const email = String(req.query.email || "")
+      .trim()
+      .toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Reporter email is required.",
+      });
+    }
+
+    const emailPattern = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const bugs = await Bug.find({
+      reporters: {
+        $regex: `^${emailPattern}$`,
+        $options: "i",
+      },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      count: bugs.length,
+      bugs,
+    });
+  } catch (error) {
+    console.error("Failed to fetch reporter bugs:", error);
+
+    return res.status(500).json({
+      message: "Unable to load reports right now.",
+    });
+  }
+};
