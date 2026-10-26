@@ -1,31 +1,34 @@
 import express from "express";
-import { createBug, resolveBug } from "../controllers/bugController.js";
+import {
+  createBug,
+  resolveBug,
+  getBugsByReporter,
+} from "../controllers/bugController.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 
 const router = express.Router();
 
-// Ensure uploads folder exists
-const uploadDir = path.join(process.cwd(), "server", "uploads");
+const uploadDir = path.join(process.cwd(), "uploads");
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 
 const upload = multer({ storage });
 
-// ✅ POST with screenshot support
+router.get("/", getBugsByReporter);
 router.post("/", upload.single("screenshot"), createBug);
-router.patch("/:id/resolve", resolveBug); // Resolve bug route
+router.patch("/:id/resolve", resolveBug);
 
 export default router;
