@@ -294,12 +294,20 @@ body {
 
 /* How it works section on main page */
 
+
+/* ============================================
+   AI Bug Tracker — How It Works
+   Editorial layout with hand-drawn annotations
+   ============================================ */
+
 .hiw-section {
   position: relative;
   isolation: isolate;
   width: 100%;
   margin-top: 72px;
   overflow: hidden;
+  border-top: 1px solid rgba(126, 105, 190, 0.1);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .hiw-inner {
@@ -412,14 +420,14 @@ body {
   border-radius: 50%;
   background: #fcfaff;
   color: #8956e7;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 750;
 }
 
 .hiw-step-title {
   margin: 9px 0 0;
   color: #252337;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.5;
   letter-spacing: -0.02em;
@@ -430,7 +438,7 @@ body {
   max-width: 265px;
   margin: 5px 0 0;
   color: #697084;
-  font-size: 14px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
@@ -463,7 +471,7 @@ body {
   border-bottom: 1px solid #f0edf7;
   background: rgba(250, 249, 253, 0.75);
   color: #363348;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 650;
 }
 
@@ -485,7 +493,7 @@ body {
   gap: 10px;
   padding: 11px 12px;
   color: #62677a;
-  font-size: 13px;
+  font-size: 10px;
 }
 
 .hiw-input-preview {
@@ -497,7 +505,7 @@ body {
   border-radius: 7px;
   background: #fff;
   color: #777b8b;
-  font-size: 12px;
+  font-size: 9px;
   line-height: 1.5;
 }
 
@@ -534,7 +542,7 @@ body {
   border-radius: 7px;
   background: linear-gradient(110deg, #9b4df1, #6338ee);
   color: #fff;
-  font-size: 12px;
+  font-size: 9px;
   font-weight: 650;
 }
 
@@ -585,7 +593,7 @@ body {
   border-radius: 6px;
   background: #f0edfa;
   color: #5f5688;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 650;
   white-space: nowrap;
 }
@@ -654,7 +662,7 @@ body {
 .hiw-status-label {
   padding-top: 1px;
   color: #7a7d8d;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .hiw-status-label.is-current {
@@ -665,7 +673,7 @@ body {
 .hiw-status-date {
   padding-top: 1px;
   color: #999bad;
-  font-size: 11px;
+  font-size: 9px;
   text-align: right;
 }
 
@@ -739,7 +747,7 @@ body {
   gap: 9px;
   margin-top: 30px;
   color: #77758a;
-  font-size: 14px;
+  font-size: 11px;
   text-align: center;
 }
 
@@ -867,21 +875,19 @@ body {
 
   .hiw-pill {
     padding: 4px 5px;
-    font-size: 10px;
+    font-size: 8px;
   }
 
   .hiw-status-row {
     gap: 7px;
   }
 }
-
-/* Respect accessibility preferences */
-
 @media (prefers-reduced-motion: reduce) {
   .hiw-window {
     transition: none;
   }
 }
+
 
 
 
