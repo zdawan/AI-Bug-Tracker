@@ -81,8 +81,17 @@ export default function TesterPage() {
             Continue
           </button>
           <p className="text-center text-gray-600 mb-6">
-            <span className="font-medium">Test URL:</span>{" "}
-            https://github.com/
+            <span className="font-medium">Test URL:</span> https://github.com/
+          </p>
+
+          <p className="mt-4 text-center text-sm text-gray-600">
+            Already reported a bug?{" "}
+            <a
+              href="/tester/dashboard"
+              className="font-semibold text-purple-700 underline underline-offset-4 hover:text-purple-900"
+            >
+              View my reports
+            </a>
           </p>
         </form>
       </div>
