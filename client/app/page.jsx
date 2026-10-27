@@ -121,7 +121,7 @@ export default function HomePage() {
                   </div>
 
                   <Link
-                    href="/tester/url"
+                    href="/tester/login"
                     className="inline-flex min-h-14 w-full max-w-[230px] items-center justify-center rounded-2xl bg-black px-7 py-4 text-base font-semibold text-white transition duration-200 hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-300"
                   >
                     Enter as Tester
