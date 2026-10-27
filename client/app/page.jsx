@@ -148,8 +148,6 @@ export default function HomePage() {
                   </Link>
                 </article>
               </section>
-
-              {/* How It Works */}
               <HowItWorks />
 
               <WhatYouCanDo />
@@ -180,7 +178,7 @@ export default function HomePage() {
           onClick={() => setShowUpgradesModal(true)}
           className="upgrades-tab"
         >
-          List of future upgrades
+          Future upgrades
         </button>
       )}
 
