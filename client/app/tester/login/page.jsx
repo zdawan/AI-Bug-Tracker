@@ -6,9 +6,7 @@ import { ArrowRight, ArrowLeft, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-).replace(/\/$/, "");
+const API_URL = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
 
 export default function TesterLoginPage() {
   const router = useRouter();

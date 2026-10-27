@@ -6,6 +6,7 @@ import { connectDB } from "./config/db.js";
 import bugRoutes from "./routes/bugRoutes.js";
 import developerRoutes from "./routes/developerRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import testerRoutes from "./routes/testerRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -23,7 +24,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests without an Origin header, such as server-to-server calls.
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -47,6 +47,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/bugs", bugRoutes);
 app.use("/api/developers", developerRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/testers", testerRoutes);
 
 // Health-check route
 app.get("/", (req, res) => {
@@ -62,3 +63,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+export default app;
