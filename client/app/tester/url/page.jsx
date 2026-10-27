@@ -1,17 +1,31 @@
 "use client";
+
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const normalizeUrl = (value) => {
+    const trimmed = value.trim();
 
-    if (!url.trim()) {
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    if (isSubmitting) return;
+
+    const trimmedUrl = url.trim();
+
+    if (!trimmedUrl) {
       toast.error("Please enter a URL", {
         position: "top-right",
         autoClose: 3000,
@@ -19,10 +33,11 @@ export default function TesterPage() {
       return;
     }
 
+    let parsedUrl;
+
     try {
-      // Validate URL format
-      new URL(url);
-    } catch (err) {
+      parsedUrl = new URL(normalizeUrl(trimmedUrl));
+    } catch {
       toast.error("Invalid URL, please enter a valid one", {
         position: "top-right",
         autoClose: 3000,
@@ -30,73 +45,139 @@ export default function TesterPage() {
       return;
     }
 
-    // ✅ Navigate to /url-bug-report instead of /user
-    router.push(`/tester/url-bug-report?url=${encodeURIComponent(url)}`);
+    if (
+      !["http:", "https:"].includes(parsedUrl.protocol) ||
+      !parsedUrl.hostname.includes(".") ||
+      parsedUrl.hostname.startsWith(".") ||
+      parsedUrl.hostname.endsWith(".")
+    ) {
+      toast.error("Please enter a valid website URL", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    router.push(
+      `/tester/url-bug-report?url=${encodeURIComponent(parsedUrl.href)}`,
+    );
   };
 
+  const previewUrl = url.trim()
+    ? normalizeUrl(url.trim())
+    : "https://github.com/";
+
   return (
-    <main
-      className="min-h-screen flex flex-col items-center justify-center 
-  font-sans
-  bg-[radial-gradient(circle,_rgba(0,0,0,0.08)_1px,_transparent_1px)]
-  [background-size:24px_24px]
-  bg-gradient-to-br from-blue-50 to-purple-100 
-  px-6 relative overflow-hidden "
-    >
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f8f3ff] px-4 py-10 font-sans sm:px-6">
       <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 
-    w-[160vw] h-[160vw] 
-    bg-gradient-to-r from-pink-300/40 via-purple-300/40 to-blue-300/40
-    blur-3xl opacity-40"
-      ></div>
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(124,92,170,0.17) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
 
-      <div className="relative z-10 bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-10 max-w-lg w-full">
-        <h1 className="text-4xl font-bold text-center mb-6 text-gray-900">
-          Enter{" "}
-          <span
-            className="font-extralight italic text-gray-900"
-            style={{ fontFamily: "Times New Roman, Times, serif" }}
-          >
-            Test URL
-          </span>
-        </h1>
-        <p className="text-center text-gray-600 mb-6">
-          Paste the testing URL you’re testing.
-          <br />
-          We’ll attach it to your bug reports.
-        </p>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[min(90vw,600px)] w-[min(90vw,600px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-200/25 blur-3xl"
+      />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="url"
-            placeholder="https://example.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-purple-400 shadow-sm"
-          />
+      <section className="relative z-10 w-full max-w-[560px] rounded-[28px] border border-white/80 bg-white/90 px-6 py-10 shadow-[0_28px_70px_-28px_rgba(38,25,55,0.30)] backdrop-blur-xl sm:px-10 sm:py-12">
+        <header className="text-center">
+          <h1 className="text-3xl font-semibold leading-tight tracking-[-1px] text-[#111827] sm:text-4xl">
+            Enter{" "}
+            <span
+              className="font-normal italic tracking-[-1.5px]"
+              style={{ fontFamily: "Times New Roman, Times, serif" }}
+            >
+              Test URL
+            </span>
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-[390px] text-base leading-7 text-[#596579]">
+            Paste the testing URL you’re testing.
+            <br />
+            We’ll attach it to your bug reports.
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+          <div>
+            <label htmlFor="test-url" className="sr-only">
+              Test website URL
+            </label>
+
+            <input
+              id="test-url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
+              placeholder="https://example.com"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              aria-describedby="url-preview"
+              className="h-14 w-full rounded-2xl border border-[#d4d8e1] bg-white px-4 text-base text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
+            />
+          </div>
+
           <button
             type="submit"
-            className="w-full py-3 px-4 rounded-2xl cursor-pointer text-white bg-black font-semibold text-lg shadow-lg hover:opacity-90 transition"
+            disabled={isSubmitting}
+            className="group flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white shadow-md transition duration-200 hover:-translate-y-0.5 hover:bg-[#202020] hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
           >
-            Continue
+            {isSubmitting ? "Continuing..." : "Continue"}
+
+            {!isSubmitting && (
+              <ArrowRight
+                size={19}
+                aria-hidden="true"
+                className="transition-transform group-hover:translate-x-1"
+              />
+            )}
           </button>
-          <p className="text-center text-gray-600 mb-6">
-            <span className="font-medium">Test URL:</span> https://github.com/
-          </p>
 
-          <p className="mt-4 text-center text-sm text-gray-600">
-            Already reported a bug?{" "}
-            <a
-              href="/tester/dashboard"
-              className="font-semibold text-purple-700 underline underline-offset-4 hover:text-purple-900"
-            >
-              View my reports
-            </a>
-          </p>
+          <div
+            id="url-preview"
+            className="flex min-h-7 items-center justify-center gap-2 text-center text-sm text-[#596579] sm:text-base"
+          >
+            <span className="shrink-0 font-medium">Test URL:</span>
+
+            <span className="max-w-[260px] truncate" title={previewUrl}>
+              {previewUrl}
+            </span>
+
+            {url.trim() && (
+              <ExternalLink
+                size={15}
+                aria-hidden="true"
+                className="shrink-0 text-slate-400"
+              />
+            )}
+          </div>
         </form>
-      </div>
 
-      <ToastContainer position="top-right" autoClose={3000} />
+        <footer className="mt-12 border-t border-slate-100 pt-6 text-center text-sm text-[#596579] sm:mt-14 sm:text-base">
+          Already reported a bug?{" "}
+          <Link
+            href="/tester/dashboard"
+            className="cursor-pointer font-semibold text-purple-700 underline decoration-purple-300 underline-offset-4 transition hover:text-purple-900 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+          >
+            View my reports
+          </Link>
+        </footer>
+      </section>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        theme="light"
+        closeOnClick
+        pauseOnHover
+      />
     </main>
   );
 }
