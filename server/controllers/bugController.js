@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Bug from "../models/Bug.js";
 import {
   summarizeBug,
@@ -20,6 +21,10 @@ function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 function normalizeSeverity(severity) {
   return VALID_SEVERITIES.includes(severity) ? severity : "Low";
 }
@@ -28,11 +33,9 @@ function getEscalatedSeverity(currentSeverity, predictedSeverity, reportCount) {
   const current = normalizeSeverity(currentSeverity);
   const predicted = normalizeSeverity(predictedSeverity);
 
-  // Never downgrade a bug because a later report receives a lower AI score.
   let result =
     SEVERITY_RANK[current] >= SEVERITY_RANK[predicted] ? current : predicted;
 
-  // Escalate based on the cumulative number of reports.
   if (reportCount >= 10) {
     result = "High";
   } else if (reportCount >= 5 && result === "Low") {
@@ -70,14 +73,34 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function addReporter(bug, email) {
+  if (!Array.isArray(bug.reporters)) {
+    bug.reporters = [];
+  }
+
+  if (!email) {
+    return;
+  }
+
+  const alreadyReported = bug.reporters.some(
+    (reporter) => normalizeEmail(reporter) === email,
+  );
+
+  if (!alreadyReported) {
+    bug.reporters.push(email);
+  }
+}
+
 // ---------------------------------------------------------
 // CREATE BUG
 // ---------------------------------------------------------
 
 export const createBug = async (req, res) => {
   try {
-    const { title, description, testUrl } = req.body;
-    const reporterEmail = normalizeEmail(req.body.reporterEmail);
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+
+    const { title, description, testUrl } = body;
+    const reporterEmail = normalizeEmail(body.reporterEmail);
 
     if (
       typeof title !== "string" ||
@@ -90,13 +113,18 @@ export const createBug = async (req, res) => {
       });
     }
 
+    if (reporterEmail && !isValidEmail(reporterEmail)) {
+      return res.status(400).json({
+        message: "Please provide a valid reporter email address.",
+      });
+    }
+
     const normalizedTitle = title.trim();
     const normalizedDescription = description.trim();
     const normalizedTestUrl = typeof testUrl === "string" ? testUrl.trim() : "";
 
     const screenshotPath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Generate AI-assisted report metadata.
     const [summary, tags, predictedSeverity, categoryResult] =
       await Promise.all([
         summarizeBug(normalizedDescription),
@@ -108,7 +136,7 @@ export const createBug = async (req, res) => {
     const severity = normalizeSeverity(predictedSeverity);
     const category = normalizeCategory(categoryResult);
 
-    // First duplicate check: exact title, category, and URL.
+    // Check for an exact duplicate first.
     const categoryDuplicate = await Bug.findOne({
       testUrl: normalizedTestUrl,
       category,
@@ -116,17 +144,9 @@ export const createBug = async (req, res) => {
     });
 
     if (categoryDuplicate) {
-      categoryDuplicate.reports = (categoryDuplicate.reports || 1) + 1;
+      categoryDuplicate.reports = (Number(categoryDuplicate.reports) || 1) + 1;
 
-      if (reporterEmail) {
-        const existingReporters = (categoryDuplicate.reporters || []).map(
-          normalizeEmail,
-        );
-
-        if (!existingReporters.includes(reporterEmail)) {
-          categoryDuplicate.reporters.push(reporterEmail);
-        }
-      }
+      addReporter(categoryDuplicate, reporterEmail);
 
       if (screenshotPath) {
         categoryDuplicate.screenshot = screenshotPath;
@@ -147,7 +167,7 @@ export const createBug = async (req, res) => {
       });
     }
 
-    // Second duplicate check: existing similarity-based service.
+    // Check for a similar bug using the existing duplicate service.
     const duplicate = await findDuplicateBug(
       summary,
       normalizedTitle,
@@ -168,17 +188,9 @@ export const createBug = async (req, res) => {
         });
       }
 
-      duplicate.reports = (duplicate.reports || 1) + 1;
+      duplicate.reports = (Number(duplicate.reports) || 1) + 1;
 
-      if (reporterEmail) {
-        const existingReporters = (duplicate.reporters || []).map(
-          normalizeEmail,
-        );
-
-        if (!existingReporters.includes(reporterEmail)) {
-          duplicate.reporters.push(reporterEmail);
-        }
-      }
+      addReporter(duplicate, reporterEmail);
 
       if (screenshotPath) {
         duplicate.screenshot = screenshotPath;
@@ -199,7 +211,7 @@ export const createBug = async (req, res) => {
       });
     }
 
-    // Create a new report when no duplicate is found.
+    // Create a new bug when no duplicate exists.
     const newBug = new Bug({
       title: normalizedTitle,
       description: normalizedDescription,
@@ -215,10 +227,8 @@ export const createBug = async (req, res) => {
 
     await newBug.save();
 
-    return res.status(201).json({
-      message: "Bug report created successfully.",
-      bug: newBug,
-    });
+    // Preserve the original response shape for frontend compatibility.
+    return res.status(201).json(newBug);
   } catch (error) {
     console.error("Error creating bug:", error);
 
@@ -237,9 +247,9 @@ export const resolveBug = async (req, res) => {
     const { id } = req.params;
     const shouldSendEmail = req.body?.sendMail === true;
 
-    if (!id) {
+    if (!id || !mongoose.isValidObjectId(id)) {
       return res.status(400).json({
-        message: "Bug ID is required.",
+        message: "A valid bug ID is required.",
       });
     }
 
@@ -254,6 +264,7 @@ export const resolveBug = async (req, res) => {
     if (bug.status === "Closed") {
       return res.status(200).json({
         message: "This bug is already resolved.",
+        emailSent: false,
         bug,
       });
     }
@@ -263,9 +274,13 @@ export const resolveBug = async (req, res) => {
 
     let emailSent = false;
 
-    if (shouldSendEmail && bug.reporters?.length > 0) {
+    if (shouldSendEmail && Array.isArray(bug.reporters)) {
       const recipients = [
-        ...new Set(bug.reporters.map(normalizeEmail).filter(Boolean)),
+        ...new Set(
+          bug.reporters
+            .map(normalizeEmail)
+            .filter((email) => email && isValidEmail(email)),
+        ),
       ];
 
       if (recipients.length > 0) {
@@ -292,7 +307,7 @@ export const resolveBug = async (req, res) => {
           await sendEmail(recipients.join(","), subject, text);
           emailSent = true;
         } catch (emailError) {
-          // Resolution is saved even if the notification fails.
+          // Keep the resolution saved even if the email fails.
           console.error("Failed to send bug resolution email:", emailError);
         }
       }
@@ -318,11 +333,11 @@ export const resolveBug = async (req, res) => {
 
 export const getBugsByReporter = async (req, res) => {
   try {
-    const email = normalizeEmail(req.query.email);
+    const email = normalizeEmail(req.query?.email);
 
-    if (!email) {
+    if (!email || !isValidEmail(email)) {
       return res.status(400).json({
-        message: "Reporter email is required.",
+        message: "A valid reporter email is required.",
       });
     }
 
