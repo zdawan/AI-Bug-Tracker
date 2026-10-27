@@ -1,15 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  ArrowLeft,
-  Mail,
-  ShieldCheck,
-  RefreshCw,
-  Bug,
-} from "lucide-react";
+import { ArrowRight, ArrowLeft, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -23,9 +16,50 @@ export default function TesterLoginPage() {
   const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+
+    const timer = setTimeout(() => {
+      setResendCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const validateEmail = (value) => {
+    const normalizedEmail = value.trim();
+
+    if (!normalizedEmail) {
+      return "Please enter your email address.";
+    }
+
+    if (normalizedEmail.length > 254) {
+      return "Email address is too long.";
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(normalizedEmail)) {
+      return "Please enter a valid email address.";
+    }
+
+    return "";
+  };
+
+  const handleEmailChange = (event) => {
+    const value = event.target.value;
+
+    setEmail(value);
+
+    if (emailError) {
+      setEmailError(validateEmail(value));
+    }
+  };
 
   const sendOtp = async (event) => {
     event?.preventDefault();
@@ -33,22 +67,26 @@ export default function TesterLoginPage() {
     if (isSending || resendCooldown > 0) return;
 
     const normalizedEmail = email.trim().toLowerCase();
+    const validationError = validateEmail(normalizedEmail);
 
-    if (
-      !normalizedEmail ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
-    ) {
-      toast.error("Enter a valid email address.");
+    if (validationError) {
+      setEmailError(validationError);
+      toast.error(validationError);
       return;
     }
 
+    setEmailError("");
     setIsSending(true);
 
     try {
       const response = await fetch(`${API_URL}/api/testers/send-otp`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: normalizedEmail,
+        }),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -60,9 +98,10 @@ export default function TesterLoginPage() {
       }
 
       setEmail(normalizedEmail);
-      setStep("otp");
       setOtp("");
+      setStep("otp");
       setResendCooldown(30);
+
       toast.success(data.message || "Verification code sent to your email.");
     } catch (error) {
       toast.error(error.message || "Something went wrong. Please try again.");
@@ -76,9 +115,7 @@ export default function TesterLoginPage() {
 
     if (isVerifying) return;
 
-    const normalizedOtp = otp.trim();
-
-    if (!/^\d{6}$/.test(normalizedOtp)) {
+    if (!/^\d{6}$/.test(otp.trim())) {
       toast.error("Enter the 6-digit verification code.");
       return;
     }
@@ -88,10 +125,12 @@ export default function TesterLoginPage() {
     try {
       const response = await fetch(`${API_URL}/api/testers/verify-otp`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
-          otp: normalizedOtp,
+          otp: otp.trim(),
         }),
       });
 
@@ -121,13 +160,16 @@ export default function TesterLoginPage() {
   };
 
   const changeEmail = () => {
+    if (isSending || isVerifying) return;
+
     setStep("email");
     setOtp("");
+    setEmailError("");
+    setResendCooldown(0);
   };
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f8f3ff] px-4 py-10 font-sans sm:px-6">
-      {/* Background decoration */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
@@ -151,11 +193,7 @@ export default function TesterLoginPage() {
       <section className="relative z-10 w-full max-w-[480px] rounded-[28px] border border-white/80 bg-white/90 px-6 py-9 shadow-[0_28px_70px_-28px_rgba(38,25,55,0.30)] backdrop-blur-xl sm:px-10 sm:py-11">
         {step === "email" ? (
           <>
-            <div className="mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-purple-700">
-                <Mail size={26} />
-              </div>
-
+            <header className="mb-8 text-center">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                 Tester{" "}
                 <span className="font-normal italic [font-family:Georgia,serif]">
@@ -164,12 +202,12 @@ export default function TesterLoginPage() {
               </h1>
 
               <p className="mx-auto mt-4 max-w-[340px] text-base leading-7 text-slate-600">
-                Sign in with your email. We’ll send you a one-time verification
-                code.
+                Sign in with your email. We&apos;ll send you a one-time
+                verification code.
               </p>
-            </div>
+            </header>
 
-            <form onSubmit={sendOtp} className="space-y-5">
+            <form onSubmit={sendOtp} noValidate className="space-y-5">
               <div className="space-y-2">
                 <label
                   htmlFor="tester-email"
@@ -178,28 +216,40 @@ export default function TesterLoginPage() {
                   Email address
                 </label>
 
-                <div className="flex h-14 items-center gap-3 rounded-2xl border border-slate-300 bg-white px-4 transition focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-100">
-                  <Mail size={19} className="shrink-0 text-slate-400" />
+                <input
+                  id="tester-email"
+                  type="email"
+                  autoComplete="email"
+                  autoFocus
+                  required
+                  maxLength={254}
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={handleEmailChange}
+                  aria-invalid={Boolean(emailError)}
+                  aria-describedby={emailError ? "email-error" : undefined}
+                  className={`h-14 w-full rounded-2xl border bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 ${
+                    emailError
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                      : "border-slate-300 focus:border-purple-500 focus:ring-purple-100"
+                  }`}
+                />
 
-                  <input
-                    id="tester-email"
-                    type="email"
-                    autoComplete="email"
-                    autoFocus
-                    required
-                    maxLength={254}
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className="h-full min-w-0 flex-1 bg-transparent text-base text-slate-900 outline-none placeholder:text-slate-400"
-                  />
-                </div>
+                {emailError && (
+                  <p
+                    id="email-error"
+                    role="alert"
+                    className="text-sm text-red-600"
+                  >
+                    {emailError}
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
                 disabled={isSending}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSending ? "Sending code..." : "Continue with email"}
                 {!isSending && <ArrowRight size={19} />}
@@ -213,18 +263,14 @@ export default function TesterLoginPage() {
               />
 
               <p className="text-sm leading-6 text-slate-600">
-                No password required. Your email verification keeps your tester
-                account simple and secure.
+                No password required. Verify your email to access the tester
+                workspace.
               </p>
             </div>
           </>
         ) : (
           <>
-            <div className="mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 text-purple-700">
-                <ShieldCheck size={26} />
-              </div>
-
+            <header className="mb-8 text-center">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                 Verify your{" "}
                 <span className="font-normal italic [font-family:Georgia,serif]">
@@ -233,13 +279,13 @@ export default function TesterLoginPage() {
               </h1>
 
               <p className="mx-auto mt-4 max-w-[340px] text-base leading-7 text-slate-600">
-                Enter the 6-digit code sent to
+                Enter the 6-digit verification code sent to
               </p>
 
-              <p className="mt-1 break-all text-sm font-semibold text-slate-900">
+              <p className="mt-2 break-all text-sm font-semibold text-slate-900">
                 {email}
               </p>
-            </div>
+            </header>
 
             <form onSubmit={verifyOtp} className="space-y-5">
               <div className="space-y-2">
@@ -271,7 +317,7 @@ export default function TesterLoginPage() {
               <button
                 type="submit"
                 disabled={isVerifying || otp.length !== 6}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isVerifying ? "Verifying..." : "Verify and continue"}
                 {!isVerifying && <ArrowRight size={19} />}
@@ -286,6 +332,7 @@ export default function TesterLoginPage() {
                 className="inline-flex cursor-pointer items-center gap-2 font-semibold text-purple-700 hover:text-purple-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCw size={15} />
+
                 {isSending
                   ? "Sending code..."
                   : resendCooldown > 0
@@ -296,7 +343,8 @@ export default function TesterLoginPage() {
               <button
                 type="button"
                 onClick={changeEmail}
-                className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950"
+                disabled={isVerifying || isSending}
+                className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ArrowLeft size={16} />
                 Change email address
@@ -306,7 +354,7 @@ export default function TesterLoginPage() {
         )}
 
         <footer className="mt-9 border-t border-slate-100 pt-6 text-center text-sm leading-6 text-slate-500">
-          Only use this portal to test websites you’re authorized to access.
+          Only test websites you are authorized to access.
         </footer>
       </section>
 
