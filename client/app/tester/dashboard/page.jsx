@@ -1259,3 +1259,1311 @@ function ReportSummaryPanel({ bugs }) {
     </section>
   );
 }
+
+function BugDetails({ bug, onClose }) {
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    if (!bug) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    dialogRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [bug, onClose]);
+
+  if (!bug) return null;
+
+  const severity = getBugSeverity(bug);
+  const status = getBugStatus(bug);
+  const tags = Array.isArray(bug.tags) ? bug.tags : [];
+  const screenshotUrl = bug.screenshot ? `${API_URL}${bug.screenshot}` : "";
+
+  const details = [
+    {
+      label: "Bug ID",
+      value: getShortBugId(bug),
+      icon: Hash,
+    },
+    {
+      label: "Reported",
+      value: formatDateTime(bug.createdAt),
+      icon: CalendarDays,
+    },
+    {
+      label: "Severity",
+      value: severity,
+      icon: ShieldAlert,
+    },
+    {
+      label: "Report count",
+      value: formatNumber(getBugReports(bug)),
+      icon: Layers,
+    },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-5"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bug-details-title"
+        className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-slate-200 bg-white shadow-2xl outline-none sm:rounded-2xl"
+      >
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+              <Bug size={20} />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-slate-500">
+                  {getShortBugId(bug)}
+                </span>
+                <Badge value={status} />
+                <Badge value={severity} type="severity" />
+              </div>
+
+              <h2
+                id="bug-details-title"
+                className="mt-2 break-words text-lg font-semibold tracking-tight text-slate-950 sm:text-xl"
+              >
+                {getBugTitle(bug)}
+              </h2>
+            </div>
+          </div>
+
+          <IconButton icon={X} label="Close bug details" onClick={onClose} />
+        </header>
+
+        <div className="space-y-7 p-5 sm:p-7">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {details.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <div
+                  key={item.label}
+                  className="rounded-lg border border-slate-200 p-4"
+                >
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Icon size={15} />
+                    {item.label}
+                  </div>
+
+                  <p className="mt-2 break-words text-sm font-medium text-slate-900">
+                    {item.value}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {bug.category && (
+            <section>
+              <h3 className="text-sm font-semibold text-slate-900">Category</h3>
+
+              <p className="mt-2 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <Tag size={14} />
+                {bug.category}
+              </p>
+            </section>
+          )}
+
+          <section>
+            <h3 className="text-sm font-semibold text-slate-900">Summary</h3>
+
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">
+              {bug.summary || "No summary available."}
+            </p>
+          </section>
+
+          <section>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Description
+            </h3>
+
+            <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+              <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
+                {bug.description || "No description provided."}
+              </p>
+            </div>
+          </section>
+
+          {tags.length > 0 && (
+            <section>
+              <h3 className="text-sm font-semibold text-slate-900">Tags</h3>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tags.map((tag, index) => (
+                  <span
+                    key={`${tag}-${index}`}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600"
+                  >
+                    <Tag size={12} />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {bug.testUrl && (
+            <section>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Affected URL
+              </h3>
+
+              <a
+                href={bug.testUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 flex min-w-0 items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm text-violet-700 transition hover:border-violet-300 hover:bg-violet-50/40"
+              >
+                <ExternalLink size={16} className="shrink-0" />
+
+                <span className="min-w-0 flex-1 break-all">{bug.testUrl}</span>
+
+                <SquareArrowOutUpRight
+                  size={14}
+                  className="shrink-0 text-slate-400"
+                />
+              </a>
+            </section>
+          )}
+
+          {screenshotUrl && (
+            <section>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Screenshot
+              </h3>
+
+              <a
+                href={screenshotUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-2"
+              >
+                <img
+                  src={screenshotUrl}
+                  alt={`Screenshot for ${getBugTitle(bug)}`}
+                  loading="lazy"
+                  className="max-h-[420px] w-full rounded-md object-contain"
+                />
+
+                <span className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-violet-700">
+                  Open original screenshot
+                  <ArrowUpRight size={14} />
+                </span>
+              </a>
+            </section>
+          )}
+
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+            <p className="text-xs text-slate-500">
+              Last updated {formatDateTime(bug.updatedAt || bug.createdAt)}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(getBugId(bug)).catch(() => {});
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              <Copy size={14} />
+              Copy bug ID
+            </button>
+          </footer>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ReportRow({ bug, compact, onView }) {
+  const title = getBugTitle(bug);
+  const description = getBugDescription(bug);
+  const timestamp = bug.createdAt;
+
+  return (
+    <tr className="group border-b border-slate-100 last:border-b-0 hover:bg-slate-50/80">
+      <td className={`min-w-[280px] ${compact ? "px-4 py-3" : "px-5 py-4"}`}>
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
+            <Bug size={16} />
+          </div>
+
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={() => onView(bug)}
+              className="max-w-full break-words text-left text-sm font-medium text-slate-900 hover:text-violet-700 focus:outline-none focus:underline"
+            >
+              {title}
+            </button>
+
+            <p className="mt-1 text-xs text-slate-400">
+              {getShortBugId(bug)}
+              {bug.category ? ` · ${bug.category}` : ""}
+            </p>
+
+            {!compact && (
+              <p className="mt-2 line-clamp-2 max-w-lg text-xs leading-5 text-slate-500">
+                {description}
+              </p>
+            )}
+
+            {bug.testUrl && (
+              <a
+                href={bug.testUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={bug.testUrl}
+                className="mt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs text-slate-500 hover:text-violet-700"
+              >
+                <ExternalLink size={12} className="shrink-0" />
+                <span className="truncate">{getHostname(bug.testUrl)}</span>
+              </a>
+            )}
+          </div>
+        </div>
+      </td>
+
+      <td className="whitespace-nowrap px-4 py-4">
+        <Badge value={getBugSeverity(bug)} type="severity" />
+      </td>
+
+      <td className="whitespace-nowrap px-4 py-4">
+        <Badge value={getBugStatus(bug)} />
+      </td>
+
+      <td className="whitespace-nowrap px-4 py-4">
+        <p className="text-sm text-slate-700">{formatDate(timestamp)}</p>
+        <p className="mt-1 text-xs text-slate-400">
+          {formatRelativeDate(timestamp)}
+        </p>
+      </td>
+
+      <td className="whitespace-nowrap px-4 py-4">
+        <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+          <Layers size={14} className="text-slate-400" />
+          {formatNumber(getBugReports(bug))}
+        </span>
+      </td>
+
+      <td className="whitespace-nowrap px-4 py-4 text-right">
+        <button
+          type="button"
+          onClick={() => onView(bug)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-violet-300 hover:text-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        >
+          Details
+          <ArrowUpRight size={14} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function MobileReportCard({ bug, onView }) {
+  return (
+    <article className="p-4 transition hover:bg-slate-50/70">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
+          <Bug size={17} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={() => onView(bug)}
+            className="break-words text-left text-sm font-semibold leading-6 text-slate-900 hover:text-violet-700"
+          >
+            {getBugTitle(bug)}
+          </button>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {getShortBugId(bug)} · {formatRelativeDate(bug.createdAt)}
+          </p>
+        </div>
+
+        <IconButton
+          icon={ArrowUpRight}
+          label={`View ${getBugTitle(bug)}`}
+          onClick={() => onView(bug)}
+          size="sm"
+        />
+      </div>
+
+      <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
+        {getBugDescription(bug)}
+      </p>
+
+      {bug.testUrl && (
+        <a
+          href={bug.testUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex max-w-full items-center gap-1.5 text-xs text-slate-500 hover:text-violet-700"
+        >
+          <ExternalLink size={12} className="shrink-0" />
+          <span className="truncate">{getHostname(bug.testUrl)}</span>
+        </a>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Badge value={getBugStatus(bug)} />
+        <Badge value={getBugSeverity(bug)} type="severity" />
+
+        <span className="ml-auto inline-flex items-center gap-1 text-xs text-slate-400">
+          <Layers size={13} />
+          {getBugReports(bug)} reports
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function FilterToolbar({
+  filters,
+  setFilter,
+  categories,
+  sortBy,
+  setSortBy,
+  onClear,
+  active,
+  onExport,
+  exportDisabled,
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_160px_160px_170px_160px_auto]">
+        <SearchInput
+          value={filters.search}
+          onChange={(value) => setFilter("search", value)}
+          placeholder="Search title, URL, tags..."
+        />
+
+        <SelectField
+          label="Filter by status"
+          value={filters.status}
+          onChange={(value) => setFilter("status", value)}
+          icon={ListFilter}
+          options={[
+            { value: "All", label: "All statuses" },
+            { value: "Open", label: "Open" },
+            { value: "Closed", label: "Resolved" },
+          ]}
+        />
+
+        <SelectField
+          label="Filter by severity"
+          value={filters.severity}
+          onChange={(value) => setFilter("severity", value)}
+          icon={ShieldAlert}
+          options={[
+            { value: "All", label: "All severities" },
+            { value: "High", label: "High severity" },
+            { value: "Medium", label: "Medium severity" },
+            { value: "Low", label: "Low severity" },
+          ]}
+        />
+
+        <SelectField
+          label="Filter by category"
+          value={filters.category}
+          onChange={(value) => setFilter("category", value)}
+          icon={Tag}
+          options={[
+            { value: "All", label: "All categories" },
+            ...categories.map((category) => ({
+              value: category,
+              label: category,
+            })),
+          ]}
+        />
+
+        <SelectField
+          label="Filter by date"
+          value={filters.dateRange}
+          onChange={(value) => setFilter("dateRange", value)}
+          icon={Calendar}
+          options={[
+            { value: "all", label: "Any date" },
+            { value: "today", label: "Today" },
+            { value: "week", label: "Last 7 days" },
+            { value: "month", label: "Last 30 days" },
+          ]}
+        />
+
+        <button
+          type="button"
+          onClick={onExport}
+          disabled={exportDisabled}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Download size={15} />
+          Export
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-500">Sort by</span>
+
+          <SelectField
+            label="Sort reports"
+            value={sortBy}
+            onChange={setSortBy}
+            options={SORT_OPTIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+          />
+        </div>
+
+        {active && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <FilterX size={14} />
+            Clear filters
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ActiveFilterList({ filters, setFilter }) {
+  const activeItems = [];
+
+  if (filters.search.trim()) {
+    activeItems.push({
+      key: "search",
+      label: `Search: ${filters.search.trim()}`,
+      reset: "",
+    });
+  }
+
+  if (filters.status !== "All") {
+    activeItems.push({
+      key: "status",
+      label: `Status: ${filters.status}`,
+      reset: "All",
+    });
+  }
+
+  if (filters.severity !== "All") {
+    activeItems.push({
+      key: "severity",
+      label: `Severity: ${filters.severity}`,
+      reset: "All",
+    });
+  }
+
+  if (filters.category !== "All") {
+    activeItems.push({
+      key: "category",
+      label: `Category: ${filters.category}`,
+      reset: "All",
+    });
+  }
+
+  if (filters.dateRange !== "all") {
+    const labels = {
+      today: "Today",
+      week: "Last 7 days",
+      month: "Last 30 days",
+    };
+
+    activeItems.push({
+      key: "dateRange",
+      label: `Date: ${labels[filters.dateRange] || filters.dateRange}`,
+      reset: "all",
+    });
+  }
+
+  if (!activeItems.length) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+      <span className="text-xs text-slate-500">Active:</span>
+
+      {activeItems.map((item) => (
+        <FilterChip
+          key={item.key}
+          onRemove={() => setFilter(item.key, item.reset)}
+        >
+          {item.label}
+        </FilterChip>
+      ))}
+    </div>
+  );
+}
+
+function ReportTable({
+  bugs,
+  compactRows,
+  onView,
+  loading,
+  loadedEmail,
+  hasSearched,
+  filtersActive,
+  onClearFilters,
+  onReport,
+}) {
+  if (loading) return <LoadingState />;
+
+  if (!hasSearched) {
+    return (
+      <EmptyState
+        icon={Search}
+        title="Find your submitted reports"
+        description="Enter the email address you used when submitting a bug to view your report history."
+      />
+    );
+  }
+
+  if (bugs.length === 0) {
+    return (
+      <EmptyState
+        icon={filtersActive ? FilterX : Bug}
+        title={filtersActive ? "No matching reports" : "No reports found"}
+        description={
+          filtersActive
+            ? "Try removing a filter or changing your search terms."
+            : `No reports were returned for ${loadedEmail}. Check the email address or submit a new report.`
+        }
+        action={
+          filtersActive ? (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Clear filters
+            </button>
+          ) : (
+            <Link
+              href="/tester/url"
+              className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
+            >
+              <Bug size={15} />
+              Report a bug
+            </Link>
+          )
+        }
+      />
+    );
+  }
+
+  return (
+    <>
+      <div className="divide-y divide-slate-100 md:hidden">
+        {bugs.map((bug) => (
+          <MobileReportCard key={bug._id} bug={bug} onView={onView} />
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[940px] border-collapse text-left">
+          <thead className="border-b border-slate-200 bg-slate-50/80">
+            <tr className="text-xs font-medium text-slate-500">
+              <th scope="col" className="px-5 py-3.5">
+                Bug report
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Severity
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Reported
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Reports
+              </th>
+              <th scope="col" className="px-4 py-3.5 text-right">
+                Details
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {bugs.map((bug) => (
+              <ReportRow
+                key={bug._id}
+                bug={bug}
+                compact={compactRows}
+                onView={onView}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function DashboardHeader({ onRefresh, refreshing, onExport, canExport }) {
+  return (
+    <header className="border-b border-slate-200 bg-white">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-950"
+        >
+          <ArrowLeft size={16} />
+          Home
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={!canExport}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+          >
+            <FileDown size={15} />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+
+          <Link
+            href="/tester/url"
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-violet-600 px-3.5 text-sm font-semibold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+          >
+            <Bug size={15} />
+            <span>Report a bug</span>
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export default function TesterDashboardPage() {
+  const [email, setEmail] = useState("");
+  const [loadedEmail, setLoadedEmail] = useState("");
+  const [bugs, setBugs] = useState([]);
+  const [filters, setFilters] = useState(createEmptyFilters);
+  const [sortBy, setSortBy] = useState(DEFAULT_PREFERENCES.sortBy);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PREFERENCES.pageSize);
+  const [compactRows, setCompactRows] = useState(
+    DEFAULT_PREFERENCES.compactRows,
+  );
+  const [showInsights, setShowInsights] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedBug, setSelectedBug] = useState(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const requestController = useRef(null);
+  const requestSequence = useRef(0);
+  const emailInputRef = useRef(null);
+  const searchFormRef = useRef(null);
+
+  const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
+
+  const categories = useMemo(() => getUniqueCategories(bugs), [bugs]);
+
+  const filteredBugs = useMemo(
+    () => filterBugs(bugs, filters),
+    [bugs, filters],
+  );
+
+  const sortedBugs = useMemo(
+    () => sortBugs(filteredBugs, sortBy),
+    [filteredBugs, sortBy],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sortedBugs.length / pageSize));
+
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedBugs = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+
+    return sortedBugs.slice(start, start + pageSize);
+  }, [sortedBugs, currentPage, pageSize]);
+
+  const filtersActive = areFiltersActive(filters);
+
+  const updateFilter = useCallback((key, value) => {
+    setFilters((current) => ({
+      ...current,
+      [key]: value,
+    }));
+
+    setPage(1);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters(createEmptyFilters());
+    setPage(1);
+  }, []);
+
+  const cancelPendingRequest = useCallback(() => {
+    if (requestController.current) {
+      requestController.current.abort();
+      requestController.current = null;
+    }
+  }, []);
+
+  const loadReports = useCallback(
+    async (event, requestedEmail = email) => {
+      event?.preventDefault();
+
+      const normalizedEmail = normalizeEmail(requestedEmail);
+
+      if (!isValidEmail(normalizedEmail)) {
+        setError("Enter a valid email address to find your reports.");
+        emailInputRef.current?.focus();
+        return;
+      }
+
+      cancelPendingRequest();
+
+      const controller = new AbortController();
+      requestController.current = controller;
+
+      const sequence = ++requestSequence.current;
+
+      setLoading(true);
+      setError("");
+      setLoadedEmail(normalizedEmail);
+      setHasSearched(true);
+      setSelectedBug(null);
+      setPage(1);
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/bugs?email=${encodeURIComponent(normalizedEmail)}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            result.message ||
+              `Unable to load reports. Server returned ${response.status}.`,
+          );
+        }
+
+        if (sequence !== requestSequence.current) return;
+
+        if (!Array.isArray(result.bugs)) {
+          throw new Error(
+            "The server response did not contain a valid reports list.",
+          );
+        }
+
+        setBugs(result.bugs);
+        setLastUpdated(new Date());
+      } catch (requestError) {
+        if (requestError.name === "AbortError") return;
+
+        if (sequence !== requestSequence.current) return;
+
+        setError(
+          requestError.message ||
+            "Unable to connect to the API. Check your connection and try again.",
+        );
+      } finally {
+        if (sequence === requestSequence.current) {
+          setLoading(false);
+          requestController.current = null;
+        }
+      }
+    },
+    [email, cancelPendingRequest],
+  );
+
+  const refreshReports = useCallback(() => {
+    if (loadedEmail) {
+      setEmail(loadedEmail);
+      loadReports(undefined, loadedEmail);
+      return;
+    }
+
+    emailInputRef.current?.focus();
+  }, [loadedEmail, loadReports]);
+
+  const handleExport = useCallback(() => {
+    if (!sortedBugs.length) {
+      setError("There are no reports available to export.");
+      return;
+    }
+
+    exportBugsCsv(sortedBugs);
+    setError("");
+  }, [sortedBugs]);
+
+  const handlePageSizeChange = useCallback((value) => {
+    setPageSize(value);
+    setPage(1);
+  }, []);
+
+  const handleOpenBug = useCallback((bug) => {
+    setSelectedBug(bug);
+  }, []);
+
+  const handleCloseBug = useCallback(() => {
+    setSelectedBug(null);
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (event) => {
+      const target = event.target;
+
+      const isTyping =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable;
+
+      if (
+        !isTyping &&
+        (event.key === "/" || (event.ctrlKey && event.key === "k"))
+      ) {
+        event.preventDefault();
+        emailInputRef.current?.focus();
+      }
+
+      if (event.key === "Escape") {
+        setShowSettings(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      requestController.current?.abort();
+    };
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <DashboardHeader
+        onRefresh={refreshReports}
+        refreshing={loading}
+        onExport={handleExport}
+        canExport={sortedBugs.length > 0}
+      />
+
+      <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+        <section className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+              <span>Workspace</span>
+              <ChevronRight size={13} />
+              <span className="text-slate-700">Tester dashboard</span>
+            </div>
+
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+              My reports
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              Track your submitted bugs, check their current status, and review
+              report details.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            {lastUpdated && (
+              <span className="mr-1">
+                Updated {formatRelativeDate(lastUpdated)}
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowInsights((value) => !value)}
+              aria-pressed={showInsights}
+              className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 font-medium transition ${
+                showInsights
+                  ? "border-violet-200 bg-violet-50 text-violet-700"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <BarChart3 size={15} />
+              Insights
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowSettings((value) => !value)}
+              aria-expanded={showSettings}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 font-medium text-slate-600 transition hover:bg-slate-100"
+            >
+              <Settings2 size={15} />
+              View settings
+            </button>
+          </div>
+        </section>
+
+        {showSettings && (
+          <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Table preferences
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Adjust the number of reports displayed and the density of the
+                  table.
+                </p>
+              </div>
+
+              <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={compactRows}
+                  onChange={(event) => setCompactRows(event.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                />
+                Compact table rows
+              </label>
+            </div>
+          </section>
+        )}
+
+        <section className="mt-7 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+            <form
+              ref={searchFormRef}
+              onSubmit={(event) => loadReports(event)}
+              className="min-w-0 flex-1"
+            >
+              <label
+                htmlFor="reporter-email"
+                className="mb-2 block text-sm font-medium text-slate-800"
+              >
+                Find reports by email
+              </label>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="relative min-w-0 flex-1">
+                  <Mail
+                    size={16}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    ref={emailInputRef}
+                    id="reporter-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? (
+                    <LoaderCircle size={16} className="animate-spin" />
+                  ) : (
+                    <Search size={16} />
+                  )}
+
+                  {loading ? "Searching..." : "Find reports"}
+                </button>
+              </div>
+
+              <p className="mt-2 text-xs text-slate-400">
+                Use the same email address you provided when submitting a bug.
+              </p>
+            </form>
+
+            <div className="hidden shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-500 lg:flex">
+              <Command size={14} />
+              <span>Press / to search</span>
+            </div>
+          </div>
+        </section>
+
+        <ErrorBanner
+          message={error}
+          onDismiss={() => setError("")}
+          onRetry={
+            hasSearched && !loading
+              ? () => loadReports(undefined, loadedEmail)
+              : null
+          }
+        />
+
+        <section className="mt-6">
+          <SectionHeading
+            eyebrow="Overview"
+            title="Report activity"
+            description={
+              loadedEmail
+                ? `Showing statistics for ${loadedEmail}`
+                : "Search for your reports to see your current activity."
+            }
+          />
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Total reports"
+              value={statistics.total}
+              description="All reports associated with this email"
+              icon={Layers3}
+              tone="neutral"
+            />
+
+            <StatCard
+              label="Open reports"
+              value={statistics.open}
+              description={getStatusDescription("Open", statistics.open)}
+              icon={Clock3}
+              tone="violet"
+              onClick={() => {
+                updateFilter(
+                  "status",
+                  filters.status === "Open" ? "All" : "Open",
+                );
+              }}
+              active={filters.status === "Open"}
+            />
+
+            <StatCard
+              label="Resolved reports"
+              value={statistics.closed}
+              description={getStatusDescription("Closed", statistics.closed)}
+              icon={CheckCircle2}
+              tone="emerald"
+              onClick={() => {
+                updateFilter(
+                  "status",
+                  filters.status === "Closed" ? "All" : "Closed",
+                );
+              }}
+              active={filters.status === "Closed"}
+            />
+
+            <StatCard
+              label="High severity"
+              value={statistics.high}
+              description={getSeverityDescription("High", statistics.high)}
+              icon={ShieldAlert}
+              tone="rose"
+              onClick={() => {
+                updateFilter(
+                  "severity",
+                  filters.severity === "High" ? "All" : "High",
+                );
+              }}
+              active={filters.severity === "High"}
+            />
+          </div>
+        </section>
+
+        {showInsights && hasSearched && bugs.length > 0 && (
+          <section className="mt-6">
+            <SectionHeading
+              eyebrow="Insights"
+              title="Report health"
+              description="A quick view of severity and resolution across your submissions."
+              action={
+                <button
+                  type="button"
+                  onClick={() => setShowInsights(false)}
+                  className="text-xs font-medium text-slate-500 hover:text-slate-900"
+                >
+                  Hide insights
+                </button>
+              }
+            />
+
+            <div className="mt-4">
+              <ReportSummaryPanel bugs={bugs} />
+            </div>
+          </section>
+        )}
+
+        <section className="mt-7 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 p-4 sm:p-5">
+            <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                    Submitted bugs
+                  </h2>
+
+                  {hasSearched && (
+                    <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
+                      {formatNumber(filteredBugs.length)}
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  {hasSearched
+                    ? getResolutionLabel(filteredBugs)
+                    : "Your bug reports will appear here after you search."}
+                </p>
+              </div>
+
+              {hasSearched && bugs.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={sortedBugs.length === 0}
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    <FileSpreadsheet size={14} />
+                    Export filtered
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    disabled={!filtersActive}
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <FilterX size={14} />
+                    Reset filters
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {hasSearched && bugs.length > 0 && (
+              <div className="mt-5">
+                <FilterToolbar
+                  filters={filters}
+                  setFilter={updateFilter}
+                  categories={categories}
+                  sortBy={sortBy}
+                  setSortBy={(value) => {
+                    setSortBy(value);
+                    setPage(1);
+                  }}
+                  onClear={clearFilters}
+                  active={filtersActive}
+                  onExport={handleExport}
+                  exportDisabled={!sortedBugs.length}
+                />
+              </div>
+            )}
+
+            {hasSearched && bugs.length > 0 && (
+              <div className="mt-3">
+                <ActiveFilterList filters={filters} setFilter={updateFilter} />
+              </div>
+            )}
+          </div>
+
+          <ReportTable
+            bugs={paginatedBugs}
+            compactRows={compactRows}
+            onView={handleOpenBug}
+            loading={loading}
+            loadedEmail={loadedEmail}
+            hasSearched={hasSearched}
+            filtersActive={filtersActive}
+            onClearFilters={clearFilters}
+            onReport={() => {
+              window.location.href = "/tester/url";
+            }}
+          />
+
+          {hasSearched && !loading && sortedBugs.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={sortedBugs.length}
+              onPageChange={setPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
+        </section>
+
+        <footer className="mt-6 flex flex-col justify-between gap-3 pb-5 text-xs text-slate-400 sm:flex-row sm:items-center">
+          <p>AI Bug Tracker · Tester workspace</p>
+
+          <div className="flex flex-wrap items-center gap-4">
+            {lastUpdated && (
+              <span>Last refreshed {formatDateTime(lastUpdated)}</span>
+            )}
+
+            <Link
+              href="/tester/url"
+              className="inline-flex items-center gap-1.5 font-medium text-violet-700 transition hover:text-violet-900"
+            >
+              Submit another report
+              <ArrowUpRight size={13} />
+            </Link>
+          </div>
+        </footer>
+      </div>
+
+      <BugDetails bug={selectedBug} onClose={handleCloseBug} />
+    </main>
+  );
+}
