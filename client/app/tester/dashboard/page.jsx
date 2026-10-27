@@ -380,6 +380,11 @@ export default function TesterDashboardPage() {
       setLoading(true);
       setError("");
       setLoadedEmail(normalizedEmail);
+      setBugs([]);
+      setSelectedBug(null);
+      setSearch("");
+      setStatus("All");
+      setSeverity("All");
 
       try {
         const response = await fetch(

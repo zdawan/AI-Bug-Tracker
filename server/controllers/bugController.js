@@ -3,75 +3,156 @@ import {
   summarizeBug,
   generateTags,
   predictSeverity,
-  generateCategory, // ⭐ AI category
+  generateCategory,
 } from "../services/nlpService.js";
 import { findDuplicateBug } from "../services/duplicateCheckService.js";
 import { sendEmail } from "../utils/sendMail.js";
 
+const SEVERITY_RANK = {
+  Low: 1,
+  Medium: 2,
+  High: 3,
+};
+
+const VALID_SEVERITIES = Object.keys(SEVERITY_RANK);
+
+function normalizeEmail(email) {
+  return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
+function normalizeSeverity(severity) {
+  return VALID_SEVERITIES.includes(severity) ? severity : "Low";
+}
+
+function getEscalatedSeverity(currentSeverity, predictedSeverity, reportCount) {
+  const current = normalizeSeverity(currentSeverity);
+  const predicted = normalizeSeverity(predictedSeverity);
+
+  // Never downgrade a bug because a later report receives a lower AI score.
+  let result =
+    SEVERITY_RANK[current] >= SEVERITY_RANK[predicted] ? current : predicted;
+
+  // Escalate based on the cumulative number of reports.
+  if (reportCount >= 10) {
+    result = "High";
+  } else if (reportCount >= 5 && result === "Low") {
+    result = "Medium";
+  }
+
+  return result;
+}
+
+function normalizeCategory(categoryResult) {
+  if (typeof categoryResult === "string" && categoryResult.trim()) {
+    return categoryResult.trim();
+  }
+
+  if (
+    categoryResult &&
+    typeof categoryResult.primary === "string" &&
+    categoryResult.primary.trim()
+  ) {
+    return categoryResult.primary.trim();
+  }
+
+  if (
+    Array.isArray(categoryResult) &&
+    typeof categoryResult[0] === "string" &&
+    categoryResult[0].trim()
+  ) {
+    return categoryResult[0].trim();
+  }
+
+  return "UI Bug";
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// ---------------------------------------------------------
+// CREATE BUG
+// ---------------------------------------------------------
+
 export const createBug = async (req, res) => {
   try {
-    const { title, description, reporterEmail, testUrl } = req.body;
+    const { title, description, testUrl } = req.body;
+    const reporterEmail = normalizeEmail(req.body.reporterEmail);
 
-    // 📸 Screenshot handling
+    if (
+      typeof title !== "string" ||
+      !title.trim() ||
+      typeof description !== "string" ||
+      !description.trim()
+    ) {
+      return res.status(400).json({
+        message: "Bug title and description are required.",
+      });
+    }
+
+    const normalizedTitle = title.trim();
+    const normalizedDescription = description.trim();
+    const normalizedTestUrl = typeof testUrl === "string" ? testUrl.trim() : "";
+
     const screenshotPath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // 🧠 AI-generated fields
-    const summary = await summarizeBug(description);
-    const tags = await generateTags(description);
-    let severity = await predictSeverity(description);
+    // Generate AI-assisted report metadata.
+    const [summary, tags, predictedSeverity, categoryResult] =
+      await Promise.all([
+        summarizeBug(normalizedDescription),
+        generateTags(normalizedDescription),
+        predictSeverity(normalizedDescription),
+        generateCategory(`${normalizedTitle}. ${normalizedDescription}`),
+      ]);
 
-    // ⭐ AI CATEGORY (FIXED — always normalize to STRING)
-    const categoryResult = await generateCategory(`${title}. ${description}`);
-    const category =
-      typeof categoryResult === "string"
-        ? categoryResult
-        : categoryResult?.primary || categoryResult?.[0] || "UI Bug";
+    const severity = normalizeSeverity(predictedSeverity);
+    const category = normalizeCategory(categoryResult);
 
-    // ⭐ CATEGORY-BASED DUPLICATE CHECK
+    // First duplicate check: exact title, category, and URL.
     const categoryDuplicate = await Bug.findOne({
-      testUrl,
+      testUrl: normalizedTestUrl,
       category,
-      title,
+      title: normalizedTitle,
     });
 
     if (categoryDuplicate) {
-      categoryDuplicate.reports += 1;
+      categoryDuplicate.reports = (categoryDuplicate.reports || 1) + 1;
 
-      if (
-        reporterEmail &&
-        !categoryDuplicate.reporters.includes(reporterEmail)
-      ) {
-        categoryDuplicate.reporters.push(reporterEmail);
+      if (reporterEmail) {
+        const existingReporters = (categoryDuplicate.reporters || []).map(
+          normalizeEmail,
+        );
+
+        if (!existingReporters.includes(reporterEmail)) {
+          categoryDuplicate.reporters.push(reporterEmail);
+        }
       }
 
       if (screenshotPath) {
         categoryDuplicate.screenshot = screenshotPath;
       }
 
-      // ⬆️ Escalate severity
-      if (
-        categoryDuplicate.reports >= 5 &&
-        categoryDuplicate.severity === "Low"
-      ) {
-        categoryDuplicate.severity = "Medium";
-      }
-      if (
-        categoryDuplicate.reports >= 10 &&
-        categoryDuplicate.severity !== "High"
-      ) {
-        categoryDuplicate.severity = "High";
-      }
+      categoryDuplicate.severity = getEscalatedSeverity(
+        categoryDuplicate.severity,
+        severity,
+        categoryDuplicate.reports,
+      );
 
       await categoryDuplicate.save();
 
       return res.status(200).json({
-        message: "Duplicate bug for same URL + category. Updated report count.",
+        message:
+          "A matching bug was found. The existing report has been updated.",
         bug: categoryDuplicate,
       });
     }
 
-    // ⭐ ORIGINAL DUPLICATE CHECK (summary + title + testUrl)
-    const duplicate = await findDuplicateBug(summary, title, testUrl);
+    // Second duplicate check: existing similarity-based service.
+    const duplicate = await findDuplicateBug(
+      summary,
+      normalizedTitle,
+      normalizedTestUrl,
+    );
 
     if (duplicate) {
       if (duplicate.status === "Closed") {
@@ -87,105 +168,157 @@ export const createBug = async (req, res) => {
         });
       }
 
-      duplicate.reports += 1;
+      duplicate.reports = (duplicate.reports || 1) + 1;
 
-      if (duplicate.reports >= 5 && severity === "Low") {
-        severity = "Medium";
-      }
-      if (duplicate.reports >= 10 && severity !== "High") {
-        severity = "High";
-      }
+      if (reporterEmail) {
+        const existingReporters = (duplicate.reporters || []).map(
+          normalizeEmail,
+        );
 
-      if (reporterEmail && !duplicate.reporters.includes(reporterEmail)) {
-        duplicate.reporters.push(reporterEmail);
+        if (!existingReporters.includes(reporterEmail)) {
+          duplicate.reporters.push(reporterEmail);
+        }
       }
 
       if (screenshotPath) {
         duplicate.screenshot = screenshotPath;
       }
 
-      duplicate.severity = severity;
+      duplicate.severity = getEscalatedSeverity(
+        duplicate.severity,
+        severity,
+        duplicate.reports,
+      );
+
       await duplicate.save();
 
       return res.status(200).json({
         message:
-          "Duplicate bug found (same URL), updated report count & severity",
+          "A duplicate bug was found. The existing report count and severity have been updated.",
         bug: duplicate,
       });
     }
 
-    // ⭐ CREATE NEW BUG (NOW SAVES CORRECTLY)
+    // Create a new report when no duplicate is found.
     const newBug = new Bug({
-      title,
-      description,
+      title: normalizedTitle,
+      description: normalizedDescription,
       summary,
-      category, // ✅ ALWAYS STRING
-      tags,
+      category,
+      tags: Array.isArray(tags) ? tags : [],
       severity,
       reporters: reporterEmail ? [reporterEmail] : [],
       reports: 1,
-      testUrl,
+      testUrl: normalizedTestUrl,
       screenshot: screenshotPath,
     });
 
     await newBug.save();
 
-    res.status(201).json(newBug);
+    return res.status(201).json({
+      message: "Bug report created successfully.",
+      bug: newBug,
+    });
   } catch (error) {
-    console.error("❌ Error creating bug:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Error creating bug:", error);
+
+    return res.status(500).json({
+      message: "Failed to create the bug report.",
+    });
   }
 };
 
-// --------------------- RESOLVE BUG (UNCHANGED) -------------------------
+// ---------------------------------------------------------
+// RESOLVE BUG
+// ---------------------------------------------------------
 
 export const resolveBug = async (req, res) => {
   try {
     const { id } = req.params;
-    const { sendMail } = req.body;
+    const shouldSendEmail = req.body?.sendMail === true;
+
+    if (!id) {
+      return res.status(400).json({
+        message: "Bug ID is required.",
+      });
+    }
 
     const bug = await Bug.findById(id);
+
     if (!bug) {
-      return res.status(404).json({ error: "Bug not found" });
+      return res.status(404).json({
+        message: "Bug not found.",
+      });
+    }
+
+    if (bug.status === "Closed") {
+      return res.status(200).json({
+        message: "This bug is already resolved.",
+        bug,
+      });
     }
 
     bug.status = "Closed";
     await bug.save();
 
-    if (sendMail && bug.reporters?.length > 0) {
-      const subject = `✅ Bug Resolved: ${bug.title}`;
-      const text = `
-Hello Tester,
+    let emailSent = false;
 
-The bug you reported has been marked as resolved:
+    if (shouldSendEmail && bug.reporters?.length > 0) {
+      const recipients = [
+        ...new Set(bug.reporters.map(normalizeEmail).filter(Boolean)),
+      ];
 
-Title: ${bug.title}
-URL: ${bug.testUrl || "N/A"}
-Severity: ${bug.severity}
+      if (recipients.length > 0) {
+        const subject = `Bug Resolved: ${bug.title}`;
 
-Description:
-${bug.description}
+        const text = [
+          "Hello Tester,",
+          "",
+          "The bug you reported has been marked as resolved:",
+          "",
+          `Title: ${bug.title}`,
+          `URL: ${bug.testUrl || "N/A"}`,
+          `Severity: ${bug.severity}`,
+          "",
+          "Description:",
+          bug.description || "No description provided.",
+          "",
+          "Thank you for helping improve the system!",
+          "",
+          "- Bug Tracker AI System",
+        ].join("\n");
 
-Thank you for helping improve the system!
-
-- Bug Tracker AI System
-      `;
-      await sendEmail(bug.reporters.join(","), subject, text);
+        try {
+          await sendEmail(recipients.join(","), subject, text);
+          emailSent = true;
+        } catch (emailError) {
+          // Resolution is saved even if the notification fails.
+          console.error("Failed to send bug resolution email:", emailError);
+        }
+      }
     }
 
-    res.status(200).json({ message: "Bug marked as resolved", bug });
+    return res.status(200).json({
+      message: "Bug marked as resolved.",
+      emailSent,
+      bug,
+    });
   } catch (error) {
-    console.error("❌ Error resolving bug:", error);
-    res.status(500).json({ error: "Failed to resolve bug" });
+    console.error("Error resolving bug:", error);
+
+    return res.status(500).json({
+      message: "Failed to resolve bug.",
+    });
   }
 };
 
+// ---------------------------------------------------------
+// GET BUGS BY REPORTER EMAIL
+// ---------------------------------------------------------
 
 export const getBugsByReporter = async (req, res) => {
   try {
-    const email = String(req.query.email || "")
-      .trim()
-      .toLowerCase();
+    const email = normalizeEmail(req.query.email);
 
     if (!email) {
       return res.status(400).json({
@@ -193,7 +326,7 @@ export const getBugsByReporter = async (req, res) => {
       });
     }
 
-    const emailPattern = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const emailPattern = escapeRegex(email);
 
     const bugs = await Bug.find({
       reporters: {
