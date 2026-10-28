@@ -1,12 +1,20 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ArrowLeft, RefreshCw, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  RefreshCw,
+  ShieldCheck,
+} from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/$/, "");
 
 export default function TesterLoginPage() {
   const router = useRouter();
@@ -91,7 +99,7 @@ export default function TesterLoginPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Unable to send the verification code.",
+          data.message || "Unable to send the verification code."
         );
       }
 
@@ -100,9 +108,13 @@ export default function TesterLoginPage() {
       setStep("otp");
       setResendCooldown(30);
 
-      toast.success(data.message || "Verification code sent to your email.");
+      toast.success(
+        data.message || "Verification code sent to your email."
+      );
     } catch (error) {
-      toast.error(error.message || "Something went wrong. Please try again.");
+      toast.error(
+        error.message || "Something went wrong. Please try again."
+      );
     } finally {
       setIsSending(false);
     }
@@ -136,22 +148,29 @@ export default function TesterLoginPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Invalid or expired verification code.",
+          data.message || "Invalid or expired verification code."
         );
       }
 
       if (!data.token) {
-        throw new Error("The server did not return an authentication token.");
+        throw new Error(
+          "The server did not return an authentication token."
+        );
       }
 
       sessionStorage.setItem("testerToken", data.token);
-      sessionStorage.setItem("testerEmail", email.trim().toLowerCase());
+      sessionStorage.setItem(
+        "testerEmail",
+        email.trim().toLowerCase()
+      );
 
       toast.success("Email verified successfully.");
 
       router.push("/tester/url");
     } catch (error) {
-      toast.error(error.message || "Verification failed. Please try again.");
+      toast.error(
+        error.message || "Verification failed. Please try again."
+      );
     } finally {
       setIsVerifying(false);
     }
@@ -225,7 +244,9 @@ export default function TesterLoginPage() {
                   value={email}
                   onChange={handleEmailChange}
                   aria-invalid={Boolean(emailError)}
-                  aria-describedby={emailError ? "email-error" : undefined}
+                  aria-describedby={
+                    emailError ? "email-error" : undefined
+                  }
                   className={`h-14 w-full rounded-2xl border bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 ${
                     emailError
                       ? "border-red-400 focus:border-red-500 focus:ring-red-100"
@@ -261,8 +282,8 @@ export default function TesterLoginPage() {
               />
 
               <p className="text-sm leading-6 text-slate-600">
-                No password required. Verify your email to access the tester
-                workspace.
+                No password required. Verify your email to access the
+                tester workspace.
               </p>
             </div>
           </>
@@ -306,7 +327,9 @@ export default function TesterLoginPage() {
                   placeholder="000000"
                   value={otp}
                   onChange={(event) =>
-                    setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
+                    setOtp(
+                      event.target.value.replace(/\D/g, "").slice(0, 6)
+                    )
                   }
                   className="h-16 w-full rounded-2xl border border-slate-300 bg-white text-center text-2xl font-semibold tracking-[0.55em] text-slate-950 outline-none transition placeholder:text-slate-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
                 />
@@ -356,7 +379,11 @@ export default function TesterLoginPage() {
         </footer>
       </section>
 
-      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        theme="light"
+      />
     </main>
   );
 }
