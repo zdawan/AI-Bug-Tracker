@@ -224,7 +224,20 @@ export default function TesterLoginPage() {
               </p>
             </header>
 
-            <form onSubmit={sendOtp} noValidate className="space-y-5">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+
+                const normalizedEmail = email.trim().toLowerCase();
+
+                sessionStorage.setItem("testerEmail", normalizedEmail);
+                sessionStorage.setItem("testerToken", "TEST_MODE");
+
+                router.push("/tester/url");
+              }}
+              noValidate
+              className="space-y-5"
+            >
               <div className="space-y-2">
                 <label
                   htmlFor="tester-email"
@@ -238,40 +251,19 @@ export default function TesterLoginPage() {
                   type="email"
                   autoComplete="email"
                   autoFocus
-                  required
-                  maxLength={254}
                   placeholder="you@example.com"
                   value={email}
                   onChange={handleEmailChange}
-                  aria-invalid={Boolean(emailError)}
-                  aria-describedby={
-                    emailError ? "email-error" : undefined
-                  }
-                  className={`h-14 w-full rounded-2xl border bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 ${
-                    emailError
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                      : "border-slate-300 focus:border-purple-500 focus:ring-purple-100"
-                  }`}
+                  className="h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
                 />
-
-                {emailError && (
-                  <p
-                    id="email-error"
-                    role="alert"
-                    className="text-sm text-red-600"
-                  >
-                    {emailError}
-                  </p>
-                )}
               </div>
 
               <button
                 type="submit"
-                disabled={isSending}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800"
               >
-                {isSending ? "Sending code..." : "Continue with email"}
-                {!isSending && <ArrowRight size={19} />}
+                Continue with email
+                <ArrowRight size={19} />
               </button>
             </form>
 
@@ -282,8 +274,8 @@ export default function TesterLoginPage() {
               />
 
               <p className="text-sm leading-6 text-slate-600">
-                No password required. Verify your email to access the
-                tester workspace.
+                No password required. Verify your email to access the tester
+                workspace.
               </p>
             </div>
           </>
@@ -327,9 +319,7 @@ export default function TesterLoginPage() {
                   placeholder="000000"
                   value={otp}
                   onChange={(event) =>
-                    setOtp(
-                      event.target.value.replace(/\D/g, "").slice(0, 6)
-                    )
+                    setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
                   }
                   className="h-16 w-full rounded-2xl border border-slate-300 bg-white text-center text-2xl font-semibold tracking-[0.55em] text-slate-950 outline-none transition placeholder:text-slate-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
                 />
@@ -379,11 +369,7 @@ export default function TesterLoginPage() {
         </footer>
       </section>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        theme="light"
-      />
+      <ToastContainer position="top-right" autoClose={3000} theme="light" />
     </main>
   );
 }
