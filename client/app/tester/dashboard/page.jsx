@@ -1251,13 +1251,271 @@ function ResolutionOverview({ statistics }) {
   );
 }
 
-function ReportSummaryPanel({ bugs }) {
-  const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
+function ReportsTrendChart({ bugs }) {
+  const trend = useMemo(() => {
+    const today = new Date();
+    const days = [];
+
+    for (let offset = 6; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - offset);
+
+      days.push({
+        key: date.toISOString().slice(0, 10),
+        date,
+        label: date.toLocaleDateString("en-IN", { weekday: "short" }),
+        count: 0,
+      });
+    }
+
+    const counts = new Map(days.map((day) => [day.key, day]));
+
+    bugs.forEach((bug) => {
+      const date = safeDate(bug?.createdAt);
+      if (!date) return;
+
+      const key = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+        .toISOString()
+        .slice(0, 10);
+
+      const bucket = counts.get(key);
+      if (bucket) bucket.count += 1;
+    });
+
+    return days;
+  }, [bugs]);
+
+  const maxCount = Math.max(1, ...trend.map((day) => day.count));
+  const total = trend.reduce((sum, day) => sum + day.count, 0);
+  const activeDays = trend.filter((day) => day.count > 0).length;
 
   return (
-    <section className="grid gap-4 lg:grid-cols-2">
-      <SeverityDistribution statistics={statistics} />
-      <ResolutionOverview statistics={statistics} />
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Reporting activity
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            New reports created over the last 7 days
+          </p>
+        </div>
+        <div className="rounded-xl bg-violet-50 px-3 py-2 text-right">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-violet-600">
+            7-day total
+          </p>
+          <p className="mt-0.5 text-xl font-semibold tracking-tight text-violet-800">
+            {formatNumber(total)}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className="mt-5 grid grid-cols-7 gap-2 sm:gap-3"
+        role="img"
+        aria-label={`Daily report counts for the last seven days. ${total} reports across ${activeDays} active days.`}
+      >
+        {trend.map((day) => {
+          const height =
+            day.count === 0 ? 5 : Math.max(12, (day.count / maxCount) * 100);
+
+          return (
+            <div key={day.key} className="flex min-w-0 flex-col items-center">
+              <span className="mb-2 text-xs font-semibold text-slate-700">
+                {day.count}
+              </span>
+              <div className="flex h-28 w-full items-end justify-center rounded-lg bg-slate-50 px-1.5 pb-1.5 sm:h-32">
+                <div
+                  className={`w-full max-w-8 rounded-md transition-all duration-300 ${
+                    day.count > 0
+                      ? "bg-gradient-to-t from-violet-600 to-violet-400"
+                      : "bg-slate-200"
+                  }`}
+                  style={{ height: `${height}%` }}
+                  title={`${day.label}: ${day.count} report${day.count === 1 ? "" : "s"}`}
+                />
+              </div>
+              <span className="mt-2 text-[11px] font-medium text-slate-500">
+                {day.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-violet-500" />
+          Reports by day
+        </span>
+        <span>{activeDays} of 7 days with activity</span>
+      </div>
+    </section>
+  );
+}
+
+function CategoryBreakdown({ bugs }) {
+  const categories = useMemo(() => {
+    const counts = new Map();
+
+    bugs.forEach((bug) => {
+      const label = normalizeString(bug?.category) || "Uncategorized";
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+
+    return [...counts.entries()]
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [bugs]);
+
+  const total = bugs.length || 1;
+  const palette = [
+    "bg-violet-500",
+    "bg-sky-500",
+    "bg-emerald-500",
+    "bg-amber-500",
+    "bg-rose-500",
+  ];
+
+  return (
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Top categories
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            Where reported issues are concentrated
+          </p>
+        </div>
+        <Layers3 size={18} className="text-slate-400" />
+      </div>
+
+      {categories.length ? (
+        <div className="mt-5 space-y-4">
+          {categories.map((category, index) => (
+            <div key={category.label}>
+              <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 truncate font-medium text-slate-700">
+                  {category.label}
+                </span>
+                <span className="shrink-0 tabular-nums text-slate-500">
+                  {category.count} ·{" "}
+                  {formatPercentage((category.count / total) * 100)}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all ${palette[index]}`}
+                  style={{ width: `${(category.count / total) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-5 flex min-h-28 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center text-xs text-slate-500">
+          Category analytics will appear when reports are available.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReportSummaryPanel({ bugs }) {
+  const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
+  const averageReports = bugs.length
+    ? bugs.reduce((sum, bug) => sum + getBugReports(bug), 0) / bugs.length
+    : 0;
+
+  return (
+    <section className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              Resolution rate
+            </span>
+            <span className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+              <CheckCircle2 size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {formatPercentage(statistics.resolutionRate)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {statistics.closed} of {statistics.total} reports resolved
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              Open workload
+            </span>
+            <span className="rounded-lg bg-violet-50 p-2 text-violet-600">
+              <Clock3 size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {formatNumber(statistics.open)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {formatPercentage(
+              statistics.total ? (statistics.open / statistics.total) * 100 : 0,
+            )}{" "}
+            of all reports
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              High severity
+            </span>
+            <span className="rounded-lg bg-rose-50 p-2 text-rose-600">
+              <ShieldAlert size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {formatNumber(statistics.high)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {formatPercentage(statistics.highSeverityRate)} of all reports
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              Avg. report count
+            </span>
+            <span className="rounded-lg bg-sky-50 p-2 text-sky-600">
+              <Layers3 size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {averageReports.toFixed(1)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Average reports per unique bug
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <ReportsTrendChart bugs={bugs} />
+        </div>
+        <CategoryBreakdown bugs={bugs} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SeverityDistribution statistics={statistics} />
+        <ResolutionOverview statistics={statistics} />
+      </div>
     </section>
   );
 }
