@@ -9,6 +9,13 @@ import {
   ArrowUp,
   ArrowUpRight,
   UserRound,
+  LayoutDashboard,
+  ListChecks,
+  ChartNoAxesCombined,
+  CircleHelp,
+  LogOut,
+  Sun,
+  Moon,
   BarChart3,
   Bell,
   Bug,
@@ -1265,9 +1272,7 @@ function ReportsTrendChart({ bugs }) {
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       days.push({
         key,
-        label: date
-          .toLocaleDateString("en-IN", { weekday: "short" })
-          .slice(0, 1),
+        label: date.toLocaleDateString("en-IN", { weekday: "short" }),
         count: 0,
       });
     }
@@ -1287,61 +1292,91 @@ function ReportsTrendChart({ bugs }) {
   const maxCount = Math.max(1, ...trend.map((day) => day.count));
   const total = trend.reduce((sum, day) => sum + day.count, 0);
   const activeDays = trend.filter((day) => day.count > 0).length;
+  const points = trend.map((day, index) => ({
+    x: 24 + (index * 592) / (trend.length - 1),
+    y: 158 - (day.count / maxCount) * 112,
+  }));
+  const linePath = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const areaPath = `${linePath} L ${points[points.length - 1].x} 164 L ${points[0].x} 164 Z`;
 
   return (
-    <section className="h-full rounded-[22px] border border-white bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+    <section className="h-full rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold tracking-tight text-slate-900">
+          <h3 className="text-base font-semibold tracking-tight text-slate-900">
             Reporting activity
           </h3>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-sm text-slate-500">
             Reports submitted during the last 7 days
           </p>
         </div>
-        <span className="rounded-full border border-violet-200 px-2.5 py-1 text-[11px] font-medium text-violet-700">
+        <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 ring-1 ring-violet-100">
           Last 7 days
         </span>
       </div>
 
-      <div
-        className="mt-5 grid grid-cols-7 gap-2 sm:gap-3"
-        role="img"
-        aria-label={`Daily report counts for the last seven days. ${total} reports across ${activeDays} active days.`}
-      >
-        {trend.map((day) => {
-          const height =
-            day.count === 0 ? 10 : Math.max(34, (day.count / maxCount) * 100);
-
-          return (
-            <div key={day.key} className="flex min-w-0 flex-col items-center">
-              <span className="mb-2 text-[11px] font-semibold tabular-nums text-slate-500">
-                {day.count}
-              </span>
-              <div className="flex h-28 w-full max-w-10 items-end justify-center rounded-full bg-slate-50 p-1 sm:h-32 sm:p-1.5">
-                <div
-                  className={`relative w-full rounded-full transition-all duration-300 ${
-                    day.count > 0
-                      ? "bg-gradient-to-b from-violet-500 to-violet-700"
-                      : "bg-slate-100"
-                  }`}
-                  style={{ height: `${height}%` }}
-                  title={`${day.label}: ${day.count} reports`}
-                >
-                  {day.count > 0 && (
-                    <span className="absolute left-1/2 top-2 h-2 w-2 -translate-x-1/2 rounded-full bg-white/90 sm:top-2.5 sm:h-2.5 sm:w-2.5" />
-                  )}
-                </div>
-              </div>
-              <span className="mt-2 text-[11px] font-medium uppercase text-slate-400">
-                {day.label}
-              </span>
-            </div>
-          );
-        })}
+      <div className="mt-5 rounded-2xl bg-slate-50/80 px-2 pt-3 sm:px-4">
+        <svg
+          className="h-44 w-full overflow-visible"
+          viewBox="0 0 640 190"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={`Daily report counts for the last seven days. ${total} reports across ${activeDays} active days.`}
+        >
+          <defs>
+            <linearGradient id="report-trend-fill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.01" />
+            </linearGradient>
+          </defs>
+          {[46, 84, 122, 160].map((y) => (
+            <line
+              key={y}
+              x1="10"
+              x2="630"
+              y1={y}
+              y2={y}
+              stroke="#e8eaf0"
+              strokeDasharray="4 6"
+            />
+          ))}
+          <path d={areaPath} fill="url(#report-trend-fill)" />
+          <path
+            d={linePath}
+            fill="none"
+            stroke="#7652d5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="3"
+            vectorEffect="non-scaling-stroke"
+          />
+          {points.map((point, index) => (
+            <g key={trend[index].key}>
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="5"
+                fill="#fff"
+                stroke="#7652d5"
+                strokeWidth="3"
+                vectorEffect="non-scaling-stroke"
+              />
+              <title>
+                {trend[index].key}: {trend[index].count} reports
+              </title>
+            </g>
+          ))}
+        </svg>
+        <div className="grid grid-cols-7 pb-3 text-center text-xs font-medium text-slate-500">
+          {trend.map((day) => (
+            <span key={day.key}>{day.label}</span>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-sm">
         <span className="text-slate-400">Daily reports</span>
         <span className="font-medium text-violet-700">
           {formatNumber(total)} total · {activeDays} active days
@@ -2210,7 +2245,59 @@ function ReportTable({
   );
 }
 
-function DashboardHeader({ onRefresh, refreshing, onExport, canExport }) {
+function DashboardHeader({
+  onRefresh,
+  refreshing,
+  onExport,
+  canExport,
+  bugs,
+  hasSearched,
+  searchValue,
+  onSearchChange,
+  onOpenBug,
+}) {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
+  const openCount = bugs.filter((bug) => getBugStatus(bug) === "Open").length;
+  const notificationBugs = useMemo(
+    () =>
+      [...bugs]
+        .sort((left, right) => {
+          const priority = (bug) => {
+            if (getBugStatus(bug) !== "Open") return 0;
+            return getBugSeverity(bug) === "High" ? 2 : 1;
+          };
+
+          return (
+            priority(right) - priority(left) ||
+            getBugTimestamp(right) - getBugTimestamp(left)
+          );
+        })
+        .slice(0, 5),
+    [bugs],
+  );
+
+  useEffect(() => {
+    if (!showNotifications) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!notificationRef.current?.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setShowNotifications(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [showNotifications]);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/70 bg-[#f7f8fa]/95 backdrop-blur-xl">
       <div className="mx-auto flex min-h-[76px] w-full max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -2235,7 +2322,9 @@ function DashboardHeader({ onRefresh, refreshing, onExport, canExport }) {
           <input
             type="search"
             aria-label="Search dashboard"
-            placeholder="Search reports, projects..."
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search loaded reports..."
             onKeyDown={(event) => {
               if (event.key === "/" && event.target.value === "") {
                 event.preventDefault();
@@ -2256,15 +2345,136 @@ function DashboardHeader({ onRefresh, refreshing, onExport, canExport }) {
           >
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
           </button>
-          <button
-            type="button"
-            aria-label="Notifications"
-            title="Notifications"
-            className="relative grid h-10 w-10 place-items-center rounded-xl border border-white bg-white text-slate-600 shadow-sm shadow-slate-900/[0.03] transition hover:border-slate-200 hover:bg-slate-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
-          >
-            <Bell size={17} />
-            <span className="absolute right-2.5 top-2 h-1.5 w-1.5 rounded-full bg-violet-500 ring-2 ring-white" />
-          </button>
+          <div className="relative" ref={notificationRef}>
+            <button
+              type="button"
+              aria-label={
+                openCount
+                  ? `Notifications, ${openCount} open reports`
+                  : "Notifications"
+              }
+              aria-expanded={showNotifications}
+              aria-controls="report-notifications"
+              title="Report notifications"
+              onClick={() => setShowNotifications((shown) => !shown)}
+              className="relative grid h-10 w-10 place-items-center rounded-xl border border-white bg-white text-slate-600 shadow-sm shadow-slate-900/[0.03] transition hover:border-slate-200 hover:bg-slate-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            >
+              <Bell size={17} />
+              {openCount > 0 && (
+                <span className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[#f7f8fa]">
+                  {openCount > 9 ? "9+" : openCount}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <section
+                id="report-notifications"
+                aria-label="Report notifications"
+                className="absolute right-0 top-[calc(100%+12px)] z-50 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10"
+              >
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">
+                      Report updates
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {hasSearched
+                        ? `${openCount} open ${openCount === 1 ? "report" : "reports"}`
+                        : "Updates for your reports"}
+                    </p>
+                  </div>
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-700">
+                    <Bell size={16} />
+                  </span>
+                </div>
+
+                {!hasSearched ? (
+                  <div className="px-4 py-8 text-center">
+                    <p className="text-sm font-medium text-slate-700">
+                      Find your reports to see updates
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Search with the email address used when you submitted a
+                      report.
+                    </p>
+                  </div>
+                ) : notificationBugs.length ? (
+                  <ul className="max-h-[360px] divide-y divide-slate-100 overflow-y-auto">
+                    {notificationBugs.map((bug) => {
+                      const status = getBugStatus(bug);
+                      const severity = getBugSeverity(bug);
+                      const isOpen = status === "Open";
+
+                      return (
+                        <li key={getBugId(bug)}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onOpenBug(bug);
+                              setShowNotifications(false);
+                            }}
+                            className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400"
+                          >
+                            <span
+                              className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
+                                isOpen && severity === "High"
+                                  ? "bg-rose-50 text-rose-600"
+                                  : isOpen
+                                    ? "bg-violet-50 text-violet-600"
+                                    : "bg-emerald-50 text-emerald-600"
+                              }`}
+                            >
+                              {isOpen && severity === "High" ? (
+                                <ShieldAlert size={15} />
+                              ) : isOpen ? (
+                                <Clock3 size={15} />
+                              ) : (
+                                <CheckCircle2 size={15} />
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-medium text-slate-800">
+                                {getBugTitle(bug)}
+                              </span>
+                              <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                                <span
+                                  className={
+                                    isOpen
+                                      ? "text-violet-700"
+                                      : "text-emerald-700"
+                                  }
+                                >
+                                  {isOpen ? "Open" : "Resolved"}
+                                </span>
+                                <span aria-hidden="true">·</span>
+                                <span>{severity} severity</span>
+                              </span>
+                            </span>
+                            <span className="shrink-0 pt-0.5 text-[11px] text-slate-400">
+                              {formatRelativeDate(bug.createdAt)}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="px-4 py-8 text-center">
+                    <span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+                      <CheckCheck size={18} />
+                    </span>
+                    <p className="mt-3 text-sm font-medium text-slate-700">
+                      No report updates yet
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Updates will appear here when reports are available.
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
 
           <div className="ml-1 hidden h-10 items-center gap-2.5 rounded-xl border border-white bg-white py-1 pl-1 pr-3 shadow-sm shadow-slate-900/[0.03] sm:flex">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-500 text-white">
@@ -2513,388 +2723,531 @@ export default function TesterDashboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] text-slate-900 antialiased">
-      <DashboardHeader
-        onRefresh={refreshReports}
-        refreshing={loading}
-        onExport={handleExport}
-        canExport={sortedBugs.length > 0}
-      />
+    <main className="min-h-screen bg-[#f0eff6] p-0 text-slate-900 antialiased sm:p-4 lg:p-6">
+      <div className="mx-auto flex min-h-screen max-w-[1680px] overflow-hidden border border-white/80 bg-white shadow-2xl shadow-slate-900/5 sm:min-h-[calc(100vh-2rem)] sm:rounded-[28px] lg:min-h-[calc(100vh-3rem)] lg:rounded-[34px]">
+        <aside className="hidden w-[194px] shrink-0 flex-col border-r border-slate-100 bg-[#faf9fd] px-4 py-6 md:flex lg:w-[218px] lg:px-5">
+          <Link
+            href="/"
+            className="mb-9 flex items-center gap-2 px-2 text-lg font-bold tracking-tight text-slate-950"
+          >
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-950 text-white">
+              <Bug size={18} />
+            </span>
+            <span>
+              AI <span className="text-violet-600">Tracker</span>
+            </span>
+          </Link>
 
-      <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-        <section className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-              <span>WORKSPACE</span>
-              <ChevronRight size={13} />
-              <span className="text-violet-700">TESTER DASHBOARD</span>
-            </div>
-
-            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.15rem]">
+          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+            Workspace
+          </p>
+          <nav aria-label="Main navigation" className="space-y-1">
+            <a
+              href="#dashboard"
+              className="flex items-center gap-3 rounded-xl bg-violet-600 px-3 py-3 text-sm font-semibold text-white shadow-sm shadow-violet-600/20"
+            >
+              <LayoutDashboard size={16} />
               Dashboard
-            </h1>
-
-            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
-              A quick view of your bug reports and team updates.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <Link
-              href="/tester/url"
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm shadow-violet-600/20 transition hover:-translate-y-px hover:bg-violet-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200"
+            </a>
+            <a
+              href="#reports"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-slate-900"
             >
-              <Bug size={15} />
-              Report a bug
-            </Link>
-            {lastUpdated && (
-              <span className="mr-1">
-                Updated {formatRelativeDate(lastUpdated)}
-              </span>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setShowInsights((value) => !value)}
-              aria-pressed={showInsights}
-              className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 font-medium transition ${
-                showInsights
-                  ? "border-violet-200 bg-violet-50 text-violet-700"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
-              }`}
+              <ListChecks size={16} />
+              Bug reports
+            </a>
+            <a
+              href="#analytics"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-slate-900"
             >
-              <BarChart3 size={15} />
-              Insights
-            </button>
+              <ChartNoAxesCombined size={16} />
+              Analytics
+            </a>
+          </nav>
 
+          <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+            General
+          </p>
+          <nav aria-label="General navigation" className="space-y-1">
             <button
               type="button"
               onClick={() => setShowSettings((value) => !value)}
-              aria-expanded={showSettings}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 font-medium text-slate-600 transition hover:bg-slate-100"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-white hover:text-slate-900"
             >
-              <Settings2 size={15} />
-              View settings
+              <Settings2 size={16} />
+              Settings
             </button>
+            <a
+              href="#help"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-slate-900"
+            >
+              <CircleHelp size={16} />
+              Help
+            </a>
+            <Link
+              href="/"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-slate-900"
+            >
+              <LogOut size={16} />
+              Exit dashboard
+            </Link>
+          </nav>
+
+          <div className="mt-auto rounded-2xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 p-3.5 text-white">
+            <span className="mb-2 grid h-7 w-7 place-items-center rounded-lg bg-white/15">
+              <Sparkles size={15} />
+            </span>
+            <p className="text-xs font-semibold">Ship better software</p>
+            <p className="mt-1 text-[10px] leading-4 text-white/60">
+              Keep track of bugs and resolve issues faster.
+            </p>
+            <Link
+              href="/tester/url"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-violet-500 px-2 py-2 text-[10px] font-semibold text-white transition hover:bg-violet-400"
+            >
+              Report a bug
+            </Link>
           </div>
-        </section>
 
-        {showSettings && (
-          <section className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Table preferences
-                </h2>
+          <div className="mt-5 flex items-center justify-between rounded-full border border-slate-200 bg-white p-1">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-violet-600 text-white">
+              <Sun size={15} />
+            </span>
+            <span className="grid h-8 w-8 place-items-center rounded-full text-slate-500">
+              <Moon size={15} />
+            </span>
+          </div>
+        </aside>
 
-                <p className="mt-1 text-xs text-slate-500">
-                  Adjust the number of reports displayed and the density of the
-                  table.
+        <div className="min-w-0 flex-1 bg-[#f8f9fc]">
+          <DashboardHeader
+            onRefresh={refreshReports}
+            refreshing={loading}
+            onExport={handleExport}
+            canExport={sortedBugs.length > 0}
+            bugs={bugs}
+            hasSearched={hasSearched}
+            searchValue={filters.search}
+            onSearchChange={(search) => updateFilter("search", search)}
+            onOpenBug={handleOpenBug}
+          />
+
+          <div
+            id="dashboard"
+            className="mx-auto max-w-[1440px] scroll-mt-24 px-4 py-5 sm:px-6 sm:py-6 lg:px-7"
+          >
+            <section className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                  <span>WORKSPACE</span>
+                  <ChevronRight size={13} />
+                  <span className="text-violet-700">TESTER DASHBOARD</span>
+                </div>
+
+                <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.15rem]">
+                  Dashboard
+                </h1>
+
+                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
+                  A quick view of your bug reports and team updates.
                 </p>
               </div>
 
-              <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={compactRows}
-                  onChange={(event) => setCompactRows(event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-                />
-                Compact table rows
-              </label>
-            </div>
-          </section>
-        )}
-
-        <section className="mt-7 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/30 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-            <form
-              ref={searchFormRef}
-              onSubmit={(event) => loadReports(event)}
-              className="min-w-0 flex-1"
-            >
-              <label
-                htmlFor="reporter-email"
-                className="mb-2 block text-sm font-medium text-slate-800"
-              >
-                Find reports by email
-              </label>
-
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <div className="relative min-w-0 flex-1">
-                  <Mail
-                    size={16}
-                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    ref={emailInputRef}
-                    id="reporter-email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white shadow-sm shadow-violet-600/15 transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <Link
+                  href="/tester/url"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm shadow-violet-600/20 transition hover:-translate-y-px hover:bg-violet-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200"
                 >
-                  {loading ? (
-                    <LoaderCircle size={16} className="animate-spin" />
-                  ) : (
-                    <Search size={16} />
-                  )}
+                  <Bug size={15} />
+                  Report a bug
+                </Link>
+                {lastUpdated && (
+                  <span className="mr-1">
+                    Updated {formatRelativeDate(lastUpdated)}
+                  </span>
+                )}
 
-                  {loading ? "Searching..." : "Find reports"}
-                </button>
-              </div>
-
-              <p className="mt-2 text-xs text-slate-400">
-                Use the same email address you provided when submitting a bug.
-              </p>
-            </form>
-
-            <div className="hidden shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-500 lg:flex">
-              <Command size={14} />
-              <span>Press / to search</span>
-            </div>
-          </div>
-        </section>
-
-        <ErrorBanner
-          message={error}
-          onDismiss={() => setError("")}
-          onRetry={
-            hasSearched && !loading
-              ? () => loadReports(undefined, loadedEmail)
-              : null
-          }
-        />
-
-        <section className="mt-6">
-          <SectionHeading
-            eyebrow="Overview"
-            title="Report activity"
-            description={
-              loadedEmail
-                ? `Showing statistics for ${loadedEmail}`
-                : "Search for your reports to see your current activity."
-            }
-          />
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Total reports"
-              value={statistics.total}
-              description="All reports associated with this email"
-              icon={Layers3}
-              tone="neutral"
-            />
-
-            <StatCard
-              label="Open reports"
-              value={statistics.open}
-              description={getStatusDescription("Open", statistics.open)}
-              icon={Clock3}
-              tone="violet"
-              onClick={() => {
-                updateFilter(
-                  "status",
-                  filters.status === "Open" ? "All" : "Open",
-                );
-              }}
-              active={filters.status === "Open"}
-            />
-
-            <StatCard
-              label="Resolved reports"
-              value={statistics.closed}
-              description={getStatusDescription("Closed", statistics.closed)}
-              icon={CheckCircle2}
-              tone="emerald"
-              onClick={() => {
-                updateFilter(
-                  "status",
-                  filters.status === "Closed" ? "All" : "Closed",
-                );
-              }}
-              active={filters.status === "Closed"}
-            />
-
-            <StatCard
-              label="High severity"
-              value={statistics.high}
-              description={getSeverityDescription("High", statistics.high)}
-              icon={ShieldAlert}
-              tone="rose"
-              onClick={() => {
-                updateFilter(
-                  "severity",
-                  filters.severity === "High" ? "All" : "High",
-                );
-              }}
-              active={filters.severity === "High"}
-            />
-          </div>
-        </section>
-
-        {hasSearched && bugs.length > 0 && (
-          <section className="mt-6">
-            <SectionHeading
-              eyebrow="Analytics"
-              title="Report health"
-              description="Track reporting activity, resolution performance, severity, and issue categories."
-              action={
                 <button
                   type="button"
                   onClick={() => setShowInsights((value) => !value)}
                   aria-pressed={showInsights}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                  className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 font-medium transition ${
                     showInsights
                       ? "border-violet-200 bg-violet-50 text-violet-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
                   }`}
                 >
-                  <BarChart3 size={14} />
-                  {showInsights ? "Hide analytics" : "Show analytics"}
+                  <BarChart3 size={15} />
+                  Insights
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowSettings((value) => !value)}
+                  aria-expanded={showSettings}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 font-medium text-slate-600 transition hover:bg-slate-100"
+                >
+                  <Settings2 size={15} />
+                  View settings
+                </button>
+              </div>
+            </section>
+
+            {showSettings && (
+              <section className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">
+                      Table preferences
+                    </h2>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      Adjust the number of reports displayed and the density of
+                      the table.
+                    </p>
+                  </div>
+
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={compactRows}
+                      onChange={(event) => setCompactRows(event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                    />
+                    Compact table rows
+                  </label>
+                </div>
+              </section>
+            )}
+
+            <section
+              className="mt-7 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/30 sm:p-6"
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+                <form
+                  ref={searchFormRef}
+                  onSubmit={(event) => loadReports(event)}
+                  className="min-w-0 flex-1"
+                >
+                  <label
+                    htmlFor="reporter-email"
+                    className="mb-2 block text-sm font-medium text-slate-800"
+                  >
+                    Find reports by email
+                  </label>
+
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative min-w-0 flex-1">
+                      <Mail
+                        size={16}
+                        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+
+                      <input
+                        ref={emailInputRef}
+                        id="reporter-email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="you@example.com"
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white shadow-sm shadow-violet-600/15 transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loading ? (
+                        <LoaderCircle size={16} className="animate-spin" />
+                      ) : (
+                        <Search size={16} />
+                      )}
+
+                      {loading ? "Searching..." : "Find reports"}
+                    </button>
+                  </div>
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    Use the same email address you provided when submitting a
+                    bug.
+                  </p>
+                </form>
+
+                <div className="hidden shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-500 lg:flex">
+                  <Command size={14} />
+                  <span>Press / to search</span>
+                </div>
+              </div>
+            </section>
+
+            <ErrorBanner
+              message={error}
+              onDismiss={() => setError("")}
+              onRetry={
+                hasSearched && !loading
+                  ? () => loadReports(undefined, loadedEmail)
+                  : null
               }
             />
 
-            {showInsights && (
-              <div className="mt-4">
-                <ReportSummaryPanel bugs={bugs} />
+            <section className="mt-6">
+              <SectionHeading
+                eyebrow="Overview"
+                title="Report activity"
+                description={
+                  loadedEmail
+                    ? `Showing statistics for ${loadedEmail}`
+                    : "Search for your reports to see your current activity."
+                }
+              />
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard
+                  label="Total reports"
+                  value={statistics.total}
+                  description="All reports associated with this email"
+                  icon={Layers3}
+                  tone="neutral"
+                />
+
+                <StatCard
+                  label="Open reports"
+                  value={statistics.open}
+                  description={getStatusDescription("Open", statistics.open)}
+                  icon={Clock3}
+                  tone="violet"
+                  onClick={() => {
+                    updateFilter(
+                      "status",
+                      filters.status === "Open" ? "All" : "Open",
+                    );
+                  }}
+                  active={filters.status === "Open"}
+                />
+
+                <StatCard
+                  label="Resolved reports"
+                  value={statistics.closed}
+                  description={getStatusDescription(
+                    "Closed",
+                    statistics.closed,
+                  )}
+                  icon={CheckCircle2}
+                  tone="emerald"
+                  onClick={() => {
+                    updateFilter(
+                      "status",
+                      filters.status === "Closed" ? "All" : "Closed",
+                    );
+                  }}
+                  active={filters.status === "Closed"}
+                />
+
+                <StatCard
+                  label="High severity"
+                  value={statistics.high}
+                  description={getSeverityDescription("High", statistics.high)}
+                  icon={ShieldAlert}
+                  tone="rose"
+                  onClick={() => {
+                    updateFilter(
+                      "severity",
+                      filters.severity === "High" ? "All" : "High",
+                    );
+                  }}
+                  active={filters.severity === "High"}
+                />
               </div>
-            )}
-          </section>
-        )}
+            </section>
 
-        <section className="mt-7 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 p-4 sm:p-5">
-            <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-base font-semibold tracking-tight text-slate-900">
-                    Submitted bugs
-                  </h2>
+            <section id="analytics" className="mt-8 scroll-mt-24">
+              <SectionHeading
+                eyebrow="Analytics"
+                title="Report health"
+                description="Track reporting activity, resolution performance, severity, and issue categories."
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setShowInsights((value) => !value)}
+                    aria-pressed={showInsights}
+                    className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition ${
+                      showInsights
+                        ? "border-violet-200 bg-violet-50 text-violet-700"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <BarChart3 size={15} />
+                    {showInsights ? "Hide analytics" : "Show analytics"}
+                  </button>
+                }
+              />
 
-                  {hasSearched && (
-                    <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
-                      {formatNumber(filteredBugs.length)}
-                    </span>
+              {showInsights && (
+                <div className="mt-4">
+                  {hasSearched && bugs.length > 0 ? (
+                    <ReportSummaryPanel bugs={bugs} />
+                  ) : (
+                    <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-sm shadow-slate-200/20">
+                      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-50 text-violet-700">
+                        <ChartNoAxesCombined size={22} />
+                      </span>
+                      <h3 className="mt-4 text-base font-semibold text-slate-900">
+                        {hasSearched
+                          ? "No report data to chart yet"
+                          : "Your report analytics start here"}
+                      </h3>
+                      <p className="mt-1.5 max-w-md text-sm leading-6 text-slate-500">
+                        {hasSearched
+                          ? "No reports were found for this email. Submit a report or try another email address."
+                          : "Search using the email address from your bug reports to see activity trends, severity breakdowns, and resolution progress."}
+                      </p>
+                      {!hasSearched && (
+                        <button
+                          type="button"
+                          onClick={() => emailInputRef.current?.focus()}
+                          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-violet-600/20 transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200"
+                        >
+                          <Search size={15} />
+                          Find my reports
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            <section
+              id="reports"
+              className="mt-7 scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/20"
+            >
+              <div className="border-b border-slate-200 p-4 sm:p-5">
+                <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                        Submitted bugs
+                      </h2>
+
+                      {hasSearched && (
+                        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
+                          {formatNumber(filteredBugs.length)}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      {hasSearched
+                        ? getResolutionLabel(filteredBugs)
+                        : "Your bug reports will appear here after you search."}
+                    </p>
+                  </div>
+
+                  {hasSearched && bugs.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleExport}
+                        disabled={sortedBugs.length === 0}
+                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                      >
+                        <FileSpreadsheet size={14} />
+                        Export filtered
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        disabled={!filtersActive}
+                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <FilterX size={14} />
+                        Reset filters
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {hasSearched
-                    ? getResolutionLabel(filteredBugs)
-                    : "Your bug reports will appear here after you search."}
-                </p>
+                {hasSearched && bugs.length > 0 && (
+                  <div className="mt-5">
+                    <FilterToolbar
+                      filters={filters}
+                      setFilter={updateFilter}
+                      categories={categories}
+                      sortBy={sortBy}
+                      setSortBy={(value) => {
+                        setSortBy(value);
+                        setPage(1);
+                      }}
+                      onClear={clearFilters}
+                      active={filtersActive}
+                      onExport={handleExport}
+                      exportDisabled={!sortedBugs.length}
+                    />
+                  </div>
+                )}
+
+                {hasSearched && bugs.length > 0 && (
+                  <div className="mt-3">
+                    <ActiveFilterList
+                      filters={filters}
+                      setFilter={updateFilter}
+                    />
+                  </div>
+                )}
               </div>
 
-              {hasSearched && bugs.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleExport}
-                    disabled={sortedBugs.length === 0}
-                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
-                  >
-                    <FileSpreadsheet size={14} />
-                    Export filtered
-                  </button>
+              <ReportTable
+                bugs={paginatedBugs}
+                compactRows={compactRows}
+                onView={handleOpenBug}
+                loading={loading}
+                loadedEmail={loadedEmail}
+                hasSearched={hasSearched}
+                filtersActive={filtersActive}
+                onClearFilters={clearFilters}
+                onReport={() => {
+                  window.location.href = "/tester/url";
+                }}
+              />
 
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    disabled={!filtersActive}
-                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <FilterX size={14} />
-                    Reset filters
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {hasSearched && bugs.length > 0 && (
-              <div className="mt-5">
-                <FilterToolbar
-                  filters={filters}
-                  setFilter={updateFilter}
-                  categories={categories}
-                  sortBy={sortBy}
-                  setSortBy={(value) => {
-                    setSortBy(value);
-                    setPage(1);
-                  }}
-                  onClear={clearFilters}
-                  active={filtersActive}
-                  onExport={handleExport}
-                  exportDisabled={!sortedBugs.length}
+              {hasSearched && !loading && sortedBugs.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={sortedBugs.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={handlePageSizeChange}
                 />
+              )}
+            </section>
+
+            <footer className="mt-6 flex flex-col justify-between gap-3 pb-5 text-xs text-slate-400 sm:flex-row sm:items-center">
+              <p>AI Bug Tracker · Tester workspace</p>
+
+              <div className="flex flex-wrap items-center gap-4">
+                {lastUpdated && (
+                  <span>Last refreshed {formatDateTime(lastUpdated)}</span>
+                )}
+
+                <Link
+                  href="/tester/url"
+                  className="inline-flex items-center gap-1.5 font-medium text-violet-700 transition hover:text-violet-900"
+                >
+                  Submit another report
+                  <ArrowUpRight size={13} />
+                </Link>
               </div>
-            )}
-
-            {hasSearched && bugs.length > 0 && (
-              <div className="mt-3">
-                <ActiveFilterList filters={filters} setFilter={updateFilter} />
-              </div>
-            )}
+            </footer>
           </div>
-
-          <ReportTable
-            bugs={paginatedBugs}
-            compactRows={compactRows}
-            onView={handleOpenBug}
-            loading={loading}
-            loadedEmail={loadedEmail}
-            hasSearched={hasSearched}
-            filtersActive={filtersActive}
-            onClearFilters={clearFilters}
-            onReport={() => {
-              window.location.href = "/tester/url";
-            }}
-          />
-
-          {hasSearched && !loading && sortedBugs.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              totalItems={sortedBugs.length}
-              onPageChange={setPage}
-              onPageSizeChange={handlePageSizeChange}
-            />
-          )}
-        </section>
-
-        <footer className="mt-6 flex flex-col justify-between gap-3 pb-5 text-xs text-slate-400 sm:flex-row sm:items-center">
-          <p>AI Bug Tracker · Tester workspace</p>
-
-          <div className="flex flex-wrap items-center gap-4">
-            {lastUpdated && (
-              <span>Last refreshed {formatDateTime(lastUpdated)}</span>
-            )}
-
-            <Link
-              href="/tester/url"
-              className="inline-flex items-center gap-1.5 font-medium text-violet-700 transition hover:text-violet-900"
-            >
-              Submit another report
-              <ArrowUpRight size={13} />
-            </Link>
-          </div>
-        </footer>
+        </div>
+        <BugDetails bug={selectedBug} onClose={handleCloseBug} />
       </div>
-
-      <BugDetails bug={selectedBug} onClose={handleCloseBug} />
     </main>
   );
 }
