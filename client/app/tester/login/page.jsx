@@ -12,6 +12,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OtpForm from "./OtpForm";
+import { Mail } from "lucide-react";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -169,6 +170,11 @@ export default function TesterLoginPage() {
               <ArrowLeft size={18} />
               Back
             </button>
+            <div className="mb-5 flex justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-100 bg-purple-50 text-purple-700">
+                <Mail size={26} strokeWidth={1.8} />
+              </div>
+            </div>
             <header className="mb-8 text-center">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                 Tester{" "}
