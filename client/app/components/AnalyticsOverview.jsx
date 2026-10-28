@@ -183,3 +183,232 @@ function ResolutionChart({ total, resolved }) {
     </section>
   );
 }
+function NotificationWidget({ notifications = [], onDismiss, onViewAll }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const visibleNotifications = expanded
+    ? notifications
+    : notifications.slice(0, 3);
+
+  return (
+    <section className="rounded-[22px] border border-white bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">
+            Notifications
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">Recent report updates</p>
+        </div>
+
+        <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+          {notifications.filter((item) => item.unread).length}
+        </span>
+      </div>
+
+      <div className="mt-4 divide-y divide-slate-100">
+        {visibleNotifications.length ? (
+          visibleNotifications.map((item) => (
+            <div key={item.id} className="flex gap-3 py-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600">
+                {item.type === "resolved" ? (
+                  <CheckCircle2 size={16} />
+                ) : item.type === "priority" ? (
+                  <ShieldAlert size={16} />
+                ) : (
+                  <Bell size={16} />
+                )}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-800">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                  {item.message}
+                </p>
+                <p className="mt-1 text-[10px] text-slate-400">{item.time}</p>
+              </div>
+
+              {onDismiss && (
+                <button
+                  type="button"
+                  onClick={() => onDismiss(item.id)}
+                  aria-label={`Dismiss ${item.title}`}
+                  className="h-7 rounded-lg p-1 text-slate-400 hover:bg-slate-100"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="py-8 text-center text-xs text-slate-500">
+            You're all caught up.
+          </p>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          setExpanded((value) => !value);
+          onViewAll?.();
+        }}
+        className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-medium text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+      >
+        {expanded ? "Show less" : "View all notifications"}
+      </button>
+    </section>
+  );
+}
+
+export default function AnalyticsOverview({
+  reports = [],
+  weeklyActivity = [],
+  notifications = [],
+  loading = false,
+  onDismissNotification,
+  onViewAllNotifications,
+}) {
+  const stats = useMemo(() => {
+    const resolved = reports.filter((report) =>
+      ["resolved", "closed", "fixed", "completed"].includes(
+        String(report.status || "").toLowerCase(),
+      ),
+    ).length;
+
+    const open = reports.filter(
+      (report) =>
+        ![
+          "resolved",
+          "closed",
+          "fixed",
+          "completed",
+          "rejected",
+          "duplicate",
+        ].includes(String(report.status || "").toLowerCase()),
+    ).length;
+
+    const high = reports.filter((report) =>
+      ["high", "critical", "urgent", "blocker"].includes(
+        String(report.severity || "").toLowerCase(),
+      ),
+    ).length;
+
+    return {
+      total: reports.length,
+      open,
+      resolved,
+      high,
+    };
+  }, [reports]);
+
+  const cards = [
+    {
+      title: "Total reports",
+      value: stats.total,
+      note: "All submitted reports",
+      icon: Layers3,
+      tone: "slate",
+      featured: true,
+    },
+    {
+      title: "Open reports",
+      value: stats.open,
+      note: "Awaiting attention",
+      icon: Clock3,
+      tone: "violet",
+    },
+    {
+      title: "Resolved reports",
+      value: stats.resolved,
+      note: "Successfully resolved",
+      icon: CheckCircle2,
+      tone: "green",
+    },
+    {
+      title: "High severity",
+      value: stats.high,
+      note: "Priority issues",
+      icon: ShieldAlert,
+      tone: "rose",
+    },
+  ];
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-end justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-600">
+            Overview
+          </p>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900">
+            Report analytics
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Metrics, activity, and notifications for your bug reports.
+          </p>
+        </div>
+
+        <span className="text-xs text-slate-400">
+          {loading ? "Refreshing..." : "Live dashboard data"}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => (
+          <MetricCard key={card.title} {...card} />
+        ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <WeeklyActivityChart data={weeklyActivity} />
+        </div>
+        <ResolutionChart total={stats.total} resolved={stats.resolved} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-[22px] border border-white bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold">Severity overview</h2>
+
+          {[
+            { label: "High severity", value: stats.high, color: "bg-rose-500" },
+            {
+              label: "Open reports",
+              value: stats.open,
+              color: "bg-violet-500",
+            },
+            {
+              label: "Resolved reports",
+              value: stats.resolved,
+              color: "bg-emerald-500",
+            },
+          ].map((item) => (
+            <div key={item.label} className="mt-5">
+              <div className="mb-2 flex justify-between text-xs">
+                <span className="text-slate-600">{item.label}</span>
+                <span className="text-slate-500">{item.value}</span>
+              </div>
+
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full ${item.color}`}
+                  style={{
+                    width: `${stats.total ? (item.value / stats.total) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <NotificationWidget
+          notifications={notifications}
+          onDismiss={onDismissNotification}
+          onViewAll={onViewAllNotifications}
+        />
+      </div>
+    </section>
+  );
+}
