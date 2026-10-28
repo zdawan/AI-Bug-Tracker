@@ -16,6 +16,8 @@ import {
   LogOut,
   BarChart3,
   Bell,
+  Bookmark,
+  BookmarkPlus,
   Bug,
   Calendar,
   CalendarDays,
@@ -66,6 +68,7 @@ import {
   Timer,
   TrendingDown,
   TrendingUp,
+  Trash2,
   X,
   Zap,
 } from "lucide-react";
@@ -169,6 +172,88 @@ const DEFAULT_PREFERENCES = {
   compactRows: false,
   showSummary: true,
 };
+
+const SAVED_VIEWS_STORAGE_PREFIX = "tester-dashboard-saved-views-v1";
+
+const QUICK_VIEWS = [
+  {
+    id: "all",
+    label: "All reports",
+    icon: Layers3,
+    filters: createEmptyQuickViewFilters(),
+  },
+  {
+    id: "open",
+    label: "Open issues",
+    icon: Clock3,
+    filters: { ...createEmptyQuickViewFilters(), status: "Open" },
+  },
+  {
+    id: "high",
+    label: "High severity",
+    icon: ShieldAlert,
+    filters: { ...createEmptyQuickViewFilters(), severity: "High" },
+  },
+  {
+    id: "recent",
+    label: "Last 7 days",
+    icon: CalendarDays,
+    filters: { ...createEmptyQuickViewFilters(), dateRange: "week" },
+  },
+];
+
+function createEmptyQuickViewFilters() {
+  return {
+    search: "",
+    status: "All",
+    severity: "All",
+    category: "All",
+    dateRange: "all",
+  };
+}
+
+function normalizeSavedViews(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(
+      (view) =>
+        view &&
+        typeof view.id === "string" &&
+        typeof view.name === "string" &&
+        view.filters &&
+        typeof view.filters === "object",
+    )
+    .map((view) => ({
+      id: view.id,
+      name: view.name.trim().slice(0, 40),
+      filters: {
+        search:
+          typeof view.filters.search === "string"
+            ? view.filters.search.slice(0, 200)
+            : "",
+        status: ["All", "Open", "Closed"].includes(view.filters.status)
+          ? view.filters.status
+          : "All",
+        severity: ["All", "High", "Medium", "Low"].includes(
+          view.filters.severity,
+        )
+          ? view.filters.severity
+          : "All",
+        category:
+          typeof view.filters.category === "string"
+            ? view.filters.category.slice(0, 100)
+            : "All",
+        dateRange: ["all", "today", "week", "month"].includes(
+          view.filters.dateRange,
+        )
+          ? view.filters.dateRange
+          : "all",
+      },
+    }))
+    .filter((view) => view.name)
+    .slice(0, 12);
+}
 
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -2243,6 +2328,174 @@ function MobileReportCard({ bug, onView }) {
   );
 }
 
+function SavedViewsToolbar({
+  bugs,
+  activeViewId,
+  savedViews,
+  canSave,
+  onApply,
+  onSave,
+  onDelete,
+}) {
+  const [isNamingView, setIsNamingView] = useState(false);
+  const [viewName, setViewName] = useState("");
+
+  const saveView = (event) => {
+    event.preventDefault();
+    const saved = onSave(viewName);
+    if (saved) {
+      setViewName("");
+      setIsNamingView(false);
+    }
+  };
+
+  return (
+    <section
+      aria-label="Saved report views"
+      className="space-y-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Bookmark size={15} className="text-violet-600" />
+          <h3 className="text-sm font-semibold text-slate-800">
+            Smart views
+          </h3>
+          <span className="text-xs text-slate-500">
+            Filter reports in one click
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsNamingView((current) => !current)}
+          disabled={!canSave || savedViews.length >= 12}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent"
+        >
+          <BookmarkPlus size={14} />
+          Save current view
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {QUICK_VIEWS.map((view) => {
+          const Icon = view.icon;
+          const count = filterBugs(bugs, view.filters).length;
+          const isActive = activeViewId === view.id;
+
+          return (
+            <button
+              key={view.id}
+              type="button"
+              onClick={() => onApply(view.id, view.filters)}
+              aria-pressed={isActive}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                isActive
+                  ? "border-violet-300 bg-white text-violet-700 shadow-sm"
+                  : "border-slate-200 bg-white/70 text-slate-600 hover:border-violet-200 hover:text-violet-700"
+              }`}
+            >
+              <Icon size={14} />
+              {view.label}
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-[10px] tabular-nums ${
+                  isActive
+                    ? "bg-violet-100 text-violet-700"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {formatNumber(count)}
+              </span>
+            </button>
+          );
+        })}
+
+        {savedViews.map((view) => {
+          const count = filterBugs(bugs, view.filters).length;
+          const isActive = activeViewId === view.id;
+
+          return (
+            <div
+              key={view.id}
+              className={`inline-flex items-center rounded-lg border transition ${
+                isActive
+                  ? "border-violet-300 bg-white text-violet-700 shadow-sm"
+                  : "border-slate-200 bg-white/70 text-slate-600 hover:border-violet-200"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => onApply(view.id, view.filters)}
+                aria-pressed={isActive}
+                className="inline-flex items-center gap-2 py-2 pl-3 pr-2 text-xs font-medium"
+              >
+                <Bookmark size={13} />
+                <span className="max-w-36 truncate">{view.name}</span>
+                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] tabular-nums text-slate-500">
+                  {formatNumber(count)}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(view.id)}
+                aria-label={`Delete saved view ${view.name}`}
+                title={`Delete ${view.name}`}
+                className="mr-1 grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {isNamingView && (
+        <form
+          onSubmit={saveView}
+          className="flex flex-col gap-2 border-t border-slate-200 pt-3 sm:flex-row"
+        >
+          <label htmlFor="saved-view-name" className="sr-only">
+            Name this saved view
+          </label>
+          <input
+            id="saved-view-name"
+            autoFocus
+            maxLength={40}
+            required
+            value={viewName}
+            onChange={(event) => setViewName(event.target.value)}
+            placeholder="e.g. Open checkout issues"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+          />
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-3 text-xs font-semibold text-white transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200"
+            >
+              <Check size={14} />
+              Save view
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsNamingView(false);
+                setViewName("");
+              }}
+              className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100"
+              aria-label="Cancel saving view"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </form>
+      )}
+      {!canSave && (
+        <p className="text-xs text-slate-500">
+          Search for reports before saving a custom view.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function FilterToolbar({
   filters,
   setFilter,
@@ -2802,6 +3055,9 @@ export default function TesterDashboardPage() {
   const [showInsights, setShowInsights] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [savedViews, setSavedViews] = useState([]);
+  const [savedViewsEmail, setSavedViewsEmail] = useState("");
+  const [activeViewId, setActiveViewId] = useState("all");
   const [selectedBug, setSelectedBug] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -2838,19 +3094,122 @@ export default function TesterDashboardPage() {
 
   const filtersActive = areFiltersActive(filters);
 
+  const scopedSavedViews =
+    savedViewsEmail === loadedEmail ? savedViews : [];
+
   const updateFilter = useCallback((key, value) => {
     setFilters((current) => ({
       ...current,
       [key]: value,
     }));
 
+    setActiveViewId("custom");
     setPage(1);
   }, []);
 
   const clearFilters = useCallback(() => {
     setFilters(createEmptyFilters());
+    setActiveViewId("all");
     setPage(1);
   }, []);
+
+  const applyReportView = useCallback((viewId, viewFilters) => {
+    setFilters({ ...createEmptyFilters(), ...viewFilters });
+    setActiveViewId(viewId);
+    setPage(1);
+  }, []);
+
+  const saveCurrentView = useCallback(
+    (requestedName) => {
+      const name = normalizeString(requestedName).slice(0, 40);
+
+      if (!name) {
+        setError("Enter a name for the saved view.");
+        return false;
+      }
+
+      if (scopedSavedViews.length >= 12) {
+        setError("You can save up to 12 custom report views.");
+        return false;
+      }
+
+      if (
+        scopedSavedViews.some(
+          (view) => view.name.toLowerCase() === name.toLowerCase(),
+        )
+      ) {
+        setError("A saved view with that name already exists.");
+        return false;
+      }
+
+      const newView = {
+        id: window.crypto?.randomUUID?.() || `view-${Date.now()}`,
+        name,
+        filters: { ...filters },
+      };
+      const nextViews = [...scopedSavedViews, newView];
+      const storageKey = `${SAVED_VIEWS_STORAGE_PREFIX}:${loadedEmail}`;
+
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(nextViews));
+      } catch {
+        setError("Could not save this view in browser storage.");
+        return false;
+      }
+
+      setSavedViews(nextViews);
+      setSavedViewsEmail(loadedEmail);
+      setActiveViewId(newView.id);
+      setError("");
+      return true;
+    },
+    [filters, loadedEmail, scopedSavedViews],
+  );
+
+  const deleteSavedView = useCallback(
+    (viewId) => {
+      const nextViews = scopedSavedViews.filter((view) => view.id !== viewId);
+      const storageKey = `${SAVED_VIEWS_STORAGE_PREFIX}:${loadedEmail}`;
+
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(nextViews));
+      } catch {
+        setError("Could not update saved views in browser storage.");
+        return;
+      }
+
+      setSavedViews(nextViews);
+      if (activeViewId === viewId) setActiveViewId("all");
+      setError("");
+    },
+    [activeViewId, loadedEmail, scopedSavedViews],
+  );
+
+  useEffect(() => {
+    setActiveViewId("all");
+
+    if (!loadedEmail) {
+      setSavedViews([]);
+      setSavedViewsEmail("");
+      return;
+    }
+
+    const storageKey = `${SAVED_VIEWS_STORAGE_PREFIX}:${loadedEmail}`;
+    setSavedViews([]);
+    setSavedViewsEmail("");
+
+    try {
+      const storedViews = window.localStorage.getItem(storageKey);
+      setSavedViews(
+        storedViews ? normalizeSavedViews(JSON.parse(storedViews)) : [],
+      );
+    } catch {
+      setError("Could not load saved views from browser storage.");
+      setSavedViews([]);
+    }
+
+    setSavedViewsEmail(loadedEmail);
+  }, [loadedEmail]);
 
   const cancelPendingRequest = useCallback(() => {
     if (requestController.current) {
@@ -3499,6 +3858,20 @@ export default function TesterDashboardPage() {
 
                 {hasSearched && bugs.length > 0 && (
                   <div className="mt-5">
+                    <SavedViewsToolbar
+                      bugs={bugs}
+                      activeViewId={activeViewId}
+                      savedViews={scopedSavedViews}
+                      canSave={savedViewsEmail === loadedEmail}
+                      onApply={applyReportView}
+                      onSave={saveCurrentView}
+                      onDelete={deleteSavedView}
+                    />
+                  </div>
+                )}
+
+                {hasSearched && bugs.length > 0 && (
+                  <div className="mt-4">
                     <FilterToolbar
                       filters={filters}
                       setFilter={updateFilter}
