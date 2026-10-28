@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import OtpForm from "./OtpForm";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -67,57 +68,13 @@ export default function TesterLoginPage() {
     }
   };
 
-  const sendOtp = async (event) => {
-    event?.preventDefault();
+  const sendOtp = (event) => {
+    event.preventDefault();
 
-    if (isSending || resendCooldown > 0) return;
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const validationError = validateEmail(normalizedEmail);
-
-    if (validationError) {
-      setEmailError(validationError);
-      toast.error(validationError);
-      return;
-    }
-
+    // Skip email validation and email delivery in test mode.
+    setEmail(email.trim().toLowerCase());
     setEmailError("");
-    setIsSending(true);
-
-    try {
-      const response = await fetch(`${API_URL}/api/testers/send-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: normalizedEmail,
-        }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Unable to send the verification code."
-        );
-      }
-
-      setEmail(normalizedEmail);
-      setOtp("");
-      setStep("otp");
-      setResendCooldown(30);
-
-      toast.success(
-        data.message || "Verification code sent to your email."
-      );
-    } catch (error) {
-      toast.error(
-        error.message || "Something went wrong. Please try again."
-      );
-    } finally {
-      setIsSending(false);
-    }
+    setStep("otp");
   };
 
   const verifyOtp = async (event) => {
@@ -148,29 +105,22 @@ export default function TesterLoginPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Invalid or expired verification code."
+          data.message || "Invalid or expired verification code.",
         );
       }
 
       if (!data.token) {
-        throw new Error(
-          "The server did not return an authentication token."
-        );
+        throw new Error("The server did not return an authentication token.");
       }
 
       sessionStorage.setItem("testerToken", data.token);
-      sessionStorage.setItem(
-        "testerEmail",
-        email.trim().toLowerCase()
-      );
+      sessionStorage.setItem("testerEmail", email.trim().toLowerCase());
 
       toast.success("Email verified successfully.");
 
       router.push("/tester/url");
     } catch (error) {
-      toast.error(
-        error.message || "Verification failed. Please try again."
-      );
+      toast.error(error.message || "Verification failed. Please try again.");
     } finally {
       setIsVerifying(false);
     }
@@ -219,25 +169,11 @@ export default function TesterLoginPage() {
               </h1>
 
               <p className="mx-auto mt-4 max-w-[340px] text-base leading-7 text-slate-600">
-                Sign in with your email. We&apos;ll send you a one-time
-                verification code.
+                Sign in with your email to access the tester workspace.
               </p>
             </header>
 
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-
-                const normalizedEmail = email.trim().toLowerCase();
-
-                sessionStorage.setItem("testerEmail", normalizedEmail);
-                sessionStorage.setItem("testerToken", "TEST_MODE");
-
-                router.push("/tester/url");
-              }}
-              noValidate
-              className="space-y-5"
-            >
+            <form onSubmit={sendOtp} noValidate className="space-y-5">
               <div className="space-y-2">
                 <label
                   htmlFor="tester-email"
@@ -253,7 +189,7 @@ export default function TesterLoginPage() {
                   autoFocus
                   placeholder="you@example.com"
                   value={email}
-                  onChange={handleEmailChange}
+                  onChange={(event) => setEmail(event.target.value)}
                   className="h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
                 />
               </div>
@@ -272,96 +208,13 @@ export default function TesterLoginPage() {
                 size={20}
                 className="mt-0.5 shrink-0 text-purple-700"
               />
-
               <p className="text-sm leading-6 text-slate-600">
-                No password required. Verify your email to access the tester
-                workspace.
+                Temporary test mode is enabled. No email will be sent.
               </p>
             </div>
           </>
         ) : (
-          <>
-            <header className="mb-8 text-center">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Verify your{" "}
-                <span className="font-normal italic [font-family:Georgia,serif]">
-                  email
-                </span>
-              </h1>
-
-              <p className="mx-auto mt-4 max-w-[340px] text-base leading-7 text-slate-600">
-                Enter the 6-digit verification code sent to
-              </p>
-
-              <p className="mt-2 break-all text-sm font-semibold text-slate-900">
-                {email}
-              </p>
-            </header>
-
-            <form onSubmit={verifyOtp} className="space-y-5">
-              <div className="space-y-2">
-                <label
-                  htmlFor="tester-otp"
-                  className="block text-sm font-semibold text-slate-800"
-                >
-                  Verification code
-                </label>
-
-                <input
-                  id="tester-otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  autoFocus
-                  required
-                  maxLength={6}
-                  pattern="[0-9]{6}"
-                  placeholder="000000"
-                  value={otp}
-                  onChange={(event) =>
-                    setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
-                  className="h-16 w-full rounded-2xl border border-slate-300 bg-white text-center text-2xl font-semibold tracking-[0.55em] text-slate-950 outline-none transition placeholder:text-slate-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isVerifying || otp.length !== 6}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isVerifying ? "Verifying..." : "Verify and continue"}
-                {!isVerifying && <ArrowRight size={19} />}
-              </button>
-            </form>
-
-            <div className="mt-6 flex flex-col items-center gap-4 text-sm">
-              <button
-                type="button"
-                onClick={sendOtp}
-                disabled={isSending || resendCooldown > 0}
-                className="inline-flex cursor-pointer items-center gap-2 font-semibold text-purple-700 hover:text-purple-900 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <RefreshCw size={15} />
-
-                {isSending
-                  ? "Sending code..."
-                  : resendCooldown > 0
-                    ? `Resend code in ${resendCooldown}s`
-                    : "Resend verification code"}
-              </button>
-
-              <button
-                type="button"
-                onClick={changeEmail}
-                disabled={isVerifying || isSending}
-                className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <ArrowLeft size={16} />
-                Change email address
-              </button>
-            </div>
-          </>
+          <OtpForm email={email} onBack={() => setStep("email")} />
         )}
 
         <footer className="mt-9 border-t border-slate-100 pt-6 text-center text-sm leading-6 text-slate-500">
