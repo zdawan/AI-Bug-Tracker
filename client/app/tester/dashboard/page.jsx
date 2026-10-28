@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   ArrowUp,
   ArrowUpRight,
+  UserRound,
   BarChart3,
   Bell,
   Bug,
@@ -1251,13 +1252,271 @@ function ResolutionOverview({ statistics }) {
   );
 }
 
-function ReportSummaryPanel({ bugs }) {
-  const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
+function ReportsTrendChart({ bugs }) {
+  const trend = useMemo(() => {
+    const today = new Date();
+    const days = [];
+
+    for (let offset = 6; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - offset);
+
+      days.push({
+        key: date.toISOString().slice(0, 10),
+        date,
+        label: date.toLocaleDateString("en-IN", { weekday: "short" }),
+        count: 0,
+      });
+    }
+
+    const counts = new Map(days.map((day) => [day.key, day]));
+
+    bugs.forEach((bug) => {
+      const date = safeDate(bug?.createdAt);
+      if (!date) return;
+
+      const key = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+        .toISOString()
+        .slice(0, 10);
+
+      const bucket = counts.get(key);
+      if (bucket) bucket.count += 1;
+    });
+
+    return days;
+  }, [bugs]);
+
+  const maxCount = Math.max(1, ...trend.map((day) => day.count));
+  const total = trend.reduce((sum, day) => sum + day.count, 0);
+  const activeDays = trend.filter((day) => day.count > 0).length;
 
   return (
-    <section className="grid gap-4 lg:grid-cols-2">
-      <SeverityDistribution statistics={statistics} />
-      <ResolutionOverview statistics={statistics} />
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Reporting activity
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            New reports created over the last 7 days
+          </p>
+        </div>
+        <div className="rounded-xl bg-violet-50 px-3 py-2 text-right">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-violet-600">
+            7-day total
+          </p>
+          <p className="mt-0.5 text-xl font-semibold tracking-tight text-violet-800">
+            {formatNumber(total)}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className="mt-5 grid grid-cols-7 gap-2 sm:gap-3"
+        role="img"
+        aria-label={`Daily report counts for the last seven days. ${total} reports across ${activeDays} active days.`}
+      >
+        {trend.map((day) => {
+          const height =
+            day.count === 0 ? 5 : Math.max(12, (day.count / maxCount) * 100);
+
+          return (
+            <div key={day.key} className="flex min-w-0 flex-col items-center">
+              <span className="mb-2 text-xs font-semibold text-slate-700">
+                {day.count}
+              </span>
+              <div className="flex h-28 w-full items-end justify-center rounded-lg bg-slate-50 px-1.5 pb-1.5 sm:h-32">
+                <div
+                  className={`w-full max-w-8 rounded-md transition-all duration-300 ${
+                    day.count > 0
+                      ? "bg-gradient-to-t from-violet-600 to-violet-400"
+                      : "bg-slate-200"
+                  }`}
+                  style={{ height: `${height}%` }}
+                  title={`${day.label}: ${day.count} report${day.count === 1 ? "" : "s"}`}
+                />
+              </div>
+              <span className="mt-2 text-[11px] font-medium text-slate-500">
+                {day.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-violet-500" />
+          Reports by day
+        </span>
+        <span>{activeDays} of 7 days with activity</span>
+      </div>
+    </section>
+  );
+}
+
+function CategoryBreakdown({ bugs }) {
+  const categories = useMemo(() => {
+    const counts = new Map();
+
+    bugs.forEach((bug) => {
+      const label = normalizeString(bug?.category) || "Uncategorized";
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+
+    return [...counts.entries()]
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [bugs]);
+
+  const total = bugs.length || 1;
+  const palette = [
+    "bg-violet-500",
+    "bg-sky-500",
+    "bg-emerald-500",
+    "bg-amber-500",
+    "bg-rose-500",
+  ];
+
+  return (
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Top categories
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            Where reported issues are concentrated
+          </p>
+        </div>
+        <Layers3 size={18} className="text-slate-400" />
+      </div>
+
+      {categories.length ? (
+        <div className="mt-5 space-y-4">
+          {categories.map((category, index) => (
+            <div key={category.label}>
+              <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 truncate font-medium text-slate-700">
+                  {category.label}
+                </span>
+                <span className="shrink-0 tabular-nums text-slate-500">
+                  {category.count} ·{" "}
+                  {formatPercentage((category.count / total) * 100)}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all ${palette[index]}`}
+                  style={{ width: `${(category.count / total) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-5 flex min-h-28 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center text-xs text-slate-500">
+          Category analytics will appear when reports are available.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReportSummaryPanel({ bugs }) {
+  const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
+  const averageReports = bugs.length
+    ? bugs.reduce((sum, bug) => sum + getBugReports(bug), 0) / bugs.length
+    : 0;
+
+  return (
+    <section className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              Resolution rate
+            </span>
+            <span className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+              <CheckCircle2 size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {formatPercentage(statistics.resolutionRate)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {statistics.closed} of {statistics.total} reports resolved
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              Open workload
+            </span>
+            <span className="rounded-lg bg-violet-50 p-2 text-violet-600">
+              <Clock3 size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {formatNumber(statistics.open)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {formatPercentage(
+              statistics.total ? (statistics.open / statistics.total) * 100 : 0,
+            )}{" "}
+            of all reports
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              High severity
+            </span>
+            <span className="rounded-lg bg-rose-50 p-2 text-rose-600">
+              <ShieldAlert size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {formatNumber(statistics.high)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {formatPercentage(statistics.highSeverityRate)} of all reports
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">
+              Avg. report count
+            </span>
+            <span className="rounded-lg bg-sky-50 p-2 text-sky-600">
+              <Layers3 size={16} />
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+            {averageReports.toFixed(1)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Average reports per unique bug
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <ReportsTrendChart bugs={bugs} />
+        </div>
+        <CategoryBreakdown bugs={bugs} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SeverityDistribution statistics={statistics} />
+        <ResolutionOverview statistics={statistics} />
+      </div>
     </section>
   );
 }
@@ -1936,71 +2195,89 @@ function ReportTable({
 
 function DashboardHeader({ onRefresh, refreshing, onExport, canExport }) {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[72px] w-full max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/70 bg-[#f7f8fa]/95 backdrop-blur-xl">
+      <div className="mx-auto flex min-h-[76px] w-full max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="group inline-flex min-w-0 items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
-          aria-label="Go to Home"
+          className="hidden shrink-0 items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold tracking-tight text-violet-700 sm:inline-flex"
+          aria-label="Go to home"
         >
-          <ArrowLeft
-            size={17}
-            strokeWidth={1.9}
-            className="shrink-0 transition-transform group-hover:-translate-x-0.5"
-          />
-          <span>Home</span>
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-violet-600 text-white shadow-sm shadow-violet-600/20">
+            <Bug size={16} />
+          </span>
+          <span>
+            bug<span className="text-slate-900">tracker</span>
+          </span>
         </Link>
 
-        <nav
-          aria-label="Dashboard actions"
-          className="flex shrink-0 items-center gap-2 sm:gap-2.5"
-        >
+        <div className="relative min-w-0 flex-1 sm:max-w-[390px]">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="search"
+            aria-label="Search dashboard"
+            placeholder="Search reports, projects..."
+            onKeyDown={(event) => {
+              if (event.key === "/" && event.target.value === "") {
+                event.preventDefault();
+              }
+            }}
+            className="h-11 w-full rounded-xl border border-white bg-white px-10 text-sm text-slate-700 shadow-sm shadow-slate-900/[0.03] outline-none transition placeholder:text-slate-400 hover:border-slate-200 focus:border-violet-300 focus:ring-4 focus:ring-violet-100/70"
+          />
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={onRefresh}
             disabled={refreshing}
-            aria-busy={refreshing}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/[0.02] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label={refreshing ? "Refreshing reports" : "Refresh reports"}
+            title={refreshing ? "Refreshing…" : "Refresh reports"}
+            className="grid h-10 w-10 place-items-center rounded-xl border border-white bg-white text-slate-600 shadow-sm shadow-slate-900/[0.03] transition hover:border-slate-200 hover:bg-slate-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:opacity-60"
           >
-            <RefreshCw
-              size={15}
-              strokeWidth={1.9}
-              className={refreshing ? "animate-spin" : ""}
-            />
-            <span className="hidden sm:inline">
-              {refreshing ? "Refreshing…" : "Refresh"}
-            </span>
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
           </button>
+          <button
+            type="button"
+            aria-label="Notifications"
+            title="Notifications"
+            className="relative grid h-10 w-10 place-items-center rounded-xl border border-white bg-white text-slate-600 shadow-sm shadow-slate-900/[0.03] transition hover:border-slate-200 hover:bg-slate-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+          >
+            <Bell size={17} />
+            <span className="absolute right-2.5 top-2 h-1.5 w-1.5 rounded-full bg-violet-500 ring-2 ring-white" />
+          </button>
+
+          <div className="ml-1 hidden h-10 items-center gap-2.5 rounded-xl border border-white bg-white py-1 pl-1 pr-3 shadow-sm shadow-slate-900/[0.03] sm:flex">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-500 text-white">
+              <UserRound size={16} />
+            </span>
+            <span className="max-w-[120px]">
+              <span className="block truncate text-xs font-semibold text-slate-800">
+                Tester workspace
+              </span>
+              <span className="block text-[10px] text-slate-400">
+                Bug tracking
+              </span>
+            </span>
+            <ChevronDown size={14} className="ml-1 text-slate-400" />
+          </div>
 
           <button
             type="button"
             onClick={onExport}
             disabled={!canExport}
-            className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 shadow-sm shadow-slate-900/[0.02] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-45 sm:inline-flex"
+            className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45 lg:inline-flex"
           >
-            <FileDown size={15} strokeWidth={1.9} />
-            <span>Export CSV</span>
+            <FileDown size={15} />
+            Export
           </button>
-
-          <Link
-            href="/tester/url"
-            className="group inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-violet-600 px-3.5 text-sm font-semibold text-white shadow-sm shadow-violet-600/20 transition hover:-translate-y-px hover:bg-violet-700 hover:shadow-md hover:shadow-violet-600/25 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 active:translate-y-0 sm:px-4"
-          >
-            <Bug size={16} strokeWidth={2} />
-            <span className="hidden sm:inline">Report a bug</span>
-            <span className="sm:hidden">Report</span>
-            <ChevronRight
-              size={14}
-              strokeWidth={2.2}
-              className="hidden opacity-70 transition-transform group-hover:translate-x-0.5 md:block"
-            />
-          </Link>
-        </nav>
+        </div>
       </div>
     </header>
   );
 }
-
 export default function TesterDashboardPage() {
   const [email, setEmail] = useState("");
   const [loadedEmail, setLoadedEmail] = useState("");
@@ -2230,23 +2507,29 @@ export default function TesterDashboardPage() {
       <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-              <span>Workspace</span>
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+              <span>WORKSPACE</span>
               <ChevronRight size={13} />
-              <span className="text-slate-700">Tester dashboard</span>
+              <span className="text-violet-700">TESTER DASHBOARD</span>
             </div>
 
-            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-[2.15rem]">
-              My reports
+            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.15rem]">
+              Dashboard
             </h1>
 
-            <p className="mt-2 max-w-2xl text-[14px] leading-6 text-slate-500">
-              Track your submitted bugs, check their current status, and review
-              report details.
+            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
+              A quick view of your bug reports and team updates.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <Link
+              href="/tester/url"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm shadow-violet-600/20 transition hover:-translate-y-px hover:bg-violet-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200"
+            >
+              <Bug size={15} />
+              Report a bug
+            </Link>
             {lastUpdated && (
               <span className="mr-1">
                 Updated {formatRelativeDate(lastUpdated)}
@@ -2444,26 +2727,34 @@ export default function TesterDashboardPage() {
           </div>
         </section>
 
-        {showInsights && hasSearched && bugs.length > 0 && (
+        {hasSearched && bugs.length > 0 && (
           <section className="mt-6">
             <SectionHeading
-              eyebrow="Insights"
+              eyebrow="Analytics"
               title="Report health"
-              description="A quick view of severity and resolution across your submissions."
+              description="Track reporting activity, resolution performance, severity, and issue categories."
               action={
                 <button
                   type="button"
-                  onClick={() => setShowInsights(false)}
-                  className="text-xs font-medium text-slate-500 hover:text-slate-900"
+                  onClick={() => setShowInsights((value) => !value)}
+                  aria-pressed={showInsights}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                    showInsights
+                      ? "border-violet-200 bg-violet-50 text-violet-700"
+                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
                 >
-                  Hide insights
+                  <BarChart3 size={14} />
+                  {showInsights ? "Hide analytics" : "Show analytics"}
                 </button>
               }
             />
 
-            <div className="mt-4">
-              <ReportSummaryPanel bugs={bugs} />
-            </div>
+            {showInsights && (
+              <div className="mt-4">
+                <ReportSummaryPanel bugs={bugs} />
+              </div>
+            )}
           </section>
         )}
 
