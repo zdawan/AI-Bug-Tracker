@@ -761,23 +761,23 @@ function StatCard({
     <Component
       type={onClick ? "button" : undefined}
       onClick={onClick}
-      className={`min-w-0 rounded-xl border bg-white p-4 text-left transition sm:p-5 ${
+      className={`min-w-0 rounded-2xl border bg-white p-4 text-left transition-all duration-200 sm:p-5 ${
         active
-          ? "border-violet-300 ring-2 ring-violet-100"
-          : "border-slate-200 hover:border-slate-300"
+          ? "border-violet-300 bg-violet-50/30 shadow-sm ring-1 ring-violet-100"
+          : "border-slate-200/90 hover:border-slate-300 hover:shadow-sm"
       } ${onClick ? "cursor-pointer hover:shadow-sm" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+          <p className="mt-3 text-[2rem] font-semibold tracking-[-0.04em] text-slate-950">
             {formatNumber(value)}
           </p>
         </div>
 
         {Icon && (
           <span
-            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${style.accent} ${style.icon}`}
+            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.accent} ${style.icon}`}
           >
             <Icon size={18} strokeWidth={1.8} />
           </span>
@@ -785,7 +785,9 @@ function StatCard({
       </div>
 
       {description && (
-        <p className="mt-3 text-xs leading-5 text-slate-500">{description}</p>
+        <p className="mt-3 text-[12px] leading-5 text-slate-500">
+          {description}
+        </p>
       )}
     </Component>
   );
@@ -940,7 +942,7 @@ function SearchInput({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+        className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-9 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
       />
 
       {value && (
@@ -977,7 +979,7 @@ function SelectField({ value, onChange, options, label, icon: Icon }) {
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pr-8 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 ${
+        className={`h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white py-2 pr-8 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 ${
           Icon ? "pl-9" : "pl-3"
         }`}
       >
@@ -1146,7 +1148,7 @@ function SeverityDistribution({ statistics }) {
   ];
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">
@@ -1197,7 +1199,7 @@ function SeverityDistribution({ statistics }) {
 
 function ResolutionOverview({ statistics }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">
@@ -1214,7 +1216,7 @@ function ResolutionOverview({ statistics }) {
 
       <div className="mt-5">
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-semibold tracking-tight text-slate-950">
+          <span className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-950">
             {formatPercentage(statistics.resolutionRate)}
           </span>
 
@@ -1327,7 +1329,7 @@ function BugDetails({ bug, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="bug-details-title"
-        className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-slate-200 bg-white shadow-2xl outline-none sm:rounded-2xl"
+        className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-slate-200/80 bg-white shadow-[0_24px_80px_-24px_rgba(15,23,42,0.35)] outline-none sm:rounded-2xl"
       >
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
           <div className="flex min-w-0 items-start gap-3">
@@ -1509,7 +1511,7 @@ function ReportRow({ bug, compact, onView }) {
   const timestamp = bug.createdAt;
 
   return (
-    <tr className="group border-b border-slate-100 last:border-b-0 hover:bg-slate-50/80">
+    <tr className="group border-b border-slate-100/90 last:border-b-0 transition-colors hover:bg-slate-50/70">
       <td className={`min-w-[280px] ${compact ? "px-4 py-3" : "px-5 py-4"}`}>
         <div className="flex min-w-0 items-start gap-3">
           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
@@ -1893,7 +1895,7 @@ function ReportTable({
 
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[940px] border-collapse text-left">
-          <thead className="border-b border-slate-200 bg-slate-50/80">
+          <thead className="border-b border-slate-200/80 bg-slate-50/70">
             <tr className="text-xs font-medium text-slate-500">
               <th scope="col" className="px-5 py-3.5">
                 Bug report
@@ -1934,45 +1936,66 @@ function ReportTable({
 
 function DashboardHeader({ onRefresh, refreshing, onExport, canExport }) {
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto flex min-h-[72px] w-full max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-950"
+          className="group inline-flex min-w-0 items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+          aria-label="Go to Home"
         >
-          <ArrowLeft size={16} />
-          Home
+          <ArrowLeft
+            size={17}
+            strokeWidth={1.9}
+            className="shrink-0 transition-transform group-hover:-translate-x-0.5"
+          />
+          <span>Home</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <nav
+          aria-label="Dashboard actions"
+          className="flex shrink-0 items-center gap-2 sm:gap-2.5"
+        >
           <button
             type="button"
             onClick={onRefresh}
             disabled={refreshing}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+            aria-busy={refreshing}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/[0.02] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">Refresh</span>
+            <RefreshCw
+              size={15}
+              strokeWidth={1.9}
+              className={refreshing ? "animate-spin" : ""}
+            />
+            <span className="hidden sm:inline">
+              {refreshing ? "Refreshing…" : "Refresh"}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={onExport}
             disabled={!canExport}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+            className="hidden h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 shadow-sm shadow-slate-900/[0.02] transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-45 sm:inline-flex"
           >
-            <FileDown size={15} />
-            <span className="hidden sm:inline">Export CSV</span>
+            <FileDown size={15} strokeWidth={1.9} />
+            <span>Export CSV</span>
           </button>
 
           <Link
             href="/tester/url"
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-violet-600 px-3.5 text-sm font-semibold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+            className="group inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-violet-600 px-3.5 text-sm font-semibold text-white shadow-sm shadow-violet-600/20 transition hover:-translate-y-px hover:bg-violet-700 hover:shadow-md hover:shadow-violet-600/25 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 active:translate-y-0 sm:px-4"
           >
-            <Bug size={15} />
-            <span>Report a bug</span>
+            <Bug size={16} strokeWidth={2} />
+            <span className="hidden sm:inline">Report a bug</span>
+            <span className="sm:hidden">Report</span>
+            <ChevronRight
+              size={14}
+              strokeWidth={2.2}
+              className="hidden opacity-70 transition-transform group-hover:translate-x-0.5 md:block"
+            />
           </Link>
-        </div>
+        </nav>
       </div>
     </header>
   );
@@ -2196,7 +2219,7 @@ export default function TesterDashboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
+    <main className="min-h-screen bg-[#f7f8fa] text-slate-900 antialiased">
       <DashboardHeader
         onRefresh={refreshReports}
         refreshing={loading}
@@ -2204,7 +2227,7 @@ export default function TesterDashboardPage() {
         canExport={sortedBugs.length > 0}
       />
 
-      <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+      <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <section className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
@@ -2213,11 +2236,11 @@ export default function TesterDashboardPage() {
               <span className="text-slate-700">Tester dashboard</span>
             </div>
 
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-[2.15rem]">
               My reports
             </h1>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="mt-2 max-w-2xl text-[14px] leading-6 text-slate-500">
               Track your submitted bugs, check their current status, and review
               report details.
             </p>
@@ -2257,7 +2280,7 @@ export default function TesterDashboardPage() {
         </section>
 
         {showSettings && (
-          <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <section className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">
@@ -2283,7 +2306,7 @@ export default function TesterDashboardPage() {
           </section>
         )}
 
-        <section className="mt-7 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+        <section className="mt-7 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/30 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
             <form
               ref={searchFormRef}
@@ -2313,14 +2336,14 @@ export default function TesterDashboardPage() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white shadow-sm shadow-violet-600/15 transition hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? (
                     <LoaderCircle size={16} className="animate-spin" />
