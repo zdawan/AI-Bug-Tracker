@@ -14,8 +14,6 @@ import {
   ChartNoAxesCombined,
   CircleHelp,
   LogOut,
-  Sun,
-  Moon,
   BarChart3,
   Bell,
   Bug,
@@ -1133,24 +1131,26 @@ function Pagination({
 
 function SeverityDistribution({ statistics }) {
   const total = statistics.total || 1;
+  const highEnd = (statistics.high / total) * 100;
+  const mediumEnd = highEnd + (statistics.medium / total) * 100;
 
   const items = [
     {
       label: "High",
       count: statistics.high,
-      color: "bg-rose-500",
+      color: "#f43f5e",
       text: "text-rose-700",
     },
     {
       label: "Medium",
       count: statistics.medium,
-      color: "bg-amber-500",
+      color: "#f59e0b",
       text: "text-amber-700",
     },
     {
       label: "Low",
       count: statistics.low,
-      color: "bg-sky-500",
+      color: "#0ea5e9",
       text: "text-sky-700",
     },
   ];
@@ -1159,10 +1159,10 @@ function SeverityDistribution({ statistics }) {
     <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-slate-900">
             Severity distribution
           </h3>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-sm text-slate-500">
             Breakdown of your submitted reports
           </p>
         </div>
@@ -1170,36 +1170,50 @@ function SeverityDistribution({ statistics }) {
         <BarChart3 size={18} className="text-slate-400" />
       </div>
 
-      <div className="mt-5 flex h-2 overflow-hidden rounded-full bg-slate-100">
-        {items.map((item) => (
-          <div
-            key={item.label}
-            className={`${item.color} transition-all`}
-            style={{
-              width: `${(item.count / total) * 100}%`,
-            }}
-            title={`${item.label}: ${item.count}`}
-          />
-        ))}
-      </div>
-
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        {items.map((item) => (
-          <div key={item.label} className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${item.color}`} />
-              <span className="text-xs text-slate-500">{item.label}</span>
-            </div>
-
-            <p className={`mt-2 text-xl font-semibold ${item.text}`}>
-              {formatNumber(item.count)}
-            </p>
-
-            <p className="mt-1 text-xs text-slate-400">
-              {formatPercentage((item.count / total) * 100)}
-            </p>
+      <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
+        <div
+          className="grid h-32 w-32 shrink-0 place-items-center rounded-full"
+          role="img"
+          aria-label={`Severity breakdown: ${statistics.high} high, ${statistics.medium} medium, and ${statistics.low} low severity issues.`}
+          style={{
+            background:
+              statistics.total === 0
+                ? "#f1f5f9"
+                : `conic-gradient(#f43f5e 0% ${highEnd}%, #f59e0b ${highEnd}% ${mediumEnd}%, #0ea5e9 ${mediumEnd}% 100%)`,
+          }}
+        >
+          <div className="grid h-[5.5rem] w-[5.5rem] place-content-center rounded-full bg-white text-center shadow-inner shadow-slate-200/50">
+            <span className="text-xl font-bold tabular-nums text-slate-900">
+              {formatNumber(statistics.total)}
+            </span>
+            <span className="text-[11px] text-slate-500">issues</span>
           </div>
-        ))}
+        </div>
+
+        <div className="w-full max-w-[220px] space-y-3">
+          {items.map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center justify-between gap-3"
+            >
+              <span className="flex items-center gap-2 text-sm text-slate-600">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                {item.label}
+              </span>
+              <span className="flex items-center gap-2">
+                <span className={`text-sm font-semibold ${item.text}`}>
+                  {formatNumber(item.count)}
+                </span>
+                <span className="w-10 text-right text-xs text-slate-400">
+                  {formatPercentage((item.count / total) * 100)}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1210,7 +1224,7 @@ function ResolutionOverview({ statistics }) {
     <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-slate-900">
             Resolution overview
           </h3>
 
@@ -1259,12 +1273,12 @@ function ResolutionOverview({ statistics }) {
   );
 }
 
-function ReportsTrendChart({ bugs }) {
+function ReportsTrendChart({ bugs, daysToShow, onRangeChange }) {
   const trend = useMemo(() => {
     const today = new Date();
     const days = [];
 
-    for (let offset = 6; offset >= 0; offset -= 1) {
+    for (let offset = daysToShow - 1; offset >= 0; offset -= 1) {
       const date = new Date(today);
       date.setHours(0, 0, 0, 0);
       date.setDate(date.getDate() - offset);
@@ -1272,7 +1286,10 @@ function ReportsTrendChart({ bugs }) {
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       days.push({
         key,
-        label: date.toLocaleDateString("en-IN", { weekday: "short" }),
+        label:
+          daysToShow === 7
+            ? date.toLocaleDateString("en-IN", { weekday: "short" })
+            : String(date.getDate()),
         count: 0,
       });
     }
@@ -1287,43 +1304,86 @@ function ReportsTrendChart({ bugs }) {
     });
 
     return days;
-  }, [bugs]);
+  }, [bugs, daysToShow]);
 
   const maxCount = Math.max(1, ...trend.map((day) => day.count));
   const total = trend.reduce((sum, day) => sum + day.count, 0);
   const activeDays = trend.filter((day) => day.count > 0).length;
+  const previousPeriodTotal = useMemo(() => {
+    const currentPeriodStart = new Date();
+    currentPeriodStart.setHours(0, 0, 0, 0);
+    currentPeriodStart.setDate(
+      currentPeriodStart.getDate() - (daysToShow - 1),
+    );
+    const previousPeriodStart = new Date(currentPeriodStart);
+    previousPeriodStart.setDate(previousPeriodStart.getDate() - daysToShow);
+
+    return bugs.filter((bug) => {
+      const date = safeDate(bug?.createdAt);
+      return (
+        date &&
+        date >= previousPeriodStart &&
+        date < currentPeriodStart
+      );
+    }).length;
+  }, [bugs, daysToShow]);
+  const periodChange =
+    previousPeriodTotal === 0
+      ? null
+      : ((total - previousPeriodTotal) / previousPeriodTotal) * 100;
+  const labelIndexes =
+    daysToShow === 7
+      ? trend.map((_, index) => index)
+      : [0, 7, 14, 21, trend.length - 1];
   const points = trend.map((day, index) => ({
-    x: 24 + (index * 592) / (trend.length - 1),
-    y: 158 - (day.count / maxCount) * 112,
+    x: 28 + (index * 584) / (trend.length - 1),
+    y: 148 - (day.count / maxCount) * 104,
   }));
   const linePath = points
     .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
     .join(" ");
-  const areaPath = `${linePath} L ${points[points.length - 1].x} 164 L ${points[0].x} 164 Z`;
+  const areaPath = `${linePath} L ${points[points.length - 1].x} 158 L ${points[0].x} 158 Z`;
 
   return (
     <section className="h-full rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-base font-semibold tracking-tight text-slate-900">
             Reporting activity
           </h3>
           <p className="mt-1 text-sm text-slate-500">
-            Reports submitted during the last 7 days
+            Daily new issues · {daysToShow === 7 ? "last 7 days" : "last 30 days"}
           </p>
         </div>
-        <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 ring-1 ring-violet-100">
-          Last 7 days
-        </span>
+        <div
+          className="inline-flex w-fit rounded-xl bg-slate-100 p-1"
+          aria-label="Chart date range"
+        >
+          {[7, 30].map((days) => (
+            <button
+              key={days}
+              type="button"
+              onClick={() => onRangeChange(days)}
+              aria-pressed={days === daysToShow}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                days === daysToShow
+                  ? "bg-white text-violet-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {days}D
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-5 rounded-2xl bg-slate-50/80 px-2 pt-3 sm:px-4">
         <svg
-          className="h-44 w-full overflow-visible"
+          className="h-48 w-full overflow-visible"
           viewBox="0 0 640 190"
           preserveAspectRatio="none"
           role="img"
-          aria-label={`Daily report counts for the last seven days. ${total} reports across ${activeDays} active days.`}
+          aria-label={`Daily new issue counts for the last ${daysToShow} days. ${total} issues across ${activeDays} active days.`}
         >
           <defs>
             <linearGradient id="report-trend-fill" x1="0" x2="0" y1="0" y2="1">
@@ -1331,7 +1391,7 @@ function ReportsTrendChart({ bugs }) {
               <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.01" />
             </linearGradient>
           </defs>
-          {[46, 84, 122, 160].map((y) => (
+          {[34, 72, 110, 148].map((y) => (
             <line
               key={y}
               x1="10"
@@ -1352,6 +1412,22 @@ function ReportsTrendChart({ bugs }) {
             strokeWidth="3"
             vectorEffect="non-scaling-stroke"
           />
+          {labelIndexes.map((index) => {
+            const point = points[index];
+
+            return (
+              <text
+                key={trend[index].key}
+                x={point.x}
+                y="181"
+                fill="#64748b"
+                fontSize="11"
+                textAnchor="middle"
+              >
+                {trend[index].label}
+              </text>
+            );
+          })}
           {points.map((point, index) => (
             <g key={trend[index].key}>
               <circle
@@ -1369,17 +1445,38 @@ function ReportsTrendChart({ bugs }) {
             </g>
           ))}
         </svg>
-        <div className="grid grid-cols-7 pb-3 text-center text-xs font-medium text-slate-500">
-          {trend.map((day) => (
-            <span key={day.key}>{day.label}</span>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-3 text-xs text-slate-500">
+          <span>
+            {formatNumber(total)} new {total === 1 ? "issue" : "issues"}
+          </span>
+          {periodChange === null ? (
+            <span>Not enough previous data to compare</span>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1 font-medium ${
+                periodChange > 0
+                  ? "text-rose-600"
+                  : periodChange < 0
+                    ? "text-emerald-600"
+                    : "text-slate-500"
+              }`}
+            >
+              {periodChange > 0 ? (
+                <TrendingUp size={13} />
+              ) : periodChange < 0 ? (
+                <TrendingDown size={13} />
+              ) : null}
+              {formatPercentage(Math.abs(periodChange))} vs previous{" "}
+              {daysToShow} days
+            </span>
+          )}
         </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-sm">
-        <span className="text-slate-400">Daily reports</span>
+        <span className="text-slate-500">Active days</span>
         <span className="font-medium text-violet-700">
-          {formatNumber(total)} total · {activeDays} active days
+          {activeDays} of {daysToShow}
         </span>
       </div>
     </section>
@@ -1457,18 +1554,23 @@ function CategoryBreakdown({ bugs }) {
 
 function ReportSummaryPanel({ bugs }) {
   const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
+  const [daysToShow, setDaysToShow] = useState(7);
   const averageReports = bugs.length
     ? bugs.reduce((sum, bug) => sum + getBugReports(bug), 0) / bugs.length
     : 0;
+  const repeatedSubmissions = Math.max(
+    0,
+    statistics.reports - statistics.total,
+  );
 
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2 px-1">
         <div>
-          <h2 className="text-sm font-semibold tracking-tight text-slate-900">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900">
             Report analytics
           </h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-sm text-slate-500">
             A snapshot of report health and activity
           </p>
         </div>
@@ -1480,31 +1582,31 @@ function ReportSummaryPanel({ bugs }) {
         <div className="relative min-h-[146px] overflow-hidden rounded-[20px] bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-500 p-4 text-white shadow-sm shadow-violet-600/20 sm:p-5">
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-white/95">
-              Reports Submitted
+              Total submissions
             </span>
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-violet-700">
               <ArrowUpRight size={15} />
             </span>
           </div>
           <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.04em] tabular-nums">
-            {formatNumber(statistics.total)}
+            {formatNumber(statistics.reports)}
           </p>
           <p className="mt-3 flex items-center gap-1.5 text-[11px] text-white/80">
             <span className="grid h-4 w-4 place-items-center rounded border border-white/40">
               <TrendingUp size={10} />
             </span>
-            All submitted reports
+            {formatNumber(statistics.total)} unique issues tracked
           </p>
           <div className="pointer-events-none absolute -bottom-9 -right-6 h-24 w-24 rounded-full border border-white/10 bg-white/[0.06]" />
         </div>
 
-        <div className="min-h-[146px] rounded-[20px] border border-white bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+        <div className="min-h-[146px] rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
           <div className="flex items-start justify-between gap-2">
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-sm font-semibold text-slate-700">
               Open Bugs
             </span>
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-slate-300 text-slate-500">
-              <ArrowUpRight size={14} />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700">
+              <CircleDashed size={17} />
             </span>
           </div>
           <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.04em] text-slate-950 tabular-nums">
@@ -1518,13 +1620,13 @@ function ReportSummaryPanel({ bugs }) {
           </p>
         </div>
 
-        <div className="min-h-[146px] rounded-[20px] border border-white bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+        <div className="min-h-[146px] rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
           <div className="flex items-start justify-between gap-2">
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-sm font-semibold text-slate-700">
               Resolved Bugs
             </span>
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-slate-300 text-slate-500">
-              <ArrowUpRight size={14} />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+              <CheckCircle2 size={17} />
             </span>
           </div>
           <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.04em] text-slate-950 tabular-nums">
@@ -1538,13 +1640,13 @@ function ReportSummaryPanel({ bugs }) {
           </p>
         </div>
 
-        <div className="min-h-[146px] rounded-[20px] border border-white bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+        <div className="min-h-[146px] rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
           <div className="flex items-start justify-between gap-2">
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-sm font-semibold text-slate-700">
               High Severity
             </span>
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-slate-300 text-slate-500">
-              <ArrowUpRight size={14} />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-600">
+              <ShieldAlert size={17} />
             </span>
           </div>
           <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.04em] text-slate-950 tabular-nums">
@@ -1560,7 +1662,11 @@ function ReportSummaryPanel({ bugs }) {
       </div>
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          <ReportsTrendChart bugs={bugs} />
+          <ReportsTrendChart
+            bugs={bugs}
+            daysToShow={daysToShow}
+            onRangeChange={setDaysToShow}
+          />
         </div>
         <CategoryBreakdown bugs={bugs} />
       </div>
@@ -1568,6 +1674,33 @@ function ReportSummaryPanel({ bugs }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <SeverityDistribution statistics={statistics} />
         <ResolutionOverview statistics={statistics} />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 shadow-sm shadow-slate-200/20">
+          <p className="text-xs font-medium text-slate-500">
+            Unique issues tracked
+          </p>
+          <p className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+            {formatNumber(statistics.total)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 shadow-sm shadow-slate-200/20">
+          <p className="text-xs font-medium text-slate-500">
+            Repeat submissions
+          </p>
+          <p className="mt-1 text-xl font-semibold tracking-tight text-violet-700">
+            {formatNumber(repeatedSubmissions)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-3.5 shadow-sm shadow-slate-200/20">
+          <p className="text-xs font-medium text-slate-500">
+            Average reports per issue
+          </p>
+          <p className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+            {averageReports.toFixed(1)}
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -2778,7 +2911,7 @@ export default function TesterDashboardPage() {
               Settings
             </button>
             <a
-              href="#help"
+              href="#reporter-email"
               className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-slate-900"
             >
               <CircleHelp size={16} />
@@ -2793,7 +2926,21 @@ export default function TesterDashboardPage() {
             </Link>
           </nav>
 
-          <div className="mt-auto rounded-2xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 p-3.5 text-white">
+          <div className="mt-auto flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-100 text-sm font-bold uppercase text-violet-700">
+              {loadedEmail ? loadedEmail.charAt(0) : <UserRound size={17} />}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-xs font-semibold text-slate-800">
+                {loadedEmail || "Tester workspace"}
+              </span>
+              <span className="mt-0.5 block text-[11px] text-slate-500">
+                {hasSearched ? `${statistics.total} issues loaded` : "Ready to search"}
+              </span>
+            </span>
+          </div>
+
+          <div className="mt-4 rounded-2xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 p-3.5 text-white">
             <span className="mb-2 grid h-7 w-7 place-items-center rounded-lg bg-white/15">
               <Sparkles size={15} />
             </span>
@@ -2809,14 +2956,6 @@ export default function TesterDashboardPage() {
             </Link>
           </div>
 
-          <div className="mt-5 flex items-center justify-between rounded-full border border-slate-200 bg-white p-1">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-violet-600 text-white">
-              <Sun size={15} />
-            </span>
-            <span className="grid h-8 w-8 place-items-center rounded-full text-slate-500">
-              <Moon size={15} />
-            </span>
-          </div>
         </aside>
 
         <div className="min-w-0 flex-1 bg-[#f8f9fc]">
@@ -2831,6 +2970,26 @@ export default function TesterDashboardPage() {
             onSearchChange={(search) => updateFilter("search", search)}
             onOpenBug={handleOpenBug}
           />
+
+          <nav
+            aria-label="Dashboard sections"
+            className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-4 py-2.5 md:hidden"
+          >
+            {[
+              { label: "Overview", href: "#dashboard", icon: LayoutDashboard },
+              { label: "Analytics", href: "#analytics", icon: ChartNoAxesCombined },
+              { label: "Reports", href: "#reports", icon: ListChecks },
+            ].map(({ label, href, icon: Icon }) => (
+              <a
+                key={href}
+                href={href}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+              >
+                <Icon size={15} />
+                {label}
+              </a>
+            ))}
+          </nav>
 
           <div
             id="dashboard"
