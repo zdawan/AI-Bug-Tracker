@@ -1433,25 +1433,39 @@ function ReportSummaryPanel({ bugs }) {
 
   return (
     <section className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">
+      <div className="flex flex-wrap items-end justify-between gap-2 px-1">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight text-slate-900">
+            Report analytics
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            A snapshot of report health and activity
+          </p>
+        </div>
+        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500">
+          Live report data
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-500 p-4 text-white shadow-md shadow-violet-600/20">
+          <div className="absolute -right-7 -top-8 h-24 w-24 rounded-full border border-white/15 bg-white/10" />
+          <div className="relative flex items-center justify-between">
+            <span className="text-xs font-medium text-white/85">
               Resolution rate
             </span>
-            <span className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
-              <CheckCircle2 size={16} />
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-violet-700">
+              <ArrowUpRight size={16} />
             </span>
           </div>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+          <p className="relative mt-3 text-3xl font-semibold tracking-tight text-white">
             {formatPercentage(statistics.resolutionRate)}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="relative mt-1 text-xs text-white/75">
             {statistics.closed} of {statistics.total} reports resolved
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+        <div className="rounded-2xl border border-white bg-white p-4 shadow-sm shadow-slate-200/30 transition-shadow hover:shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">
               Open workload
@@ -1471,7 +1485,7 @@ function ReportSummaryPanel({ bugs }) {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+        <div className="rounded-2xl border border-white bg-white p-4 shadow-sm shadow-slate-200/30 transition-shadow hover:shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">
               High severity
@@ -1488,7 +1502,7 @@ function ReportSummaryPanel({ bugs }) {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20">
+        <div className="rounded-2xl border border-white bg-white p-4 shadow-sm shadow-slate-200/30 transition-shadow hover:shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">
               Avg. report count
@@ -2504,7 +2518,7 @@ export default function TesterDashboardPage() {
         canExport={sortedBugs.length > 0}
       />
 
-      <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <section className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
