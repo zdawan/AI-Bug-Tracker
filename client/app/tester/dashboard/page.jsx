@@ -1289,7 +1289,10 @@ function ReportsTrendChart({ bugs, daysToShow, onRangeChange }) {
         label:
           daysToShow === 7
             ? date.toLocaleDateString("en-IN", { weekday: "short" })
-            : String(date.getDate()),
+            : date.toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+              }),
         count: 0,
       });
     }
@@ -1552,7 +1555,148 @@ function CategoryBreakdown({ bugs }) {
   );
 }
 
-function ReportSummaryPanel({ bugs }) {
+function PriorityInbox({ bugs, onOpenBug, onViewAll }) {
+  const openIssues = useMemo(
+    () =>
+      bugs
+        .filter((bug) => getBugStatus(bug) === "Open")
+        .sort((left, right) => {
+          const severityDifference =
+            getSeverityRank(getBugSeverity(right)) -
+            getSeverityRank(getBugSeverity(left));
+
+          return severityDifference || getBugTimestamp(left) - getBugTimestamp(right);
+        }),
+    [bugs],
+  );
+  const highPriorityCount = openIssues.filter(
+    (bug) => getBugSeverity(bug) === "High",
+  ).length;
+  const visibleIssues = openIssues.slice(0, 4);
+
+  return (
+    <section className="overflow-hidden rounded-[22px] border border-slate-200/80 bg-white shadow-sm shadow-slate-200/30">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-rose-50 text-rose-600">
+            <ShieldAlert size={18} />
+          </span>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">
+              Needs attention
+            </h3>
+            <p className="mt-0.5 text-sm text-slate-500">
+              Open issues, prioritized by severity and age
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+            {highPriorityCount} high priority
+          </span>
+          <button
+            type="button"
+            onClick={onViewAll}
+            disabled={openIssues.length === 0}
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent"
+          >
+            View open
+            <ArrowUpRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {visibleIssues.length ? (
+        <ul className="divide-y divide-slate-100">
+          {visibleIssues.map((bug) => {
+            const severity = getBugSeverity(bug);
+            const isHigh = severity === "High";
+
+            return (
+              <li key={getBugId(bug)}>
+                <button
+                  type="button"
+                  onClick={() => onOpenBug(bug)}
+                  className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400 sm:px-5"
+                >
+                  <span
+                    className={`h-9 w-1 shrink-0 rounded-full ${
+                      isHigh ? "bg-rose-500" : "bg-amber-400"
+                    }`}
+                  />
+                  <span
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
+                      isHigh
+                        ? "bg-rose-50 text-rose-600"
+                        : "bg-amber-50 text-amber-600"
+                    }`}
+                  >
+                    {isHigh ? (
+                      <Flame size={16} />
+                    ) : (
+                      <CircleAlert size={16} />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-slate-800 group-hover:text-violet-700">
+                      {getBugTitle(bug)}
+                    </span>
+                    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                      <span>{getShortBugId(bug)}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{severity} severity</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{getBugReports(bug)} reports</span>
+                    </span>
+                  </span>
+                  <span className="hidden shrink-0 text-right sm:block">
+                    <span className="block text-xs font-medium text-slate-600">
+                      {formatRelativeDate(bug.createdAt)}
+                    </span>
+                    <span className="mt-1 block text-[11px] text-slate-400">
+                      first reported
+                    </span>
+                  </span>
+                  <ChevronRight
+                    size={16}
+                    className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-violet-600"
+                  />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="flex flex-col items-center px-5 py-9 text-center">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+            <CheckCheck size={19} />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-slate-800">
+            Nothing needs attention
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            New open issues will appear here.
+          </p>
+        </div>
+      )}
+
+      {openIssues.length > visibleIssues.length && (
+        <div className="border-t border-slate-100 px-5 py-3 text-center">
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="text-sm font-medium text-violet-700 transition hover:text-violet-900"
+          >
+            See all {openIssues.length} open issues
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
   const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
   const [daysToShow, setDaysToShow] = useState(7);
   const averageReports = bugs.length
@@ -1670,6 +1814,12 @@ function ReportSummaryPanel({ bugs }) {
         </div>
         <CategoryBreakdown bugs={bugs} />
       </div>
+
+      <PriorityInbox
+        bugs={bugs}
+        onOpenBug={onOpenBug}
+        onViewAll={onViewAllOpen}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SeverityDistribution statistics={statistics} />
@@ -2819,6 +2969,18 @@ export default function TesterDashboardPage() {
     setSelectedBug(null);
   }, []);
 
+  const viewOpenReports = useCallback(() => {
+    setFilters((current) => ({
+      ...current,
+      status: "Open",
+      severity: "All",
+    }));
+    setPage(1);
+    document
+      .getElementById("reports")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   useEffect(() => {
     const handleGlobalKeyDown = (event) => {
       const target = event.target;
@@ -3248,7 +3410,11 @@ export default function TesterDashboardPage() {
               {showInsights && (
                 <div className="mt-4">
                   {hasSearched && bugs.length > 0 ? (
-                    <ReportSummaryPanel bugs={bugs} />
+                    <ReportSummaryPanel
+                      bugs={bugs}
+                      onOpenBug={handleOpenBug}
+                      onViewAllOpen={viewOpenReports}
+                    />
                   ) : (
                     <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-sm shadow-slate-200/20">
                       <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-50 text-violet-700">
