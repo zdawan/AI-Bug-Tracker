@@ -109,6 +109,12 @@ export default function TesterPage() {
           <ArrowLeft size={18} />
           Back
         </button>
+        <div className="mb-5 flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-100 bg-purple-50 text-purple-700">
+            <Globe size={26} strokeWidth={1.8} />
+          </div>
+        </div>
+
         <header className="text-center">
           <h1 className="text-3xl font-semibold leading-tight tracking-[-1px] text-[#111827] sm:text-4xl">
             Enter{" "}
