@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ExternalLink, Globe } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Globe } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -100,6 +100,15 @@ export default function TesterPage() {
       />
 
       <section className="relative z-10 w-full max-w-[560px] rounded-[28px] border border-white/80 bg-white/90 px-6 py-10 shadow-[0_28px_70px_-28px_rgba(38,25,55,0.30)] backdrop-blur-xl sm:px-10 sm:py-12">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="mb-6 inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+          aria-label="Go back to previous page"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
         <header className="text-center">
           <h1 className="text-3xl font-semibold leading-tight tracking-[-1px] text-[#111827] sm:text-4xl">
             Enter{" "}
