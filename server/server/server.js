@@ -6,6 +6,7 @@ import { connectDB } from "./config/db.js";
 import bugRoutes from "./routes/bugRoutes.js";
 import developerRoutes from "./routes/developerRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import testerRoutes from "./routes/testerRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/bugs", bugRoutes);
 app.use("/api/developers", developerRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/testers", testerRoutes);
 
 // Connect to MongoDB
 connectDB();
