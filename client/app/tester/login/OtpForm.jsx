@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowLeft, ArrowRight, RefreshCw, Clock3 } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 const RESEND_COOLDOWN = 30;
 
@@ -142,6 +143,11 @@ export default function OtpForm({ email, onBack }) {
         <ArrowLeft size={18} />
         Back
       </button>
+      <div className="mb-5 flex justify-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-purple-100 bg-purple-50 text-purple-700">
+          <ShieldCheck size={26} strokeWidth={1.8} />
+        </div>
+      </div>
       <header className="mb-8 text-center">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
           Verify your{" "}
