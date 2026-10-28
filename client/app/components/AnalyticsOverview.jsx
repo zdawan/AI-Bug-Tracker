@@ -11,7 +11,41 @@ import {
   TrendingUp,
   X,
   ChartNoAxesCombined,
+  CircleAlert,
+  Activity,
 } from "lucide-react";
+
+const isResolved = (status = "") =>
+  ["resolved", "closed", "fixed", "completed"].includes(
+    String(status).toLowerCase(),
+  );
+
+const isOpen = (status = "") =>
+  ![
+    "resolved",
+    "closed",
+    "fixed",
+    "completed",
+    "rejected",
+    "duplicate",
+    "cancelled",
+    "canceled",
+  ].includes(String(status).toLowerCase());
+
+const isHighSeverity = (severity = "") =>
+  ["high", "critical", "urgent", "blocker"].includes(
+    String(severity).toLowerCase(),
+  );
+
+const getDate = (value) => {
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatCount = (value) => new Intl.NumberFormat("en-IN").format(value);
 
 const metricStyles = {
   slate: "bg-slate-100 text-slate-600",
