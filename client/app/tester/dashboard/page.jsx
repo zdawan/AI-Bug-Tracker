@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { MetricQualityPanel } from "../../components/AnalyticsOverview";
 import {
   ArrowDown,
   ArrowDownAZ,
@@ -1937,6 +1938,8 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
           </p>
         </div>
       </div>
+
+      <MetricQualityPanel reports={bugs} />
     </section>
   );
 }
