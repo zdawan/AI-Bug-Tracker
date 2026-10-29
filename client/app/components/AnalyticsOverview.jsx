@@ -560,7 +560,8 @@ const METRIC_DEFINITIONS = [
   {
     key: "submissions",
     label: "Total submissions",
-    formula: "Sum each issue's positive reports count; use 1 when absent.",
+    formula:
+      "Sum each issue's positive reports count; use 1 when missing or invalid.",
     source: "reports",
     check: "Counts must be finite positive numbers to contribute as stored.",
   },
@@ -636,6 +637,7 @@ function createQualityFinding({
   return {
     key: `${getQualityReportId(report, index)}-${field}-${category}`,
     reportId: getQualityReportId(report, index),
+    reportIndex: index,
     reportTitle: getQualityLabel(report, index),
     field,
     category,
@@ -859,12 +861,15 @@ function analyzeReportQuality(reports) {
     }
     return result;
   }, {});
+  const rowsWithFindings = new Set(
+    findings.map((finding) => finding.reportIndex),
+  );
 
   return {
     findings,
     counts,
     checked: reports.length,
-    clean: Math.max(0, reports.length - new Set(findings.map((item) => item.reportId)).size),
+    clean: reports.length - rowsWithFindings.size,
   };
 }
 
