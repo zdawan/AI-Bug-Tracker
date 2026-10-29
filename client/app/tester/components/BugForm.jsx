@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -12,6 +13,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
   const [screenshot, setScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState("");
   const [loading, setLoading] = useState(false);
   const [aiSourceFileUrl, setAiSourceFileUrl] = useState("");
   const [showPopupMode, setShowPopupMode] = useState(true);
@@ -22,6 +24,18 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [aiScreenshot, setAiScreenshot] = useState(null);
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!screenshot) {
+      setScreenshotPreview("");
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(screenshot);
+    setScreenshotPreview(previewUrl);
+
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [screenshot]);
 
   // Converts Base64 to File
   const dataURLToFile = async (dataUrl, filename = "screenshot.png") => {
@@ -212,11 +226,40 @@ export default function BugForm({ onBugCreated, testUrl }) {
             Screenshot (optional)
           </label>
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={(e) => setScreenshot(e.target.files[0])}
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm cursor-pointer"
           />
+          {screenshot && screenshotPreview && (
+            <div className="mt-3 flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <img
+                src={screenshotPreview}
+                alt={`Preview of ${screenshot.name || "attached screenshot"}`}
+                className="h-20 w-20 rounded-lg border border-gray-200 bg-white object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="break-all text-sm font-medium text-gray-800">
+                  {screenshot.name || "Attached screenshot"}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {Math.max(1, Math.round(screenshot.size / 1024))} KB · Ready
+                  to attach
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScreenshot(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  className="mt-2 text-xs font-semibold text-rose-700 underline underline-offset-2 hover:text-rose-900"
+                >
+                  Remove screenshot
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* AI + Submit Buttons Row */}
