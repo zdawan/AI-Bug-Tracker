@@ -1336,6 +1336,14 @@ export default function AnalyticsOverview({
   );
 }
 
+function LegacyAnalyticsOverviewPreview({
+  bugs,
+  loading,
+  notifications,
+  dismissNotification,
+  openNotifications,
+  handleViewReport,
+}) {
 <AnalyticsOverview
   reports={bugs}
   loading={loading}
@@ -1344,3 +1352,6 @@ export default function AnalyticsOverview({
   onViewAllNotifications={openNotifications}
   onViewReport={handleViewReport}
 />;
+}
+
+export { MetricQualityPanel };
