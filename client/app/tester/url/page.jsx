@@ -777,6 +777,27 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
             destination. Query values and credentials are never displayed by
             the review panel.
           </p>
+          {parsedUrl && (parsedUrl.username || parsedUrl.password) && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
+              <p className="text-[11px] leading-5 text-rose-900">
+                This address contains embedded credentials. Remove them before
+                sharing the destination.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const cleaned = new URL(parsedUrl.href);
+                  cleaned.username = "";
+                  cleaned.password = "";
+                  onChangeUrl(cleaned.href);
+                  toast.success("Embedded credentials removed.");
+                }}
+                className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-rose-800 transition hover:bg-rose-100"
+              >
+                Remove credentials
+              </button>
+            </div>
+          )}
           {queryParameters.length > 0 && (
             <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
