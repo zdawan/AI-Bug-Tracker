@@ -82,7 +82,8 @@ export default function TesterPage() {
 
     if (
       !["http:", "https:"].includes(parsedUrl.protocol) ||
-      !parsedUrl.hostname.includes(".") ||
+      (!parsedUrl.hostname.includes(".") &&
+        parsedUrl.hostname !== "localhost") ||
       parsedUrl.hostname.startsWith(".") ||
       parsedUrl.hostname.endsWith(".") ||
       /\s/.test(parsedUrl.hostname)
