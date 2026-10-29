@@ -11,6 +11,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function BugForm({ onBugCreated, testUrl }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [stepDraft, setStepDraft] = useState("");
   const [email, setEmail] = useState("");
   const [screenshot, setScreenshot] = useState(null);
   const [screenshotPreview, setScreenshotPreview] = useState("");
@@ -24,6 +25,32 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [aiScreenshot, setAiScreenshot] = useState(null);
 
   const fileInputRef = useRef(null);
+
+  const addReproductionStep = () => {
+    const step = stepDraft.trim();
+
+    if (!step) {
+      toast.error("Enter a reproduction step first.");
+      return;
+    }
+
+    const currentDescription = description.trimEnd();
+    const stepsHeadingIndex = currentDescription.search(/^steps to reproduce:$/im);
+    const existingSteps =
+      stepsHeadingIndex < 0
+        ? []
+        : currentDescription.slice(stepsHeadingIndex).match(/^\d+\.\s.+$/gm) ||
+          [];
+    const hasStepsHeading = stepsHeadingIndex >= 0;
+    const heading = hasStepsHeading
+      ? currentDescription
+        ? `${currentDescription}\n`
+        : ""
+      : `${currentDescription ? `${currentDescription}\n\n` : ""}Steps to reproduce:\n`;
+
+    setDescription(`${heading}${existingSteps.length + 1}. ${step}`);
+    setStepDraft("");
+  };
 
   useEffect(() => {
     if (!screenshot) {
@@ -241,6 +268,45 @@ export default function BugForm({ onBugCreated, testUrl }) {
           >
             {description.length} characters
           </p>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+          <label
+            htmlFor="reproduction-step"
+            className="block text-sm font-medium text-gray-800"
+          >
+            Reproduction steps{" "}
+            <span className="text-xs font-normal text-gray-500">
+              (optional)
+            </span>
+          </label>
+          <p className="mt-1 text-xs leading-5 text-gray-600">
+            Add a numbered step to the description above so others can follow
+            what you did.
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              id="reproduction-step"
+              type="text"
+              value={stepDraft}
+              onChange={(event) => setStepDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addReproductionStep();
+                }
+              }}
+              placeholder="e.g. Open Settings and select Profile"
+              className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-violet-300"
+            />
+            <button
+              type="button"
+              onClick={addReproductionStep}
+              className="rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-50"
+            >
+              Add step
+            </button>
+          </div>
         </div>
 
         {/* Email */}

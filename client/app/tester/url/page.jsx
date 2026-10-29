@@ -169,6 +169,7 @@ export default function TesterPage() {
                 type="text"
                 inputMode="url"
                 autoComplete="url"
+                aria-describedby="test-url-hint"
                 placeholder="e.g. github.com"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
@@ -190,7 +191,10 @@ export default function TesterPage() {
               )}
             </div>
 
-            <p className="mt-2 px-1 text-sm leading-5 text-slate-500">
+            <p
+              id="test-url-hint"
+              className="mt-2 px-1 text-sm leading-5 text-slate-500"
+            >
               Enter a name like github.com or a full page URL.
             </p>
             <UrlLengthIndicator value={url} />
