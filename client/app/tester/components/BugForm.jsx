@@ -235,6 +235,12 @@ export default function BugForm({ onBugCreated, testUrl }) {
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
             rows="4"
           ></textarea>
+          <p
+            className="mt-1 text-right text-xs text-gray-500"
+            aria-live="polite"
+          >
+            {description.length} characters
+          </p>
         </div>
 
         {/* Email */}
