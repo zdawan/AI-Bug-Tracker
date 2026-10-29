@@ -528,6 +528,12 @@ export default function ReportAgingBoard({
             <span className="text-[10px] text-slate-400">
               Based on report creation date
             </span>
+            <span className="text-[10px] text-slate-400">
+              Oldest dated open issue:{" "}
+              {insight.oldestAge
+                ? `${formatCount(insight.oldestAge)} days`
+                : "—"}
+            </span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             {AGE_BUCKETS.map((bucket) => (
