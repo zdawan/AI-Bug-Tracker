@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink, Globe } from "lucide-react";
@@ -690,6 +690,9 @@ function UrlAuditCheck({ check }) {
 function UrlPrivacyAudit({ url, onChangeUrl }) {
   const [expanded, setExpanded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [selectedParameterNames, setSelectedParameterNames] = useState(
+    () => new Set(),
+  );
   const checks = getUrlAuditChecks(url);
   const parsedUrl = (() => {
     const entered = url.trim();
@@ -711,6 +714,11 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   const flaggedParameterNames = parsedUrl
     ? getFlaggedQueryParameterNames(parsedUrl)
     : new Set();
+
+  useEffect(() => {
+    setSelectedParameterNames(new Set(flaggedParameterNames));
+  }, [url]);
+
   const reviewCount = checks.filter(
     (check) => check.state === "attention",
   ).length;
@@ -792,9 +800,30 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                     key={`${parameter.name}-${index}`}
                     className="flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0"
                   >
-                    <span className="font-mono text-[10px] text-slate-600">
-                      {maskParameterName(parameter.name)}
-                    </span>
+                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedParameterNames.has(parameter.name)}
+                        onChange={(event) => {
+                          setSelectedParameterNames((current) => {
+                            const next = new Set(current);
+
+                            if (event.target.checked) {
+                              next.add(parameter.name);
+                            } else {
+                              next.delete(parameter.name);
+                            }
+
+                            return next;
+                          });
+                        }}
+                        aria-label={`Select ${maskParameterName(parameter.name)} query parameter for removal`}
+                        className="h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-violet-700 focus:ring-violet-500"
+                      />
+                      <span className="truncate font-mono text-[10px] text-slate-600">
+                        {maskParameterName(parameter.name)}
+                      </span>
+                    </label>
                     <span className="flex items-center gap-2 text-[10px]">
                       {parameter.occurrences > 1 && (
                         <span className="text-slate-400">
@@ -815,6 +844,52 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                 ))}
               </ul>
               <div className="mt-3 flex flex-wrap gap-2">
+                {flaggedParameterNames.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedParameterNames(new Set(flaggedParameterNames))
+                    }
+                    className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100"
+                  >
+                    Select flagged ({flaggedParameterNames.size})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedParameterNames.size === queryParameters.length) {
+                      setSelectedParameterNames(new Set());
+                    } else {
+                      setSelectedParameterNames(
+                        new Set(queryParameters.map(({ name }) => name)),
+                      );
+                    }
+                  }}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+                >
+                  {selectedParameterNames.size === queryParameters.length
+                    ? "Clear selection"
+                    : "Select all"}
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedParameterNames.size === 0}
+                  onClick={() => {
+                    const cleaned = new URL(parsedUrl.href);
+
+                    for (const name of selectedParameterNames) {
+                      cleaned.searchParams.delete(name);
+                    }
+
+                    onChangeUrl(cleaned.href);
+                    setSelectedParameterNames(new Set());
+                    toast.success("Selected query parameters removed.");
+                  }}
+                  className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Remove selected ({selectedParameterNames.size})
+                </button>
                 <button
                   type="button"
                   onClick={() => {
