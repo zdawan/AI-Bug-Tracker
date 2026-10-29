@@ -325,6 +325,27 @@ function getFlaggedQueryParameterNames(parsed) {
   return flaggedNames;
 }
 
+function getQueryParameterSummary(parsed) {
+  const flaggedNames = getFlaggedQueryParameterNames(parsed);
+  const parameters = new Map();
+
+  for (const [name] of parsed.searchParams.entries()) {
+    const existing = parameters.get(name);
+
+    if (existing) {
+      existing.occurrences += 1;
+    } else {
+      parameters.set(name, {
+        name,
+        occurrences: 1,
+        flagged: flaggedNames.has(name),
+      });
+    }
+  }
+
+  return [...parameters.values()];
+}
+
 function getUrlAuditChecks(value) {
   const entered = value.trim();
 
@@ -670,20 +691,26 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   const [expanded, setExpanded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
   const checks = getUrlAuditChecks(url);
-  const flaggedParameterNames = (() => {
+  const parsedUrl = (() => {
     const entered = url.trim();
 
-    if (!entered) return new Set();
+    if (!entered) return null;
 
     try {
       const normalized = /^https?:\/\//i.test(entered)
         ? entered
         : `https://${entered}`;
-      return getFlaggedQueryParameterNames(new URL(normalized));
+      return new URL(normalized);
     } catch {
-      return new Set();
+      return null;
     }
   })();
+  const queryParameters = parsedUrl
+    ? getQueryParameterSummary(parsedUrl)
+    : [];
+  const flaggedParameterNames = parsedUrl
+    ? getFlaggedQueryParameterNames(parsedUrl)
+    : new Set();
   const reviewCount = checks.filter(
     (check) => check.state === "attention",
   ).length;
@@ -742,6 +769,89 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
             destination. Query values and credentials are never displayed by
             the review panel.
           </p>
+          {queryParameters.length > 0 && (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h4 className="text-[11px] font-semibold text-slate-800">
+                    Query parameter review
+                  </h4>
+                  <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                    Names are masked and values stay hidden. Review these
+                    parameters before sharing the destination.
+                  </p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">
+                  {queryParameters.length} unique ·{" "}
+                  {[...parsedUrl.searchParams.keys()].length} total
+                </span>
+              </div>
+              <ul className="mt-3 divide-y divide-slate-100">
+                {queryParameters.map((parameter, index) => (
+                  <li
+                    key={`${parameter.name}-${index}`}
+                    className="flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0"
+                  >
+                    <span className="font-mono text-[10px] text-slate-600">
+                      {maskParameterName(parameter.name)}
+                    </span>
+                    <span className="flex items-center gap-2 text-[10px]">
+                      {parameter.occurrences > 1 && (
+                        <span className="text-slate-400">
+                          {parameter.occurrences} occurrences
+                        </span>
+                      )}
+                      <span
+                        className={
+                          parameter.flagged
+                            ? "font-semibold text-amber-700"
+                            : "text-slate-500"
+                        }
+                      >
+                        {parameter.flagged ? "Flagged" : "Not recognized"}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cleaned = new URL(parsedUrl.href);
+                    cleaned.search = "";
+                    onChangeUrl(cleaned.href);
+                    toast.success("All query parameters removed.");
+                  }}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+                >
+                  Remove all query data
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      if (!navigator.clipboard?.writeText) {
+                        throw new Error("Clipboard access is unavailable.");
+                      }
+
+                      const cleaned = new URL(parsedUrl.href);
+                      cleaned.search = "";
+                      await navigator.clipboard.writeText(cleaned.href);
+                      toast.success("Query-free URL copied.");
+                    } catch {
+                      toast.error(
+                        "Could not copy the cleaned URL. Please copy it manually.",
+                      );
+                    }
+                  }}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+                >
+                  Copy query-free URL
+                </button>
+              </div>
+            </div>
+          )}
           {flaggedParameterNames.size > 0 && (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
               <p className="text-[11px] leading-5 text-amber-900">
