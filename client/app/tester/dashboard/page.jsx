@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import AnalyticsDrilldown from "./components/AnalyticsDrilldown";
 import { MetricQualityPanel } from "../../components/AnalyticsOverview";
 import {
   ArrowDown,
@@ -3369,6 +3370,18 @@ export default function TesterDashboardPage() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
+  const applyAnalyticsFilters = useCallback((analyticsFilters) => {
+    setFilters((current) => ({
+      ...current,
+      ...analyticsFilters,
+    }));
+    setActiveViewId("custom");
+    setPage(1);
+    document
+      .getElementById("reports")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   useEffect(() => {
     const handleGlobalKeyDown = (event) => {
       const target = event.target;
@@ -3831,6 +3844,14 @@ export default function TesterDashboardPage() {
                     </div>
                   )}
                 </div>
+              )}
+              {showInsights && hasSearched && bugs.length > 0 && (
+                <AnalyticsDrilldown
+                  reports={bugs}
+                  filters={filters}
+                  onOpenReport={handleOpenBug}
+                  onApplyFilters={applyAnalyticsFilters}
+                />
               )}
             </section>
 
