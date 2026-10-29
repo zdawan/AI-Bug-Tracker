@@ -12,6 +12,8 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [stepDraft, setStepDraft] = useState("");
+  const [expectedBehavior, setExpectedBehavior] = useState("");
+  const [actualBehavior, setActualBehavior] = useState("");
   const [email, setEmail] = useState("");
   const [screenshot, setScreenshot] = useState(null);
   const [screenshotPreview, setScreenshotPreview] = useState("");
@@ -65,6 +67,31 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
     setDescription(`${heading}${existingSteps.length + 1}. ${step}`);
     setStepDraft("");
+  };
+
+  const addOutcomeDetails = () => {
+    const expected = expectedBehavior.trim();
+    const actual = actualBehavior.trim();
+
+    if (!expected || !actual) {
+      toast.error("Add both expected and actual behavior.");
+      return;
+    }
+
+    if (/^(expected|actual) behavior:/im.test(description)) {
+      toast.info("Expected and actual behavior are already in the description.");
+      return;
+    }
+
+    const details = `Expected behavior:\n${expected}\n\nActual behavior:\n${actual}`;
+    const existingDescription = description.trimEnd();
+
+    setDescription(
+      `${existingDescription ? `${existingDescription}\n\n` : ""}${details}`,
+    );
+    setExpectedBehavior("");
+    setActualBehavior("");
+    toast.success("Outcome details added to the description.");
   };
 
   useEffect(() => {
@@ -323,6 +350,46 @@ export default function BugForm({ onBugCreated, testUrl }) {
             </button>
           </div>
         </div>
+
+        <section className="mb-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+          <h3 className="text-sm font-medium text-gray-800">
+            Expected vs. actual{" "}
+            <span className="text-xs font-normal text-gray-500">(optional)</span>
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-gray-600">
+            Describe what you expected and what happened. Both notes will be
+            added to the report description.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="text-xs font-medium text-gray-700">
+              Expected behavior
+              <textarea
+                value={expectedBehavior}
+                onChange={(event) => setExpectedBehavior(event.target.value)}
+                rows={3}
+                placeholder="What should have happened?"
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-normal focus:ring-2 focus:ring-violet-300"
+              />
+            </label>
+            <label className="text-xs font-medium text-gray-700">
+              Actual behavior
+              <textarea
+                value={actualBehavior}
+                onChange={(event) => setActualBehavior(event.target.value)}
+                rows={3}
+                placeholder="What happened instead?"
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-normal focus:ring-2 focus:ring-violet-300"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={addOutcomeDetails}
+            className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+          >
+            Add details to description
+          </button>
+        </section>
 
         {/* Email */}
         <div className="mb-5">
