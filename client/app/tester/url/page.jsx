@@ -173,6 +173,7 @@ export default function TesterPage() {
             <p className="mt-2 px-1 text-sm leading-5 text-slate-500">
               Enter a name like github.com or a full page URL.
             </p>
+            <UrlLengthIndicator value={url} />
           </div>
 
           <button
@@ -719,6 +720,45 @@ function UrlPrivacyAudit({ url }) {
         </div>
       )}
     </section>
+  );
+}
+
+function UrlLengthIndicator({ value }) {
+  const length = value.length;
+  const isLong = length > 500;
+  const isVeryLong = length > 2000;
+
+  return (
+    <div className="mt-2 flex flex-wrap items-start justify-between gap-2 px-1">
+      <p
+        className={`text-[11px] leading-4 ${
+          isVeryLong
+            ? "font-medium text-rose-700"
+            : isLong
+              ? "text-amber-700"
+              : "text-slate-400"
+        }`}
+        aria-live={isLong ? "polite" : "off"}
+      >
+        {isVeryLong
+          ? "This link is very long. Check for extra tracking or private data."
+          : isLong
+            ? "Long links can contain extra tracking or private data."
+            : "Short links are easier to review and share."}
+      </p>
+      <span
+        className={`shrink-0 text-[10px] tabular-nums ${
+          isVeryLong
+            ? "font-semibold text-rose-700"
+            : isLong
+              ? "text-amber-700"
+              : "text-slate-400"
+        }`}
+        aria-label={`${length} characters in the address`}
+      >
+        {length.toLocaleString("en-IN")} characters
+      </span>
+    </div>
   );
 }
 
