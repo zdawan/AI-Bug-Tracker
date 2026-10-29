@@ -299,6 +299,13 @@ export default function BugForm({ onBugCreated, testUrl }) {
           )}
         </div>
 
+        <ReportReadinessPanel
+          title={title}
+          description={description}
+          email={email}
+          testUrl={testUrl}
+        />
+
         {/* AI + Submit Buttons Row */}
         <div className="flex items-center gap-3 mb-4">
           <input
@@ -389,5 +396,95 @@ export default function BugForm({ onBugCreated, testUrl }) {
         </div>
       )}
     </div>
+  );
+}
+
+function ReportReadinessPanel({ title, description, email, testUrl }) {
+  const checks = [
+    {
+      label: "Clear issue title",
+      complete: title.trim().length >= 12,
+      hint: "Use a short title that identifies the problem.",
+    },
+    {
+      label: "Useful issue description",
+      complete: description.trim().length >= 40,
+      hint: "Add what you expected and what happened instead.",
+    },
+    {
+      label: "Valid contact email",
+      complete: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
+      hint: "Enter an email address so the report can be associated with you.",
+    },
+    {
+      label: "Testing destination",
+      complete: Boolean(testUrl?.trim()),
+      hint: "Return to the previous step and add the page you tested.",
+    },
+  ];
+  const completedChecks = checks.filter((check) => check.complete).length;
+  const score = Math.round((completedChecks / checks.length) * 100);
+  const nextCheck = checks.find((check) => !check.complete);
+
+  return (
+    <section
+      aria-label="Report readiness"
+      className="mb-6 rounded-2xl border border-violet-100 bg-violet-50/60 p-4"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            Report readiness
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            A quick guide to making your report easier to investigate.
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-violet-700">
+          {completedChecks}/{checks.length} ready
+        </span>
+      </div>
+
+      <div
+        className="mt-3 h-2 overflow-hidden rounded-full bg-white"
+        role="progressbar"
+        aria-label="Report readiness"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={score}
+      >
+        <div
+          className="h-full rounded-full bg-violet-600 transition-all duration-300"
+          style={{ width: `${score}%` }}
+        />
+      </div>
+
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {checks.map((check) => (
+          <li
+            key={check.label}
+            className="flex items-center gap-2 text-xs text-slate-700"
+          >
+            <span
+              aria-hidden="true"
+              className={`grid h-4 w-4 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
+                check.complete
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-white text-slate-400"
+              }`}
+            >
+              {check.complete ? "✓" : "•"}
+            </span>
+            {check.label}
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-3 text-xs leading-5 text-slate-600" aria-live="polite">
+        {nextCheck
+          ? nextCheck.hint
+          : "Your report has the key details. A screenshot is optional but can help show the issue."}
+      </p>
+    </section>
   );
 }

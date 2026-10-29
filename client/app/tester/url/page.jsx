@@ -782,6 +782,7 @@ function UrlLengthIndicator({ value }) {
               : "text-slate-400"
         }`}
         aria-label={`${length} characters in the address`}
+        aria-live={isLong ? "polite" : "off"}
       >
         {length.toLocaleString("en-IN")} characters
       </span>
