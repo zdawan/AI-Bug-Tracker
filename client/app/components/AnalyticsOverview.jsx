@@ -13,6 +13,7 @@ import {
   ChartNoAxesCombined,
   CircleAlert,
   Activity,
+  TrendingDown,
 } from "lucide-react";
 
 const isResolved = (status = "") =>
@@ -46,6 +47,43 @@ const getDate = (value) => {
 };
 
 const formatCount = (value) => new Intl.NumberFormat("en-IN").format(value);
+
+function getActivityDays(reports, numberOfDays) {
+  const today = new Date();
+  const days = [];
+
+  for (let offset = numberOfDays - 1; offset >= 0; offset -= 1) {
+    const date = new Date(today);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - offset);
+
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    days.push({
+      key,
+      day:
+        numberOfDays === 7
+          ? date.toLocaleDateString("en-IN", { weekday: "short" })
+          : date.toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+            }),
+      count: 0,
+    });
+  }
+
+  const byDate = new Map(days.map((day) => [day.key, day]));
+
+  reports.forEach((report) => {
+    const date = getDate(report.createdAt || report.created_at);
+    if (!date) return;
+
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const day = byDate.get(key);
+    if (day) day.count += 1;
+  });
+
+  return days;
+}
 
 const metricStyles = {
   slate: "bg-slate-100 text-slate-600",
@@ -119,10 +157,21 @@ function MetricCard({
   );
 }
 
-function WeeklyActivityChart({ data = [], loading = false }) {
+function WeeklyActivityChart({
+  data = [],
+  loading = false,
+  days = 7,
+  onRangeChange,
+  previousTotal = 0,
+}) {
   const maxCount = Math.max(1, ...data.map((day) => day.count || 0));
 
   const total = data.reduce((sum, day) => sum + (day.count || 0), 0);
+  const activeDays = data.filter((day) => day.count > 0).length;
+  const periodChange =
+    previousTotal > 0
+      ? ((total - previousTotal) / previousTotal) * 100
+      : null;
 
   return (
     <section className="rounded-[22px] border border-white bg-white p-5 shadow-sm shadow-slate-200/50 sm:p-6">
@@ -133,17 +182,40 @@ function WeeklyActivityChart({ data = [], loading = false }) {
           </h2>
 
           <p className="mt-1 text-xs text-slate-500">
-            Reports submitted during the last seven days
+            New reports from the last {days} days
           </p>
         </div>
 
-        <span className="inline-flex items-center gap-2 rounded-full border border-violet-100 bg-violet-50 px-3 py-1.5 text-[11px] font-medium text-violet-700">
-          <span className="h-2 w-2 rounded-full bg-violet-500" />
-          Last 7 days
-        </span>
+        <div
+          className="inline-flex rounded-xl bg-slate-100 p-1"
+          aria-label="Activity chart date range"
+        >
+          {[7, 30].map((range) => (
+            <button
+              key={range}
+              type="button"
+              onClick={() => onRangeChange(range)}
+              aria-pressed={days === range}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                days === range
+                  ? "bg-white text-violet-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {range}D
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-7 gap-2 sm:gap-4">
+      {data.length ? (
+      <div
+        className={`mt-6 grid gap-2 sm:gap-4 ${
+          days === 7 ? "grid-cols-7" : "grid-cols-6 sm:grid-cols-10"
+        }`}
+        role="img"
+        aria-label={`${formatCount(total)} reports across ${activeDays} active days in the last ${days} days.`}
+      >
         {data.map((day, index) => {
           const count = day.count || 0;
 
@@ -174,26 +246,51 @@ function WeeklyActivityChart({ data = [], loading = false }) {
                 </div>
               </div>
 
-              <span className="mt-2 text-[11px] font-medium text-slate-400">
+              <span className="mt-2 truncate text-[11px] font-medium text-slate-400">
                 {day.day}
               </span>
             </div>
           );
         })}
       </div>
+      ) : (
+        <div className="mt-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+          Activity data will appear when reports are available.
+        </div>
+      )}
 
       <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
         <span className="text-slate-400">Daily reports</span>
 
         <span className="font-medium text-violet-700">
-          {loading ? "Updating..." : `${formatCount(total)} reports this week`}
+          {loading
+            ? "Updating..."
+            : `${formatCount(total)} reports · ${activeDays} active days`}
         </span>
       </div>
+      {periodChange !== null && (
+        <p
+          className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${
+            periodChange > 0
+              ? "text-rose-600"
+              : periodChange < 0
+                ? "text-emerald-600"
+                : "text-slate-500"
+          }`}
+        >
+          {periodChange > 0 ? (
+            <TrendingUp size={13} />
+          ) : periodChange < 0 ? (
+            <TrendingDown size={13} />
+          ) : null}
+          {Math.abs(periodChange).toFixed(0)}% vs previous {days} days
+        </p>
+      )}
     </section>
   );
 }
 
-function MetricCard({
+function LegacyMetricCard({
   title,
   value,
   note,
@@ -258,7 +355,7 @@ function MetricCard({
   );
 }
 
-function WeeklyActivityChart({ data = [] }) {
+function LegacyWeeklyActivityChart({ data = [] }) {
   const maxCount = Math.max(1, ...data.map((day) => day.count));
 
   return (
@@ -363,7 +460,12 @@ function ResolutionChart({ total, resolved }) {
     </section>
   );
 }
-function NotificationWidget({ notifications = [], onDismiss, onViewAll }) {
+function NotificationWidget({
+  notifications = [],
+  onDismiss,
+  onViewAll,
+  onViewReport,
+}) {
   const [expanded, setExpanded] = useState(false);
 
   const visibleNotifications = expanded
@@ -381,7 +483,7 @@ function NotificationWidget({ notifications = [], onDismiss, onViewAll }) {
         </div>
 
         <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
-          {notifications.filter((item) => item.unread).length}
+          {notifications.length} updates
         </span>
       </div>
 
@@ -399,7 +501,12 @@ function NotificationWidget({ notifications = [], onDismiss, onViewAll }) {
                 )}
               </span>
 
-              <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => item.report && onViewReport?.(item.report)}
+                disabled={!item.report || !onViewReport}
+                className="min-w-0 flex-1 text-left disabled:cursor-default"
+              >
                 <p className="text-xs font-semibold text-slate-800">
                   {item.title}
                 </p>
@@ -407,7 +514,7 @@ function NotificationWidget({ notifications = [], onDismiss, onViewAll }) {
                   {item.message}
                 </p>
                 <p className="mt-1 text-[10px] text-slate-400">{item.time}</p>
-              </div>
+              </button>
 
               {onDismiss && (
                 <button
@@ -449,67 +556,80 @@ export default function AnalyticsOverview({
   loading = false,
   onDismissNotification,
   onViewAllNotifications,
+  onViewReport,
 }) {
+  const [activityDays, setActivityDays] = useState(7);
+  const activity = useMemo(
+    () =>
+      activityDays === 7 && weeklyActivity.length
+        ? weeklyActivity
+        : getActivityDays(reports, activityDays),
+    [activityDays, reports, weeklyActivity],
+  );
+  const previousPeriodTotal = useMemo(() => {
+    const periodStart = new Date();
+    periodStart.setHours(0, 0, 0, 0);
+    periodStart.setDate(periodStart.getDate() - activityDays);
+    const previousStart = new Date(periodStart);
+    previousStart.setDate(previousStart.getDate() - activityDays);
+
+    return reports.filter((report) => {
+      const date = getDate(report.createdAt || report.created_at);
+      return date && date >= previousStart && date < periodStart;
+    }).length;
+  }, [activityDays, reports]);
+
   const stats = useMemo(() => {
-    const resolved = reports.filter((report) =>
-      ["resolved", "closed", "fixed", "completed"].includes(
-        String(report.status || "").toLowerCase(),
-      ),
-    ).length;
-
-    const open = reports.filter(
-      (report) =>
-        ![
-          "resolved",
-          "closed",
-          "fixed",
-          "completed",
-          "rejected",
-          "duplicate",
-        ].includes(String(report.status || "").toLowerCase()),
-    ).length;
-
+    const resolved = reports.filter((report) => isResolved(report.status)).length;
+    const open = reports.filter((report) => isOpen(report.status)).length;
     const high = reports.filter((report) =>
-      ["high", "critical", "urgent", "blocker"].includes(
-        String(report.severity || "").toLowerCase(),
-      ),
+      isHighSeverity(report.severity),
     ).length;
+    const submissions = reports.reduce((sum, report) => {
+      const count = Number(report.reports);
+      return sum + (Number.isFinite(count) && count > 0 ? count : 1);
+    }, 0);
 
     return {
       total: reports.length,
+      submissions,
+      repeats: Math.max(0, submissions - reports.length),
       open,
       resolved,
       high,
+      resolutionRate: reports.length
+        ? Math.round((resolved / reports.length) * 100)
+        : 0,
     };
   }, [reports]);
 
   const cards = [
     {
-      title: "Total reports",
+      label: "Unique issues",
       value: stats.total,
-      note: "All submitted reports",
+      note: `${formatCount(stats.submissions)} total submissions`,
       icon: Layers3,
       tone: "slate",
       featured: true,
     },
     {
-      title: "Open reports",
+      label: "Open reports",
       value: stats.open,
       note: "Awaiting attention",
       icon: Clock3,
       tone: "violet",
     },
     {
-      title: "Resolved reports",
+      label: "Resolved reports",
       value: stats.resolved,
-      note: "Successfully resolved",
+      note: `${stats.resolutionRate}% resolution rate`,
       icon: CheckCircle2,
       tone: "green",
     },
     {
-      title: "High severity",
+      label: "High severity",
       value: stats.high,
-      note: "Priority issues",
+      note: `${formatCount(stats.repeats)} repeat submissions`,
       icon: ShieldAlert,
       tone: "rose",
     },
@@ -537,13 +657,19 @@ export default function AnalyticsOverview({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <MetricCard key={card.title} {...card} />
+          <MetricCard key={card.label} {...card} />
         ))}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          <WeeklyActivityChart data={weeklyActivity} />
+          <WeeklyActivityChart
+            data={activity}
+            days={activityDays}
+            loading={loading}
+            onRangeChange={setActivityDays}
+            previousTotal={previousPeriodTotal}
+          />
         </div>
         <ResolutionChart total={stats.total} resolved={stats.resolved} />
       </div>
@@ -587,6 +713,7 @@ export default function AnalyticsOverview({
           notifications={notifications}
           onDismiss={onDismissNotification}
           onViewAll={onViewAllNotifications}
+          onViewReport={onViewReport}
         />
       </div>
     </section>
