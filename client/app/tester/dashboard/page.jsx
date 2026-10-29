@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AnalyticsDrilldown from "./components/AnalyticsDrilldown";
+import ReportAgingBoard from "./components/ReportAgingBoard";
 import { MetricQualityPanel } from "../../components/AnalyticsOverview";
 import {
   ArrowDown,
@@ -1906,6 +1907,11 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
         bugs={bugs}
         onOpenBug={onOpenBug}
         onViewAll={onViewAllOpen}
+      />
+      <ReportAgingBoard
+        reports={bugs}
+        onOpenReport={onOpenBug}
+        onViewAllOpen={onViewAllOpen}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
