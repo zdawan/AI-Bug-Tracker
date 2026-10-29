@@ -234,6 +234,494 @@ export default function TesterPage() {
   );
 }
 
+const URL_AUDIT_CATEGORIES = [
+  { value: "all", label: "All checks" },
+  { value: "privacy", label: "Privacy" },
+  { value: "transport", label: "Connection" },
+  { value: "sharing", label: "Shared data" },
+];
+
+const SENSITIVE_PARAMETER_PATTERN =
+  /(^|[_-])(token|access[_-]?token|refresh[_-]?token|secret|password|passwd|session|sessionid|auth|authorization|api[_-]?key|client[_-]?secret|credential|signature|jwt)([_-]|$)/i;
+
+const PERSONAL_PARAMETER_PATTERN =
+  /(^|[_-])(email|e-mail|phone|mobile|telephone|address|username|user[_-]?name|birth[_-]?date|dob)([_-]|$)/i;
+
+const PRIVATE_HOST_PATTERN =
+  /(^localhost$|\.localhost$|\.local$|\.internal$|\.test$|^127\.|^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\.)/i;
+
+function makeUrlAuditCheck({
+  id,
+  category,
+  state,
+  title,
+  detail,
+  recommendation,
+  evidence,
+}) {
+  return {
+    id,
+    category,
+    state,
+    title,
+    detail,
+    recommendation,
+    evidence,
+  };
+}
+
+function getUrlAuditChecks(value) {
+  const entered = value.trim();
+
+  if (!entered) {
+    return [
+      makeUrlAuditCheck({
+        id: "destination",
+        category: "sharing",
+        state: "neutral",
+        title: "No destination to review yet",
+        detail: "The audit updates locally as you enter a URL.",
+        recommendation: "Enter the destination you intend to test.",
+      }),
+    ];
+  }
+
+  const normalized = /^https?:\/\//i.test(entered)
+    ? entered
+    : `https://${entered}`;
+  let parsed;
+
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    return [
+      makeUrlAuditCheck({
+        id: "parse",
+        category: "sharing",
+        state: "attention",
+        title: "Address could not be inspected",
+        detail: "The text is not currently parseable as a web address.",
+        recommendation: "Check for missing separators, spaces, or typos.",
+      }),
+    ];
+  }
+
+  const checks = [];
+  const isHttp = parsed.protocol === "http:";
+  const isHttps = parsed.protocol === "https:";
+  const isPrivateHost = PRIVATE_HOST_PATTERN.test(parsed.hostname);
+  const isLoopbackHost =
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "[::1]";
+  const sensitiveKeys = [];
+  const personalKeys = [];
+
+  for (const [key, queryValue] of parsed.searchParams.entries()) {
+    const cleanKey = key.trim();
+
+    if (SENSITIVE_PARAMETER_PATTERN.test(cleanKey)) {
+      sensitiveKeys.push(cleanKey);
+    } else if (PERSONAL_PARAMETER_PATTERN.test(cleanKey)) {
+      personalKeys.push(cleanKey);
+    }
+
+    if (
+      queryValue &&
+      /^(bearer\s+|eyJ[a-zA-Z0-9_-]{10,}\.|gh[pousr]_[a-zA-Z0-9]{12,})/i.test(
+        queryValue,
+      ) &&
+      !sensitiveKeys.includes(cleanKey)
+    ) {
+      sensitiveKeys.push(cleanKey || "unnamed parameter");
+    }
+  }
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "transport",
+      category: "transport",
+      state: isHttps ? "good" : isHttp ? "attention" : "attention",
+      title: isHttps ? "HTTPS is enabled" : "Connection is not HTTPS",
+      detail: isHttps
+        ? "The address uses an encrypted web protocol."
+        : "The address uses HTTP, so traffic is not encrypted in transit.",
+      recommendation: isHttps
+        ? "Keep the secure protocol for public websites."
+        : isLoopbackHost
+          ? "HTTP is expected for many local previews."
+          : "Prefer HTTPS for public or shared destinations.",
+      evidence: parsed.protocol.replace(":", "").toUpperCase(),
+    }),
+  );
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "credentials",
+      category: "privacy",
+      state:
+        parsed.username || parsed.password
+          ? "attention"
+          : "good",
+      title:
+        parsed.username || parsed.password
+          ? "Credentials appear in the address"
+          : "No embedded credentials detected",
+      detail:
+        parsed.username || parsed.password
+          ? "A user name or password is embedded before the host."
+          : "The address does not contain URL user-name or password fields.",
+      recommendation:
+        parsed.username || parsed.password
+          ? "Remove credentials and use an approved sign-in workflow instead."
+          : "Avoid adding account credentials to a shared URL.",
+    }),
+  );
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "secret-query",
+      category: "privacy",
+      state: sensitiveKeys.length ? "attention" : "good",
+      title: sensitiveKeys.length
+        ? "Possible secret in query parameter name"
+        : "No sensitive query names detected",
+      detail: sensitiveKeys.length
+        ? "Parameter names may indicate access tokens, keys, or session data. Values are intentionally hidden."
+        : "No query parameter names matched common secret indicators.",
+      recommendation: sensitiveKeys.length
+        ? "Remove secrets from the URL before sharing it or opening the report form."
+        : "Still review the link manually; unusual secrets may not be recognized.",
+      evidence: sensitiveKeys.length
+        ? sensitiveKeys.map((key) => maskParameterName(key))
+        : undefined,
+    }),
+  );
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "personal-query",
+      category: "privacy",
+      state: personalKeys.length ? "attention" : "good",
+      title: personalKeys.length
+        ? "Personal-data query names detected"
+        : "No common personal-data query names detected",
+      detail: personalKeys.length
+        ? "Parameter names may contain contact or profile data. Values are never shown here."
+        : "No common email, phone, address, or profile parameter names were found.",
+      recommendation: personalKeys.length
+        ? "Remove personal values unless they are essential and approved for the report."
+        : "Check the destination manually for personal information in other fields.",
+      evidence: personalKeys.length
+        ? personalKeys.map((key) => maskParameterName(key))
+        : undefined,
+    }),
+  );
+
+  const queryCount = [...parsed.searchParams.keys()].length;
+  checks.push(
+    makeUrlAuditCheck({
+      id: "query-data",
+      category: "sharing",
+      state: queryCount > 0 ? "neutral" : "good",
+      title: queryCount
+        ? `${queryCount} query ${
+            queryCount === 1 ? "parameter is" : "parameters are"
+          } attached`
+        : "No query parameters attached",
+      detail: queryCount
+        ? "Query values are excluded from this audit display to avoid exposing them."
+        : "The address does not include query-string data.",
+      recommendation: queryCount
+        ? "Inspect the original link locally and remove values that are not needed."
+        : "No query-string cleanup is needed.",
+      evidence: queryCount
+        ? [...new Set([...parsed.searchParams.keys()])].map(maskParameterName)
+        : undefined,
+    }),
+  );
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "fragment",
+      category: "sharing",
+      state: parsed.hash ? "neutral" : "good",
+      title: parsed.hash
+        ? "Page fragment is included"
+        : "No page fragment attached",
+      detail: parsed.hash
+        ? "The part after # may identify a client-side section and is not sent to the server."
+        : "The address does not include an anchor or client-side fragment.",
+      recommendation: parsed.hash
+        ? "Keep the fragment if it is needed to reproduce the issue; otherwise remove it."
+        : "No fragment review is needed.",
+    }),
+  );
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "host-scope",
+      category: "transport",
+      state: isPrivateHost ? "neutral" : "good",
+      title: isPrivateHost
+        ? "Local or private host detected"
+        : "Public-style host name",
+      detail: isPrivateHost
+        ? "This address appears to use localhost, a private network, or a development-only domain."
+        : "The host does not match the common local or private-host patterns.",
+      recommendation: isPrivateHost
+        ? "Confirm the environment is accessible to the people and services involved in testing."
+        : "This check cannot verify ownership, authorization, or reachability.",
+      evidence: parsed.hostname,
+    }),
+  );
+
+  const port = parsed.port;
+  const standardPort =
+    !port ||
+    (isHttp && port === "80") ||
+    (isHttps && port === "443");
+  checks.push(
+    makeUrlAuditCheck({
+      id: "port",
+      category: "transport",
+      state: standardPort ? "good" : "neutral",
+      title: standardPort
+        ? "Standard web port"
+        : `Custom port ${port} is specified`,
+      detail: standardPort
+        ? "No non-standard port is visible in the address."
+        : "Custom ports are often used by preview environments and local servers.",
+      recommendation: standardPort
+        ? "No port review is needed."
+        : "Confirm the target environment is approved and the port is intentional.",
+      evidence: port || (isHttps ? "443" : "80"),
+    }),
+  );
+
+  const addressLength = entered.length;
+  const lengthState =
+    addressLength > 2000
+      ? "attention"
+      : addressLength > 500
+        ? "neutral"
+        : "good";
+  checks.push(
+    makeUrlAuditCheck({
+      id: "length",
+      category: "sharing",
+      state: lengthState,
+      title:
+        lengthState === "attention"
+          ? "Address is unusually long"
+          : lengthState === "neutral"
+            ? "Address is longer than typical"
+            : "Address length looks typical",
+      detail: `${addressLength} characters entered. Long links can include unnecessary tracking or state data.`,
+      recommendation:
+        lengthState === "attention"
+          ? "Review and shorten the link before continuing."
+          : lengthState === "neutral"
+            ? "Remove unused tracking parameters if they are not needed."
+            : "No length cleanup is suggested.",
+      evidence: `${addressLength} characters`,
+    }),
+  );
+
+  return checks;
+}
+
+function maskParameterName(value) {
+  const key = String(value || "").trim();
+
+  if (!key) return "unnamed parameter";
+  if (key.length <= 4) return `${key.slice(0, 1)}***`;
+
+  return `${key.slice(0, 2)}***${key.slice(-1)}`;
+}
+
+function UrlAuditBadge({ state }) {
+  const styles = {
+    good: "bg-emerald-100 text-emerald-800",
+    attention: "bg-amber-100 text-amber-900",
+    neutral: "bg-slate-100 text-slate-600",
+  };
+
+  const labels = {
+    good: "Looks good",
+    attention: "Review",
+    neutral: "Note",
+  };
+
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+        styles[state] || styles.neutral
+      }`}
+    >
+      {labels[state] || labels.neutral}
+    </span>
+  );
+}
+
+function UrlAuditCheck({ check }) {
+  const accentStyles = {
+    good: "border-emerald-200",
+    attention: "border-amber-200",
+    neutral: "border-slate-200",
+  };
+
+  return (
+    <article
+      className={`rounded-xl border bg-white p-3 ${
+        accentStyles[check.state] || accentStyles.neutral
+      }`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h4 className="text-xs font-semibold text-slate-800">
+            {check.title}
+          </h4>
+          <p className="mt-1 text-[11px] leading-5 text-slate-600">
+            {check.detail}
+          </p>
+        </div>
+        <UrlAuditBadge state={check.state} />
+      </div>
+      <p className="mt-2 border-t border-slate-100 pt-2 text-[10px] leading-4 text-slate-500">
+        <span className="font-semibold text-slate-600">Next step: </span>
+        {check.recommendation}
+      </p>
+      {check.evidence && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {(Array.isArray(check.evidence)
+            ? check.evidence
+            : [check.evidence]
+          ).map((item, index) => (
+            <span
+              key={`${check.id}-${index}`}
+              className="max-w-full truncate rounded-md bg-slate-50 px-2 py-1 font-mono text-[9px] text-slate-500"
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function UrlPrivacyAudit({ url }) {
+  const [expanded, setExpanded] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const checks = getUrlAuditChecks(url);
+  const reviewCount = checks.filter(
+    (check) => check.state === "attention",
+  ).length;
+  const filteredChecks =
+    activeCategory === "all"
+      ? checks
+      : checks.filter((check) => check.category === activeCategory);
+  const displayedChecks = expanded
+    ? filteredChecks
+    : filteredChecks.slice(0, 3);
+
+  return (
+    <section
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+      aria-labelledby="url-privacy-heading"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-700">
+            <span aria-hidden="true" className="text-sm font-bold">
+              {reviewCount ? "!" : "✓"}
+            </span>
+          </span>
+          <div className="min-w-0">
+            <h3
+              id="url-privacy-heading"
+              className="text-xs font-semibold text-slate-800"
+            >
+              Privacy and target review
+            </h3>
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">
+              {reviewCount
+                ? `${reviewCount} item${reviewCount === 1 ? "" : "s"} worth reviewing. Nothing is blocked.`
+                : "Local checks only; review the destination before continuing."}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-controls="url-privacy-details"
+          className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700"
+        >
+          {expanded ? "Hide review" : "Review URL"}
+        </button>
+      </div>
+
+      {expanded && (
+        <div
+          id="url-privacy-details"
+          className="border-t border-slate-100 bg-slate-50/60 px-4 py-4"
+        >
+          <p className="text-[11px] leading-5 text-slate-500">
+            This check runs in your browser and does not contact the
+            destination. Query values and credentials are never displayed by
+            the review panel.
+          </p>
+          <div
+            className="mt-3 flex gap-2 overflow-x-auto pb-2"
+            aria-label="Filter URL audit checks"
+          >
+            {URL_AUDIT_CATEGORIES.map((category) => {
+              const count =
+                category.value === "all"
+                  ? checks.length
+                  : checks.filter(
+                      (check) => check.category === category.value,
+                    ).length;
+
+              return (
+                <button
+                  key={category.value}
+                  type="button"
+                  onClick={() => setActiveCategory(category.value)}
+                  aria-pressed={activeCategory === category.value}
+                  className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition ${
+                    activeCategory === category.value
+                      ? "bg-violet-700 text-white"
+                      : "border border-slate-200 bg-white text-slate-500 hover:text-violet-700"
+                  }`}
+                >
+                  {category.label} ({count})
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2 grid gap-2">
+            {displayedChecks.map((check) => (
+              <UrlAuditCheck key={check.id} check={check} />
+            ))}
+          </div>
+          {filteredChecks.length > displayedChecks.length && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-semibold text-slate-600 hover:border-violet-200 hover:text-violet-700"
+            >
+              Show remaining checks
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 const URL_ENTRY_EXAMPLES = [
   {
     label: "Website home",
@@ -535,6 +1023,8 @@ function UrlReadinessGuide({ url, onUseExample }) {
 
       <div className="space-y-5 px-5 py-5 sm:px-6">
         <UrlGuideStatus state={inspected.state} message={inspected.message} />
+
+        <UrlPrivacyAudit url={url} />
 
         {inspected.state !== "empty" && (
           <div className="space-y-3">
