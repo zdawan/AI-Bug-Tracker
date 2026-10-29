@@ -26,6 +26,21 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
   const fileInputRef = useRef(null);
 
+  const handleScreenshotChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setScreenshot(null);
+      event.target.value = "";
+      toast.error("Choose an image file for the screenshot.");
+      return;
+    }
+
+    setScreenshot(file);
+  };
+
   const addReproductionStep = () => {
     const step = stepDraft.trim();
 
@@ -332,9 +347,13 @@ export default function BugForm({ onBugCreated, testUrl }) {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={(e) => setScreenshot(e.target.files[0])}
+            aria-describedby="screenshot-help"
+            onChange={handleScreenshotChange}
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm cursor-pointer"
           />
+          <p id="screenshot-help" className="mt-2 text-xs text-gray-500">
+            Select an image file. Adding a screenshot is optional.
+          </p>
           {screenshot && screenshotPreview && (
             <div className="mt-3 flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
               <img
