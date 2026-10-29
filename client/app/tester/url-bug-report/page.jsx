@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BugForm from "../components/BugForm";
 import { ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function UserPageContent() {
@@ -37,6 +38,19 @@ function UserPageContent() {
     setShowPopup(false);
   };
 
+  const copyTestUrl = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      await navigator.clipboard.writeText(finalUrl);
+      toast.success("Test destination copied.");
+    } catch {
+      toast.error("Could not copy the destination. Please copy it manually.");
+    }
+  };
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
@@ -59,6 +73,13 @@ function UserPageContent() {
               >
                 Preview
               </a>
+              <button
+                type="button"
+                onClick={copyTestUrl}
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Copy URL
+              </button>
               <button
                 onClick={() => {
                   setTempPath(path);

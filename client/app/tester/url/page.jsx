@@ -34,6 +34,25 @@ export default function TesterPage() {
     }
   };
 
+  const copyPreviewUrl = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      await navigator.clipboard.writeText(getPreviewUrl());
+      toast.success("Test URL copied.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } catch {
+      toast.error("Could not copy the URL. Please copy it manually.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
 
@@ -207,6 +226,13 @@ export default function TesterPage() {
                 aria-hidden="true"
                 className="mt-1 shrink-0 text-slate-400"
               />
+              <button
+                type="button"
+                onClick={copyPreviewUrl}
+                className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700"
+              >
+                Copy URL
+              </button>
             </div>
           </div>
         </form>
