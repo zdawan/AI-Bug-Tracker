@@ -302,6 +302,29 @@ function makeUrlAuditCheck({
   };
 }
 
+function getFlaggedQueryParameterNames(parsed) {
+  const flaggedNames = new Set();
+
+  for (const [key, value] of parsed.searchParams.entries()) {
+    const cleanKey = key.trim();
+    const valueLooksSensitive =
+      value &&
+      /^(bearer\s+|eyJ[a-zA-Z0-9_-]{10,}\.|gh[pousr]_[a-zA-Z0-9]{12,})/i.test(
+        value,
+      );
+
+    if (
+      SENSITIVE_PARAMETER_PATTERN.test(cleanKey) ||
+      PERSONAL_PARAMETER_PATTERN.test(cleanKey) ||
+      valueLooksSensitive
+    ) {
+      flaggedNames.add(key);
+    }
+  }
+
+  return flaggedNames;
+}
+
 function getUrlAuditChecks(value) {
   const entered = value.trim();
 
@@ -643,10 +666,24 @@ function UrlAuditCheck({ check }) {
   );
 }
 
-function UrlPrivacyAudit({ url }) {
+function UrlPrivacyAudit({ url, onChangeUrl }) {
   const [expanded, setExpanded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
   const checks = getUrlAuditChecks(url);
+  const flaggedParameterNames = (() => {
+    const entered = url.trim();
+
+    if (!entered) return new Set();
+
+    try {
+      const normalized = /^https?:\/\//i.test(entered)
+        ? entered
+        : `https://${entered}`;
+      return getFlaggedQueryParameterNames(new URL(normalized));
+    } catch {
+      return new Set();
+    }
+  })();
   const reviewCount = checks.filter(
     (check) => check.state === "attention",
   ).length;
@@ -705,6 +742,34 @@ function UrlPrivacyAudit({ url }) {
             destination. Query values and credentials are never displayed by
             the review panel.
           </p>
+          {flaggedParameterNames.size > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+              <p className="text-[11px] leading-5 text-amber-900">
+                {flaggedParameterNames.size} query{" "}
+                {flaggedParameterNames.size === 1 ? "parameter" : "parameters"}{" "}
+                flagged for review.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const entered = url.trim();
+                  const normalized = /^https?:\/\//i.test(entered)
+                    ? entered
+                    : `https://${entered}`;
+                  const cleaned = new URL(normalized);
+
+                  for (const name of flaggedParameterNames) {
+                    cleaned.searchParams.delete(name);
+                  }
+
+                  onChangeUrl(cleaned.href);
+                }}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100"
+              >
+                Remove flagged parameters
+              </button>
+            </div>
+          )}
           <div
             className="mt-3 flex gap-2 overflow-x-auto pb-2"
             aria-label="Filter URL audit checks"
@@ -890,13 +955,13 @@ function inspectTesterUrl(value) {
   }
 
   const hasWebProtocol = ["http:", "https:"].includes(parsed.protocol);
-  const hasDottedHostname =
-    parsed.hostname.includes(".") &&
+  const hasAcceptableHostname =
+    (parsed.hostname === "localhost" || parsed.hostname.includes(".")) &&
     !parsed.hostname.startsWith(".") &&
     !parsed.hostname.endsWith(".") &&
     !/\s/.test(parsed.hostname);
 
-  if (!hasWebProtocol || !hasDottedHostname) {
+  if (!hasWebProtocol || !hasAcceptableHostname) {
     return {
       state: "invalid",
       normalized: parsed.href,
@@ -1096,7 +1161,7 @@ function UrlReadinessGuide({ url, onUseExample }) {
       <div className="space-y-5 px-5 py-5 sm:px-6">
         <UrlGuideStatus state={inspected.state} message={inspected.message} />
 
-        <UrlPrivacyAudit url={url} />
+        <UrlPrivacyAudit url={url} onChangeUrl={onUseExample} />
 
         {inspected.state !== "empty" && (
           <div className="space-y-3">
