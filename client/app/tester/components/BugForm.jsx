@@ -178,6 +178,31 @@ export default function BugForm({ onBugCreated, testUrl }) {
           Found something broken? Let’s fix it together.
         </p>
 
+        {testUrl && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <p className="min-w-0 flex-1 break-all text-xs leading-5 text-gray-600">
+              Testing on: <span className="font-medium">{testUrl}</span>
+            </p>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  if (!navigator.clipboard?.writeText) {
+                    throw new Error("Clipboard access is unavailable.");
+                  }
+                  await navigator.clipboard.writeText(testUrl);
+                  toast.success("Test URL copied.");
+                } catch {
+                  toast.error("Could not copy the URL. Please copy it manually.");
+                }
+              }}
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:text-violet-700"
+            >
+              Copy URL
+            </button>
+          </div>
+        )}
+
         {/* Title */}
         <div className="mb-5">
           <label className="block text-sm font-medium text-gray-700 mb-2">

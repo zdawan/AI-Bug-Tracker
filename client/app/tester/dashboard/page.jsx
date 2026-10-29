@@ -1946,6 +1946,20 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
 
 function BugDetails({ bug, onClose }) {
   const dialogRef = useRef(null);
+  const [testUrlCopyStatus, setTestUrlCopyStatus] = useState("");
+
+  const copyTestUrl = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      await navigator.clipboard.writeText(bug.testUrl);
+      setTestUrlCopyStatus("URL copied.");
+    } catch {
+      setTestUrlCopyStatus("Could not copy URL. Copy it manually.");
+    }
+  };
 
   useEffect(() => {
     if (!bug) return undefined;
@@ -2133,6 +2147,18 @@ function BugDetails({ bug, onClose }) {
                   className="shrink-0 text-slate-400"
                 />
               </a>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={copyTestUrl}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700"
+                >
+                  Copy URL
+                </button>
+                <p className="text-xs text-slate-500" role="status" aria-live="polite">
+                  {testUrlCopyStatus}
+                </p>
+              </div>
             </section>
           )}
 
