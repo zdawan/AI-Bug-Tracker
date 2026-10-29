@@ -593,3 +593,11 @@ export default function AnalyticsOverview({
   );
 }
 
+<AnalyticsOverview
+  reports={bugs}
+  loading={loading}
+  notifications={notifications}
+  onDismissNotification={dismissNotification}
+  onViewAllNotifications={openNotifications}
+  onViewReport={handleViewReport}
+/>;
