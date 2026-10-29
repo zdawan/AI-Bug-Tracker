@@ -16,27 +16,11 @@ import {
   TrendingDown,
 } from "lucide-react";
 
-const isResolved = (status = "") =>
-  ["resolved", "closed", "fixed", "completed"].includes(
-    String(status).toLowerCase(),
-  );
+const isResolved = (status = "") => status === "Closed";
 
-const isOpen = (status = "") =>
-  ![
-    "resolved",
-    "closed",
-    "fixed",
-    "completed",
-    "rejected",
-    "duplicate",
-    "cancelled",
-    "canceled",
-  ].includes(String(status).toLowerCase());
+const isOpen = (status = "") => !isResolved(status);
 
-const isHighSeverity = (severity = "") =>
-  ["high", "critical", "urgent", "blocker"].includes(
-    String(severity).toLowerCase(),
-  );
+const isHighSeverity = (severity = "") => severity === "High";
 
 const getDate = (value) => {
   if (!value) return null;
