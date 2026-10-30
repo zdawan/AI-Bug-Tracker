@@ -912,6 +912,9 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
 
     return true;
   });
+  const selectedVisibleCount = visibleQueryParameters.filter((parameter) =>
+    selectedParameterNames.has(parameter.name),
+  ).length;
 
   useEffect(() => {
     setSelectedParameterNames(new Set(flaggedParameterNames));
@@ -1139,6 +1142,13 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   {queryParameters.length} unique ·{" "}
                   {[...parsedUrl.searchParams.keys()].length} occurrences
                 </span>
+                {selectedParameterNames.size > 0 && (
+                  <span className="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-semibold text-violet-800">
+                    {selectedParameterNames.size} selected
+                    {selectedVisibleCount !== selectedParameterNames.size &&
+                      ` · ${selectedVisibleCount} visible`}
+                  </span>
+                )}
               </div>
               <div
                 className="mt-3 flex flex-wrap gap-1.5"
