@@ -809,6 +809,8 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
       document.body.appendChild(downloadLink);
       downloadLink.click();
       downloadLink.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadUrl = null;
       toast.success("Privacy-safe audit summary downloaded.");
     } catch {
       toast.error("Could not download the audit summary.");
