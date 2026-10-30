@@ -1646,6 +1646,7 @@ function MetricQualityPanel({ reports = [] }) {
   const [query, setQuery] = useState("");
   const [showDefinitions, setShowDefinitions] = useState(false);
   const [visibleCount, setVisibleCount] = useState(QUALITY_PAGE_SIZE);
+  const [exportError, setExportError] = useState("");
   const quality = useMemo(() => analyzeReportQuality(reports), [reports]);
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -1676,6 +1677,66 @@ function MetricQualityPanel({ reports = [] }) {
   const pageFindings = visibleFindings.slice(0, visibleCount);
   const totalFindings = quality.findings.length;
   const hasFindings = totalFindings > 0;
+
+  const exportFindings = () => {
+    let downloadUrl = "";
+
+    try {
+      const csvRows = [
+        [
+          "Report ID",
+          "Report title",
+          "Category",
+          "Field",
+          "Finding",
+          "Details",
+          "Suggested check",
+        ],
+        ...visibleFindings.map((finding) => [
+          finding.reportId,
+          finding.reportTitle,
+          finding.category,
+          finding.field,
+          finding.title,
+          finding.detail,
+          finding.recommendation,
+        ]),
+      ];
+      const csv = csvRows
+        .map((row) =>
+          row
+            .map((value) => {
+              const text = String(value ?? "");
+              const safeText = /^[\t\r ]*[=+\-@]/.test(text)
+                ? `'${text}`
+                : text;
+              return `"${safeText.replace(/"/g, '""')}"`;
+            })
+            .join(","),
+        )
+        .join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = `data-quality-findings-${activeFilter}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadUrl = "";
+      setExportError("");
+    } catch {
+      setExportError("Could not export quality findings. Please try again.");
+    } finally {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    }
+  };
 
   return (
     <section
@@ -1763,20 +1824,37 @@ function MetricQualityPanel({ reports = [] }) {
               impact.
             </p>
           </div>
-          <label className="w-full sm:max-w-xs">
-            <span className="sr-only">Search quality findings</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setVisibleCount(QUALITY_PAGE_SIZE);
-              }}
-              placeholder="Search reports or finding text"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-            />
-          </label>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end">
+            <label className="w-full sm:max-w-xs">
+              <span className="sr-only">Search quality findings</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setVisibleCount(QUALITY_PAGE_SIZE);
+                }}
+                placeholder="Search reports or finding text"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={exportFindings}
+              disabled={!visibleFindings.length}
+              aria-label={`Export ${visibleFindings.length} matching data-quality findings as CSV`}
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download size={14} aria-hidden="true" />
+              Export CSV ({visibleFindings.length})
+            </button>
+          </div>
         </div>
+        {exportError && (
+          <p role="alert" className="mt-2 text-xs text-rose-700">
+            {exportError}
+          </p>
+        )}
 
         <div
           className="mt-4 flex gap-2 overflow-x-auto pb-2"
