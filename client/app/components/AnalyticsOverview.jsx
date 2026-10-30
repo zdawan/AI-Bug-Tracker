@@ -169,6 +169,7 @@ function WeeklyActivityChart({
 
   const total = data.reduce((sum, day) => sum + (day.count || 0), 0);
   const activeDays = data.filter((day) => day.count > 0).length;
+  const averagePerDay = data.length ? total / data.length : 0;
   const periodChange =
     previousTotal > 0
       ? ((total - previousTotal) / previousTotal) * 100
@@ -332,11 +333,21 @@ function WeeklyActivityChart({
       <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
         <span className="text-slate-400">Daily reports</span>
 
-        <span className="font-medium text-violet-700">
-          {loading
-            ? "Updating..."
-            : `${formatCount(total)} reports · ${activeDays} active days`}
-        </span>
+        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-right">
+          <span className="font-medium text-violet-700">
+            {loading
+              ? "Updating..."
+              : `${formatCount(total)} reports · ${activeDays} active days`}
+          </span>
+          {!loading && (
+            <span
+              className="text-slate-500"
+              aria-label={`${averagePerDay.toFixed(1)} average reports per day`}
+            >
+              Avg. {averagePerDay.toFixed(1)}/day
+            </span>
+          )}
+        </div>
       </div>
       {periodChange !== null && (
         <p
