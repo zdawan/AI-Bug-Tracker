@@ -553,7 +553,7 @@ function WeeklyActivityChart({
           role="status"
           aria-live="polite"
         >
-          <span className="text-xs font-medium text-slate-600">
+          <span className="min-w-0 flex-1 text-xs font-medium text-slate-600">
             {selectedDay.key
               ? new Date(`${selectedDay.key}T12:00:00`).toLocaleDateString(
                   "en-IN",
@@ -574,6 +574,14 @@ function WeeklyActivityChart({
               reports
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setSelectedDayKey("")}
+            aria-label="Clear selected activity day"
+            className="ml-auto inline-flex h-7 items-center rounded-lg border border-violet-200 bg-white px-2 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          >
+            Clear
+          </button>
         </div>
       )}
 
