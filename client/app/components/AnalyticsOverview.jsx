@@ -188,12 +188,14 @@ function WeeklyActivityChart({
 
         <div
           className="inline-flex rounded-xl bg-slate-100 p-1"
+          role="group"
           aria-label="Activity chart date range"
         >
           {[7, 30].map((range) => (
             <button
               key={range}
               type="button"
+              aria-label={`Show activity for the last ${range} days`}
               onClick={() => onRangeChange(range)}
               aria-pressed={days === range}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
@@ -257,6 +259,16 @@ function WeeklyActivityChart({
         <div className="mt-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
           Activity data will appear when reports are available.
         </div>
+      )}
+
+      {data.length > 0 && (
+        <ul className="sr-only" aria-label="Daily report counts">
+          {data.map((day, index) => (
+            <li key={`${day.key || day.day}-summary-${index}`}>
+              {day.day}: {formatCount(day.count || 0)} reports
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
