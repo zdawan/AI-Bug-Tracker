@@ -839,6 +839,7 @@ function UrlAuditCheck({ check }) {
 function UrlPrivacyAudit({ url, onChangeUrl }) {
   const [expanded, setExpanded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [parameterFilter, setParameterFilter] = useState("all");
   const [lastCleanup, setLastCleanup] = useState(null);
   const [selectedParameterNames, setSelectedParameterNames] = useState(
     () => new Set(),
@@ -876,6 +877,41 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   const trackingParameterNames = parsedUrl
     ? getTrackingQueryParameterNames(parsedUrl)
     : new Set();
+  const parameterFilters = [
+    { id: "all", label: "All", count: queryParameters.length },
+    {
+      id: "sensitive",
+      label: "Sensitive",
+      count: queryParameters.filter((parameter) => parameter.sensitive).length,
+    },
+    {
+      id: "personal",
+      label: "Personal",
+      count: queryParameters.filter((parameter) => parameter.personal).length,
+    },
+    {
+      id: "tracking",
+      label: "Tracking",
+      count: queryParameters.filter((parameter) => parameter.tracking).length,
+    },
+    {
+      id: "other",
+      label: "Other",
+      count: queryParameters.filter(
+        (parameter) => !parameter.flagged && !parameter.tracking,
+      ).length,
+    },
+  ];
+  const visibleQueryParameters = queryParameters.filter((parameter) => {
+    if (parameterFilter === "sensitive") return parameter.sensitive;
+    if (parameterFilter === "personal") return parameter.personal;
+    if (parameterFilter === "tracking") return parameter.tracking;
+    if (parameterFilter === "other") {
+      return !parameter.flagged && !parameter.tracking;
+    }
+
+    return true;
+  });
 
   useEffect(() => {
     setSelectedParameterNames(new Set(flaggedParameterNames));
@@ -1099,12 +1135,34 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   </p>
                 </div>
                 <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">
+                  Showing {visibleQueryParameters.length} of{" "}
                   {queryParameters.length} unique ·{" "}
-                  {[...parsedUrl.searchParams.keys()].length} total
+                  {[...parsedUrl.searchParams.keys()].length} occurrences
                 </span>
               </div>
+              <div
+                className="mt-3 flex flex-wrap gap-1.5"
+                role="group"
+                aria-label="Filter query parameters"
+              >
+                {parameterFilters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    aria-pressed={parameterFilter === filter.id}
+                    onClick={() => setParameterFilter(filter.id)}
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+                      parameterFilter === filter.id
+                        ? "border-violet-300 bg-violet-50 text-violet-800"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+                    }`}
+                  >
+                    {filter.label} ({filter.count})
+                  </button>
+                ))}
+              </div>
               <ul className="mt-3 divide-y divide-slate-100">
-                {queryParameters.map((parameter, index) => (
+                {visibleQueryParameters.map((parameter, index) => (
                   <li
                     key={`${parameter.name}-${index}`}
                     className="flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0"
@@ -1163,6 +1221,12 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   </li>
                 ))}
               </ul>
+              {visibleQueryParameters.length === 0 && (
+                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[10px] text-slate-500">
+                  No parameters match this filter. Choose another category to
+                  view the remaining names.
+                </p>
+              )}
               <p className="sr-only" role="status" aria-live="polite">
                 {selectedParameterNames.size} query{" "}
                 {selectedParameterNames.size === 1 ? "parameter" : "parameters"}{" "}
@@ -1231,19 +1295,34 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                 <button
                   type="button"
                   onClick={() => {
-                    if (selectedParameterNames.size === queryParameters.length) {
-                      setSelectedParameterNames(new Set());
-                    } else {
-                      setSelectedParameterNames(
-                        new Set(queryParameters.map(({ name }) => name)),
+                    const visibleNames = visibleQueryParameters.map(
+                      ({ name }) => name,
+                    );
+                    const allVisibleSelected =
+                      visibleNames.length > 0 &&
+                      visibleNames.every((name) =>
+                        selectedParameterNames.has(name),
                       );
-                    }
+                    setSelectedParameterNames((current) => {
+                      const next = new Set(current);
+
+                      for (const name of visibleNames) {
+                        if (allVisibleSelected) next.delete(name);
+                        else next.add(name);
+                      }
+
+                      return next;
+                    });
                   }}
+                  disabled={visibleQueryParameters.length === 0}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
                 >
-                  {selectedParameterNames.size === queryParameters.length
-                    ? "Clear selection"
-                    : "Select all"}
+                  {visibleQueryParameters.length > 0 &&
+                  visibleQueryParameters.every(({ name }) =>
+                    selectedParameterNames.has(name),
+                  )
+                    ? "Clear visible"
+                    : `Select visible (${visibleQueryParameters.length})`}
                 </button>
                 <button
                   type="button"
