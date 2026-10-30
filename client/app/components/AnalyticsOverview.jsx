@@ -1985,19 +1985,34 @@ function ActivityFollowUpPanel({ reports = [], email, onOpenReport }) {
             </button>
           ))}
         </div>
-        <label className="relative min-w-0 sm:w-64">
-          <span className="sr-only">Search report activity</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setShowAll(false);
-            }}
-            placeholder="Search reports"
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-          />
-        </label>
+        <div className="flex items-center gap-2">
+          <label className="relative min-w-0 sm:w-64">
+            <span className="sr-only">Search report activity</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setShowAll(false);
+              }}
+              placeholder="Search reports"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+            />
+          </label>
+          {(filter !== "all" || query) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilter("all");
+                setQuery("");
+                setShowAll(false);
+              }}
+              className="h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            >
+              Reset
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
