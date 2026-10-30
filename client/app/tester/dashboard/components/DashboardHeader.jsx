@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Bug, Search, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Bug, Search, LoaderCircle, X } from "lucide-react";
 
 export default function DashboardHeader({
   email,
@@ -77,8 +77,18 @@ export default function DashboardHeader({
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Enter your reporter email"
-                className="h-12 w-full rounded-xl border border-slate-200/90 bg-slate-50/80 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                className="h-12 w-full rounded-xl border border-slate-200/90 bg-slate-50/80 pl-10 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
               />
+              {email && (
+                <button
+                  type="button"
+                  onClick={() => setEmail("")}
+                  aria-label="Clear reporter email"
+                  className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition hover:bg-white hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                >
+                  <X size={15} aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             <button
