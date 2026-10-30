@@ -279,6 +279,9 @@ const SENSITIVE_PARAMETER_PATTERN =
 const PERSONAL_PARAMETER_PATTERN =
   /(^|[_-])(email|e-mail|phone|mobile|telephone|address|username|user[_-]?name|birth[_-]?date|dob)([_-]|$)/i;
 
+const TRACKING_PARAMETER_PATTERN =
+  /^(utm_.+|gclid|dclid|fbclid|msclkid|twclid|yclid|gbraid|wbraid|mc_cid|mc_eid|igshid|vero_id|vero_conv|oly_anon_id|oly_enc_id)$/i;
+
 const PRIVATE_HOST_PATTERN =
   /(^localhost$|\.localhost$|\.local$|\.internal$|\.test$|^127\.|^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\.)/i;
 
@@ -325,8 +328,21 @@ function getFlaggedQueryParameterNames(parsed) {
   return flaggedNames;
 }
 
+function getTrackingQueryParameterNames(parsed) {
+  const trackingNames = new Set();
+
+  for (const [key] of parsed.searchParams.entries()) {
+    if (TRACKING_PARAMETER_PATTERN.test(key.trim())) {
+      trackingNames.add(key);
+    }
+  }
+
+  return trackingNames;
+}
+
 function getQueryParameterSummary(parsed) {
   const flaggedNames = getFlaggedQueryParameterNames(parsed);
+  const trackingNames = getTrackingQueryParameterNames(parsed);
   const parameters = new Map();
 
   for (const [name] of parsed.searchParams.entries()) {
@@ -339,6 +355,7 @@ function getQueryParameterSummary(parsed) {
         name,
         occurrences: 1,
         flagged: flaggedNames.has(name),
+        tracking: trackingNames.has(name),
       });
     }
   }
@@ -462,6 +479,7 @@ function getUrlAuditChecks(value) {
   const sensitiveKeys = [];
   const personalKeys = [];
   const sensitivePathSegments = getSensitivePathSegments(parsed);
+  const trackingKeys = getTrackingQueryParameterNames(parsed);
 
   for (const [key, queryValue] of parsed.searchParams.entries()) {
     const cleanKey = key.trim();
@@ -581,6 +599,24 @@ function getUrlAuditChecks(value) {
       evidence: sensitivePathSegments.map(
         (segment) => `Segment ${segment.index}: ${segment.masked}`,
       ),
+    }),
+  );
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "tracking-query",
+      category: "sharing",
+      state: trackingKeys.size ? "neutral" : "good",
+      title: trackingKeys.size
+        ? "Tracking parameters are attached"
+        : "No common tracking parameters detected",
+      detail: trackingKeys.size
+        ? `${trackingKeys.size} common analytics or campaign parameter name${trackingKeys.size === 1 ? "" : "s"} found. Values are not displayed.`
+        : "No common campaign or click-tracking parameter names were found.",
+      recommendation: trackingKeys.size
+        ? "Remove tracking values if they are not needed to reproduce the issue."
+        : "No tracking cleanup is suggested.",
+      evidence: [...trackingKeys].map(maskParameterName),
     }),
   );
 
@@ -807,6 +843,9 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
     : [];
   const flaggedParameterNames = parsedUrl
     ? getFlaggedQueryParameterNames(parsedUrl)
+    : new Set();
+  const trackingParameterNames = parsedUrl
+    ? getTrackingQueryParameterNames(parsedUrl)
     : new Set();
 
   useEffect(() => {
@@ -1072,10 +1111,16 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                         className={
                           parameter.flagged
                             ? "font-semibold text-amber-700"
-                            : "text-slate-500"
+                            : parameter.tracking
+                              ? "font-semibold text-sky-700"
+                              : "text-slate-500"
                         }
                       >
-                        {parameter.flagged ? "Flagged" : "Not recognized"}
+                        {parameter.flagged
+                          ? "Flagged"
+                          : parameter.tracking
+                            ? "Tracking"
+                            : "Not recognized"}
                       </span>
                     </span>
                   </li>
@@ -1087,6 +1132,27 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                 selected for removal.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
+                {trackingParameterNames.size > 0 && (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${trackingParameterNames.size} detected tracking ${trackingParameterNames.size === 1 ? "parameter" : "parameters"}`}
+                    onClick={() => {
+                      const cleaned = new URL(parsedUrl.href);
+
+                      for (const name of trackingParameterNames) {
+                        cleaned.searchParams.delete(name);
+                      }
+
+                      applyUrlCleanup(
+                        cleaned.href,
+                        "Common tracking parameters removed.",
+                      );
+                    }}
+                    className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-[10px] font-semibold text-sky-800 transition hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+                  >
+                    Remove tracking ({trackingParameterNames.size})
+                  </button>
+                )}
                 {flaggedParameterNames.size > 0 && (
                   <button
                     type="button"
