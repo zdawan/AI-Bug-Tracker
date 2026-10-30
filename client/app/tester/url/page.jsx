@@ -864,6 +864,11 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   </li>
                 ))}
               </ul>
+              <p className="sr-only" role="status" aria-live="polite">
+                {selectedParameterNames.size} query{" "}
+                {selectedParameterNames.size === 1 ? "parameter" : "parameters"}{" "}
+                selected for removal.
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {flaggedParameterNames.size > 0 && (
                   <button
