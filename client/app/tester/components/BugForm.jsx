@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const REPORT_DRAFT_STORAGE_KEY = "tester-bug-report-draft-v1";
 
 export default function BugForm({ onBugCreated, testUrl }) {
   const [title, setTitle] = useState("");
@@ -27,6 +28,47 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [aiScreenshot, setAiScreenshot] = useState(null);
 
   const fileInputRef = useRef(null);
+
+  const saveReportDraft = () => {
+    try {
+      window.sessionStorage.setItem(
+        REPORT_DRAFT_STORAGE_KEY,
+        JSON.stringify({ title, description }),
+      );
+      toast.success(
+        "Draft saved for this browser session. Email and screenshot are not saved.",
+      );
+    } catch {
+      toast.error("Could not save the draft in this browser session.");
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const savedDraft = window.sessionStorage.getItem(
+        REPORT_DRAFT_STORAGE_KEY,
+      );
+
+      if (!savedDraft) return;
+
+      const draft = JSON.parse(savedDraft);
+      if (!draft || typeof draft !== "object" || Array.isArray(draft)) {
+        throw new Error("Saved draft has an invalid format.");
+      }
+
+      const savedTitle = typeof draft.title === "string" ? draft.title : "";
+      const savedDescription =
+        typeof draft.description === "string" ? draft.description : "";
+
+      if (savedTitle || savedDescription) {
+        setTitle(savedTitle);
+        setDescription(savedDescription);
+        toast.info("Your saved report draft was restored.");
+      }
+    } catch {
+      toast.error("Could not restore the saved report draft.");
+    }
+  }, []);
 
   const handleScreenshotChange = (event) => {
     const file = event.target.files?.[0];
@@ -150,6 +192,11 @@ export default function BugForm({ onBugCreated, testUrl }) {
       setEmail("");
       setScreenshot(null);
       if (fileInputRef.current) fileInputRef.current.value = null;
+      try {
+        window.sessionStorage.removeItem(REPORT_DRAFT_STORAGE_KEY);
+      } catch {
+        toast.info("The submitted report succeeded, but its saved draft remains in this session.");
+      }
 
       if (onBugCreated) onBugCreated(res.data);
     } catch (err) {
@@ -457,6 +504,20 @@ export default function BugForm({ onBugCreated, testUrl }) {
           email={email}
           testUrl={testUrl}
         />
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs leading-5 text-slate-600">
+            Drafts stay in this browser tab. Email and screenshots are excluded.
+          </p>
+          <button
+            type="button"
+            onClick={saveReportDraft}
+            disabled={!title.trim() && !description.trim()}
+            className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Save draft
+          </button>
+        </div>
 
         {/* AI + Submit Buttons Row */}
         <div className="flex items-center gap-3 mb-4">
