@@ -690,6 +690,7 @@ function UrlAuditCheck({ check }) {
 function UrlPrivacyAudit({ url, onChangeUrl }) {
   const [expanded, setExpanded] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [lastCleanup, setLastCleanup] = useState(null);
   const [selectedParameterNames, setSelectedParameterNames] = useState(
     () => new Set(),
   );
@@ -729,6 +730,23 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   const displayedChecks = expanded
     ? filteredChecks
     : filteredChecks.slice(0, 3);
+
+  const applyUrlCleanup = (cleanedUrl, message) => {
+    setLastCleanup({ previousUrl: url, cleanedUrl });
+    onChangeUrl(cleanedUrl);
+    toast.success(message);
+  };
+
+  const undoLastCleanup = () => {
+    if (!lastCleanup || url.trim() !== lastCleanup.cleanedUrl) return;
+
+    onChangeUrl(lastCleanup.previousUrl);
+    setLastCleanup(null);
+    toast.info("Previous URL restored.");
+  };
+
+  const canUndoCleanup =
+    lastCleanup !== null && url.trim() === lastCleanup.cleanedUrl;
 
   return (
     <section
@@ -777,6 +795,20 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
             destination. Query values and credentials are never displayed by
             the review panel.
           </p>
+          {canUndoCleanup && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
+              <p className="text-[11px] leading-5 text-sky-900">
+                URL cleanup applied. You can restore the previous address.
+              </p>
+              <button
+                type="button"
+                onClick={undoLastCleanup}
+                className="rounded-lg border border-sky-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-sky-900 transition hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+              >
+                Undo cleanup
+              </button>
+            </div>
+          )}
           {parsedUrl && (parsedUrl.username || parsedUrl.password) && (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
               <p className="text-[11px] leading-5 text-rose-900">
@@ -789,10 +821,9 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   const cleaned = new URL(parsedUrl.href);
                   cleaned.username = "";
                   cleaned.password = "";
-                  onChangeUrl(cleaned.href);
-                  toast.success("Embedded credentials removed.");
+                  applyUrlCleanup(cleaned.href, "Embedded credentials removed.");
                 }}
-                className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-rose-800 transition hover:bg-rose-100"
+                className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
               >
                 Remove credentials
               </button>
@@ -908,9 +939,11 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                       cleaned.searchParams.delete(name);
                     }
 
-                    onChangeUrl(cleaned.href);
+                    applyUrlCleanup(
+                      cleaned.href,
+                      "Selected query parameters removed.",
+                    );
                     setSelectedParameterNames(new Set());
-                    toast.success("Selected query parameters removed.");
                   }}
                   className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -921,10 +954,9 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   onClick={() => {
                     const cleaned = new URL(parsedUrl.href);
                     cleaned.search = "";
-                    onChangeUrl(cleaned.href);
-                    toast.success("All query parameters removed.");
+                    applyUrlCleanup(cleaned.href, "All query parameters removed.");
                   }}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
                 >
                   Remove all query data
                 </button>
@@ -973,9 +1005,12 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                     cleaned.searchParams.delete(name);
                   }
 
-                  onChangeUrl(cleaned.href);
+                  applyUrlCleanup(
+                    cleaned.href,
+                    "Flagged query parameters removed.",
+                  );
                 }}
-                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100"
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
                 Remove flagged parameters
               </button>
