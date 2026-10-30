@@ -175,6 +175,10 @@ function WeeklyActivityChart({
       ? ((total - previousTotal) / previousTotal) * 100
       : null;
   const [exportError, setExportError] = useState("");
+  const [selectedDayKey, setSelectedDayKey] = useState("");
+  const selectedDay = data.find(
+    (day) => (day.key || day.day) === selectedDayKey,
+  );
 
   const exportActivity = () => {
     let downloadUrl = "";
@@ -238,7 +242,10 @@ function WeeklyActivityChart({
                 key={range}
                 type="button"
                 aria-label={`Show activity for the last ${range} days`}
-                onClick={() => onRangeChange(range)}
+                onClick={() => {
+                  setSelectedDayKey("");
+                  onRangeChange(range);
+                }}
                 aria-pressed={days === range}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
                   days === range
@@ -274,18 +281,29 @@ function WeeklyActivityChart({
         className={`mt-6 grid gap-2 sm:gap-4 ${
           days === 7 ? "grid-cols-7" : "grid-cols-6 sm:grid-cols-10"
         }`}
-        role="img"
+        role="group"
         aria-label={`${formatCount(total)} reports across ${activeDays} active days in the last ${days} days.`}
       >
         {data.map((day, index) => {
           const count = day.count || 0;
-
           const height = count > 0 ? Math.max(26, (count / maxCount) * 100) : 8;
+          const dayKey = day.key || day.day;
+          const isSelected = selectedDayKey === dayKey;
 
           return (
-            <div
+            <button
               key={`${day.key || day.day}-${index}`}
-              className="flex min-w-0 flex-col items-center"
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={`${day.day}: ${count} ${count === 1 ? "report" : "reports"}. Select for details.`}
+              onClick={() =>
+                setSelectedDayKey((current) =>
+                  current === dayKey ? "" : dayKey,
+                )
+              }
+              className={`flex min-w-0 flex-col items-center rounded-xl px-1 pb-1 pt-2 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+                isSelected ? "bg-violet-50 ring-1 ring-violet-200" : ""
+              }`}
             >
               <span className="mb-2 text-[11px] font-semibold tabular-nums text-slate-500">
                 {count}
@@ -310,13 +328,34 @@ function WeeklyActivityChart({
               <span className="mt-2 truncate text-[11px] font-medium text-slate-400">
                 {day.day}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
       ) : (
         <div className="mt-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
           Activity data will appear when reports are available.
+        </div>
+      )}
+
+      {selectedDay && (
+        <div
+          className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2.5"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="text-xs font-medium text-slate-600">
+            {selectedDay.key
+              ? new Date(`${selectedDay.key}T12:00:00`).toLocaleDateString(
+                  "en-IN",
+                  { weekday: "long", day: "numeric", month: "long", year: "numeric" },
+                )
+              : selectedDay.day}
+          </span>
+          <span className="text-xs font-semibold text-violet-800">
+            {formatCount(selectedDay.count || 0)}{" "}
+            {(selectedDay.count || 0) === 1 ? "report" : "reports"}
+          </span>
         </div>
       )}
 
