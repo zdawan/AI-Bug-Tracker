@@ -1765,6 +1765,7 @@ function ActivityFollowUpPanel({ reports = [], email, onOpenReport }) {
   const [loadedForEmail, setLoadedForEmail] = useState("");
   const [canPersist, setCanPersist] = useState(false);
   const [storageError, setStorageError] = useState("");
+  const [exportError, setExportError] = useState("");
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
@@ -1841,6 +1842,18 @@ function ActivityFollowUpPanel({ reports = [], email, onOpenReport }) {
   const visibleActivity = showAll
     ? filteredActivity
     : filteredActivity.slice(0, FOLLOW_UP_PAGE_SIZE);
+  const activityCounts = useMemo(
+    () =>
+      activity.reduce(
+        (counts, item) => {
+          counts[item.type] += 1;
+          if (followUpSet.has(item.id)) counts.followUp += 1;
+          return counts;
+        },
+        { reported: 0, updated: 0, followUp: 0 },
+      ),
+    [activity, followUpSet],
+  );
 
   const toggleFollowUp = (id) => {
     setFollowUpIds((current) =>
@@ -1848,6 +1861,66 @@ function ActivityFollowUpPanel({ reports = [], email, onOpenReport }) {
         ? current.filter((value) => value !== id)
         : [...current, id].slice(-500),
     );
+  };
+
+  const exportActivity = () => {
+    let downloadUrl = "";
+
+    try {
+      const rows = [
+        [
+          "Report ID",
+          "Report title",
+          "Activity",
+          "Date",
+          "Status",
+          "Category",
+          "Marked for follow-up",
+        ],
+        ...filteredActivity.map((item) => [
+          item.id,
+          item.title,
+          item.type,
+          item.date.toISOString(),
+          item.status,
+          item.category,
+          followUpSet.has(item.id) ? "Yes" : "No",
+        ]),
+      ];
+      const csv = rows
+        .map((row) =>
+          row
+            .map((value) => {
+              const text = String(value ?? "");
+              const safeText = /^[\t\r ]*[=+\-@]/.test(text)
+                ? `'${text}`
+                : text;
+              return `"${safeText.replace(/"/g, '""')}"`;
+            })
+            .join(","),
+        )
+        .join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = `report-activity-${filter}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadUrl = "";
+      setExportError("");
+    } catch {
+      setExportError("Could not export report activity. Please try again.");
+    } finally {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    }
   };
 
   if (!reports.length) return null;
@@ -1927,9 +2000,32 @@ function ActivityFollowUpPanel({ reports = [], email, onOpenReport }) {
         </label>
       </div>
 
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+        <p className="text-[10px] text-slate-600" aria-live="polite">
+          {formatCount(activityCounts.reported)} submitted ·{" "}
+          {formatCount(activityCounts.updated)} updated ·{" "}
+          {formatCount(activityCounts.followUp)} marked for follow-up
+        </p>
+        <button
+          type="button"
+          onClick={exportActivity}
+          disabled={!filteredActivity.length}
+          aria-label={`Export ${filteredActivity.length} matching activity entries as CSV`}
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Download size={12} aria-hidden="true" />
+          Export matching activity
+        </button>
+      </div>
+
       {storageError && (
         <p role="alert" className="mt-3 text-xs text-amber-800">
           {storageError}
+        </p>
+      )}
+      {exportError && (
+        <p role="alert" className="mt-2 text-xs text-rose-700">
+          {exportError}
         </p>
       )}
       <p className="mt-2 text-[10px] text-slate-500" aria-live="polite">
