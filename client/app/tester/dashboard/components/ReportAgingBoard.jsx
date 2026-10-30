@@ -282,7 +282,14 @@ function AgeBucketCard({ bucket, count, total, selected, onSelect }) {
           {formatCount(count)}
         </span>
       </span>
-      <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-slate-100">
+      <span
+        className="mt-2 block h-1.5 overflow-hidden rounded-full bg-slate-100"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(percentage)}
+        aria-label={`${bucket.label} share of open issues`}
+      >
         <span
           className={`block h-full rounded-full transition-all ${bucket.color}`}
           style={{ width: `${percentage}%` }}

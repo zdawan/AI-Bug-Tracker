@@ -59,6 +59,13 @@ const STATUS_OPTIONS = [
   },
 ];
 
+const DATE_RANGE_OPTIONS = [
+  { value: "all", label: "Any time" },
+  { value: "today", label: "Today" },
+  { value: "week", label: "Last 7 days" },
+  { value: "month", label: "Last 30 days" },
+];
+
 const formatCount = (value) => new Intl.NumberFormat("en-IN").format(value);
 
 function getCategoryName(report) {
@@ -141,6 +148,22 @@ function summarizeReports(reports) {
     : 0;
 
   return summary;
+}
+
+function isWithinDateRange(report, dateRange, now = Date.now()) {
+  if (dateRange === "all") return true;
+
+  const date = getReportDate(report);
+  if (!date) return false;
+
+  if (dateRange === "today") {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return date.getTime() >= startOfToday.getTime();
+  }
+
+  const rangeInDays = dateRange === "week" ? 7 : 30;
+  return date.getTime() >= now - rangeInDays * 86_400_000;
 }
 
 function buildCategorySummary(reports) {
@@ -341,6 +364,11 @@ function FilterSummary({ filters, onClear }) {
     filters.status !== "All" && `Status: ${filters.status}`,
     filters.severity !== "All" && `Severity: ${filters.severity}`,
     filters.category !== "All" && `Category: ${filters.category}`,
+    filters.dateRange !== "all" &&
+      `Date: ${
+        DATE_RANGE_OPTIONS.find((option) => option.value === filters.dateRange)
+          ?.label || filters.dateRange
+      }`,
   ].filter(Boolean);
 
   return (
@@ -440,13 +468,17 @@ export default function AnalyticsDrilldown({
   const [draftCategory, setDraftCategory] = useState(
     filters.category || "All",
   );
+  const [draftDateRange, setDraftDateRange] = useState(
+    filters.dateRange || "all",
+  );
   const [categorySearch, setCategorySearch] = useState("");
 
   useEffect(() => {
     setDraftStatus(filters.status || "All");
     setDraftSeverity(filters.severity || "All");
     setDraftCategory(filters.category || "All");
-  }, [filters.category, filters.severity, filters.status]);
+    setDraftDateRange(filters.dateRange || "all");
+  }, [filters.category, filters.dateRange, filters.severity, filters.status]);
 
   const metrics = useMemo(() => summarizeReports(reports), [reports]);
   const categories = useMemo(() => buildCategorySummary(reports), [reports]);
@@ -465,10 +497,11 @@ export default function AnalyticsDrilldown({
           (draftStatus === "All" || status === draftStatus) &&
           (draftSeverity === "All" || severity === draftSeverity) &&
           (draftCategory === "All" ||
-            getCategoryName(report) === draftCategory)
+            getCategoryName(report) === draftCategory) &&
+          isWithinDateRange(report, draftDateRange)
         );
       }),
-    [draftCategory, draftSeverity, draftStatus, reports],
+    [draftCategory, draftDateRange, draftSeverity, draftStatus, reports],
   );
 
   const recentMatches = useMemo(
@@ -487,16 +520,19 @@ export default function AnalyticsDrilldown({
     status: draftStatus,
     severity: draftSeverity,
     category: draftCategory,
+    dateRange: draftDateRange,
   };
   const hasDraftChanges =
     draftStatus !== (filters.status || "All") ||
     draftSeverity !== (filters.severity || "All") ||
-    draftCategory !== (filters.category || "All");
+    draftCategory !== (filters.category || "All") ||
+    draftDateRange !== (filters.dateRange || "all");
 
   const clearDraftFilters = () => {
     setDraftStatus("All");
     setDraftSeverity("All");
     setDraftCategory("All");
+    setDraftDateRange("all");
   };
 
   const applyDraftFilters = () => {
@@ -640,6 +676,40 @@ export default function AnalyticsDrilldown({
           </p>
         </section>
       </div>
+
+      <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 className="text-xs font-semibold text-slate-800">
+              Filter by report date
+            </h4>
+            <p className="mt-1 text-[10px] text-slate-500">
+              Compare a recent reporting window with your other filters.
+            </p>
+          </div>
+          <div
+            className="flex flex-wrap gap-1.5 rounded-xl bg-slate-100 p-1"
+            role="group"
+            aria-label="Filter reports by date range"
+          >
+            {DATE_RANGE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setDraftDateRange(option.value)}
+                aria-pressed={draftDateRange === option.value}
+                className={`rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+                  draftDateRange === option.value
+                    ? "bg-white text-violet-800 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <div className="mt-4">
         <CategoryFilterList
