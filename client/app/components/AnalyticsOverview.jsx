@@ -18,6 +18,7 @@ import {
   ArrowLeftRight,
   CalendarDays,
   Minus,
+  Printer,
 } from "lucide-react";
 
 const isResolved = (status = "") =>
@@ -1677,6 +1678,63 @@ function MetricQualityPanel({ reports = [] }) {
   const pageFindings = visibleFindings.slice(0, visibleCount);
   const totalFindings = quality.findings.length;
   const hasFindings = totalFindings > 0;
+  const printSnapshot = useMemo(() => {
+    const validReports = reports.filter(
+      (report) =>
+        report && typeof report === "object" && !Array.isArray(report),
+    );
+    const resolved = validReports.filter((report) =>
+      isResolved(report.status),
+    ).length;
+    const open = validReports.filter((report) => isOpen(report.status)).length;
+    const high = validReports.filter((report) =>
+      isHighSeverity(report.severity),
+    ).length;
+    const submissions = validReports.reduce((sum, report) => {
+      const count = Number(report.reports);
+      return sum + (Number.isFinite(count) && count > 0 ? count : 1);
+    }, 0);
+    const activity = getActivityDays(validReports, 30);
+    const previousActivity = getActivityDays(validReports, 30, 30);
+    const categoryCounts = new Map();
+
+    validReports.forEach((report) => {
+      const category =
+        typeof report.category === "string" && report.category.trim()
+          ? report.category.trim()
+          : "Uncategorized";
+      categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+    });
+
+    return {
+      total: validReports.length,
+      submissions,
+      repeats: Math.max(0, submissions - validReports.length),
+      open,
+      resolved,
+      high,
+      resolutionRate: validReports.length
+        ? Math.round((resolved / validReports.length) * 100)
+        : 0,
+      activityTotal: activity.reduce((sum, day) => sum + day.count, 0),
+      activeDays: activity.filter((day) => day.count > 0).length,
+      previousActivityTotal: previousActivity.reduce(
+        (sum, day) => sum + day.count,
+        0,
+      ),
+      categories: [...categoryCounts.entries()]
+        .map(([category, count]) => ({ category, count }))
+        .sort(
+          (left, right) =>
+            right.count - left.count ||
+            left.category.localeCompare(right.category),
+        ),
+    };
+  }, [reports]);
+  const printDate = new Date().toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
   const exportFindings = () => {
     let downloadUrl = "";
@@ -1760,14 +1818,25 @@ function MetricQualityPanel({ reports = [] }) {
             are advisory; this panel does not modify reports.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowDefinitions((visible) => !visible)}
-          aria-expanded={showDefinitions}
-          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
-        >
-          {showDefinitions ? "Hide metric rules" : "View metric rules"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            aria-label="Print analytics summary"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          >
+            <Printer size={14} aria-hidden="true" />
+            Print summary
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDefinitions((visible) => !visible)}
+            aria-expanded={showDefinitions}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+          >
+            {showDefinitions ? "Hide metric rules" : "View metric rules"}
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -1946,6 +2015,170 @@ function MetricQualityPanel({ reports = [] }) {
           </div>
         )}
       </div>
+      <style>{`
+        @page {
+          size: auto;
+          margin: 14mm;
+        }
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #analytics-quality-print-report,
+          #analytics-quality-print-report * {
+            visibility: visible !important;
+          }
+          #analytics-quality-print-report {
+            display: block !important;
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            color: #0f172a !important;
+            background: #fff !important;
+            font-family: Arial, sans-serif !important;
+          }
+          #analytics-quality-print-report table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          #analytics-quality-print-report th,
+          #analytics-quality-print-report td {
+            border: 1px solid #cbd5e1;
+            padding: 7px 9px;
+            text-align: left;
+          }
+          #analytics-quality-print-report th {
+            background: #f1f5f9 !important;
+          }
+          #analytics-quality-print-report tr {
+            break-inside: avoid;
+          }
+        }
+      `}</style>
+      <section
+        id="analytics-quality-print-report"
+        className="hidden"
+        aria-label="Printable analytics summary"
+      >
+        <header style={{ marginBottom: 20 }}>
+          <p
+            style={{
+              color: "#6d28d9",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+            }}
+          >
+            AI Bug Tracker
+          </p>
+          <h1 style={{ margin: "5px 0", fontSize: 24 }}>
+            Report analytics summary
+          </h1>
+          <p style={{ margin: 0, color: "#64748b", fontSize: 11 }}>
+            Generated {printDate} · Current report snapshot
+          </p>
+        </header>
+        <h2 style={{ margin: "18px 0 8px", fontSize: 15 }}>
+          Overall metrics
+        </h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+              <th>Context</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Unique issues</td>
+              <td>{formatCount(printSnapshot.total)}</td>
+              <td>{formatCount(printSnapshot.submissions)} total submissions</td>
+            </tr>
+            <tr>
+              <td>Open reports</td>
+              <td>{formatCount(printSnapshot.open)}</td>
+              <td>Awaiting attention</td>
+            </tr>
+            <tr>
+              <td>Resolved reports</td>
+              <td>{formatCount(printSnapshot.resolved)}</td>
+              <td>{printSnapshot.resolutionRate}% resolution rate</td>
+            </tr>
+            <tr>
+              <td>High severity</td>
+              <td>{formatCount(printSnapshot.high)}</td>
+              <td>{formatCount(printSnapshot.repeats)} repeat submissions</td>
+            </tr>
+          </tbody>
+        </table>
+        <h2 style={{ margin: "18px 0 8px", fontSize: 15 }}>
+          Recent activity · last 30 days
+        </h2>
+        <table>
+          <thead>
+            <tr>
+              <th>New issues</th>
+              <th>Active days</th>
+              <th>Average per day</th>
+              <th>Previous 30 days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{formatCount(printSnapshot.activityTotal)}</td>
+              <td>{formatCount(printSnapshot.activeDays)}</td>
+              <td>{(printSnapshot.activityTotal / 30).toFixed(1)}</td>
+              <td>{formatCount(printSnapshot.previousActivityTotal)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <h2 style={{ margin: "18px 0 8px", fontSize: 15 }}>
+          Reports by category
+        </h2>
+        {printSnapshot.categories.length ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Issues</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printSnapshot.categories.map(({ category, count }) => (
+                <tr key={category}>
+                  <td>{category}</td>
+                  <td>{formatCount(count)}</td>
+                  <td>
+                    {printSnapshot.total
+                      ? `${((count / printSnapshot.total) * 100).toFixed(1)}%`
+                      : "0.0%"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: "#64748b", fontSize: 12 }}>
+            No report categories are available.
+          </p>
+        )}
+        <h2 style={{ margin: "18px 0 8px", fontSize: 15 }}>
+          Data-quality review
+        </h2>
+        <p style={{ fontSize: 12 }}>
+          {formatCount(quality.checked)} reports checked ·{" "}
+          {formatCount(quality.clean)} without findings ·{" "}
+          {formatCount(totalFindings)} findings to review
+        </p>
+        <p style={{ marginTop: 20, color: "#64748b", fontSize: 10 }}>
+          Generated from the current dashboard data. Trends and categories are
+          descriptive and do not imply issue priority or resolution quality.
+        </p>
+      </section>
     </section>
   );
 }
@@ -1999,6 +2232,30 @@ export default function AnalyticsOverview({
         : 0,
     };
   }, [reports]);
+
+  const printCategories = useMemo(() => {
+    const categoryCounts = new Map();
+
+    reports.forEach((report) => {
+      const category =
+        typeof report.category === "string" && report.category.trim()
+          ? report.category.trim()
+          : "Uncategorized";
+      categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+    });
+
+    return [...categoryCounts.entries()]
+      .map(([category, count]) => ({ category, count }))
+      .sort(
+        (left, right) =>
+          right.count - left.count || left.category.localeCompare(right.category),
+      )
+      .slice(0, 8);
+  }, [reports]);
+  const printDate = new Date().toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
   const cards = [
     {
@@ -2146,6 +2403,192 @@ export default function AnalyticsOverview({
           onViewReport={onViewReport}
         />
       </div>
+
+      <style media="not all">{`
+        @page {
+          size: auto;
+          margin: 14mm;
+        }
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #analytics-print-report,
+          #analytics-print-report * {
+            visibility: visible !important;
+          }
+          #analytics-print-report {
+            display: block !important;
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            color: #0f172a !important;
+            background: #fff !important;
+            font-family: Arial, sans-serif !important;
+          }
+          #analytics-print-report table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          #analytics-print-report th,
+          #analytics-print-report td {
+            border: 1px solid #cbd5e1;
+            padding: 7px 9px;
+            text-align: left;
+          }
+          #analytics-print-report th {
+            background: #f1f5f9 !important;
+          }
+          #analytics-print-report tr {
+            break-inside: avoid;
+          }
+        }
+      `}</style>
+      <section
+        id="analytics-print-report"
+        className="hidden"
+        aria-label="Printable analytics summary"
+      >
+        <header style={{ marginBottom: 20 }}>
+          <p
+            style={{
+              color: "#6d28d9",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+            }}
+          >
+            AI Bug Tracker
+          </p>
+          <h1 style={{ margin: "5px 0", fontSize: 24 }}>
+            Report analytics summary
+          </h1>
+          <p style={{ margin: 0, color: "#64748b", fontSize: 11 }}>
+            Generated {printDate} · Current report snapshot
+          </p>
+        </header>
+
+        <h2 style={{ margin: "18px 0 8px", fontSize: 15 }}>
+          Overall metrics
+        </h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+              <th>Context</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Unique issues</td>
+              <td>{formatCount(stats.total)}</td>
+              <td>{formatCount(stats.submissions)} total submissions</td>
+            </tr>
+            <tr>
+              <td>Open reports</td>
+              <td>{formatCount(stats.open)}</td>
+              <td>Awaiting attention</td>
+            </tr>
+            <tr>
+              <td>Resolved reports</td>
+              <td>{formatCount(stats.resolved)}</td>
+              <td>{stats.resolutionRate}% resolution rate</td>
+            </tr>
+            <tr>
+              <td>High severity</td>
+              <td>{formatCount(stats.high)}</td>
+              <td>{formatCount(stats.repeats)} repeat submissions</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 style={{ margin: "18px 0 8px", fontSize: 15 }}>
+          Recent activity · last {activityDays} days
+        </h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>New issues</th>
+              <th>Active days</th>
+              <th>Average per day</th>
+              <th>Previous period</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Most recent {activityDays} days</td>
+              <td>
+                {formatCount(
+                  activity.reduce((sum, day) => sum + (day.count || 0), 0),
+                )}
+              </td>
+              <td>{formatCount(activity.filter((day) => day.count > 0).length)}</td>
+              <td>
+                {activity.length
+                  ? (
+                      activity.reduce(
+                        (sum, day) => sum + (day.count || 0),
+                        0,
+                      ) / activity.length
+                    ).toFixed(1)
+                  : "0.0"}
+              </td>
+              <td>{formatCount(previousPeriodTotal)} issues</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 style={{ margin: "18px 0 8px", fontSize: 15 }}>
+          Reports by category
+        </h2>
+        {printCategories.length ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Issues</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printCategories.map(({ category, count }) => (
+                <tr key={category}>
+                  <td>{category}</td>
+                  <td>{formatCount(count)}</td>
+                  <td>
+                    {stats.total
+                      ? `${((count / stats.total) * 100).toFixed(1)}%`
+                      : "0.0%"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: "#64748b", fontSize: 12 }}>
+            No report categories are available.
+          </p>
+        )}
+        {printCategories.length < new Set(
+          reports.map((report) =>
+            typeof report.category === "string" && report.category.trim()
+              ? report.category.trim()
+              : "Uncategorized",
+          ),
+        ).size && (
+          <p style={{ color: "#64748b", fontSize: 10 }}>
+            Showing the top {printCategories.length} categories.
+          </p>
+        )}
+        <p style={{ marginTop: 20, color: "#64748b", fontSize: 10 }}>
+          Generated from the current dashboard data. Trends and categories are
+          descriptive and do not imply issue priority or resolution quality.
+        </p>
+      </section>
     </section>
   );
 }
