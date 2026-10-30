@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AnalyticsDrilldown from "./components/AnalyticsDrilldown";
+import PersonalTriageWorkspace from "./components/PersonalTriageWorkspace";
 import ReportAgingBoard from "./components/ReportAgingBoard";
 import { MetricQualityPanel } from "../../components/AnalyticsOverview";
 import {
@@ -3860,6 +3861,14 @@ export default function TesterDashboardPage() {
                 />
               )}
             </section>
+
+            {hasSearched && (
+              <PersonalTriageWorkspace
+                bugs={bugs}
+                email={loadedEmail}
+                onOpenBug={handleOpenBug}
+              />
+            )}
 
             <section
               id="reports"
