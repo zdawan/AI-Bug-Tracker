@@ -823,7 +823,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   cleaned.password = "";
                   applyUrlCleanup(cleaned.href, "Embedded credentials removed.");
                 }}
-                className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-rose-800 transition hover:bg-rose-100"
+                className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
               >
                 Remove credentials
               </button>
@@ -956,7 +956,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                     cleaned.search = "";
                     applyUrlCleanup(cleaned.href, "All query parameters removed.");
                   }}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
                 >
                   Remove all query data
                 </button>
@@ -1010,7 +1010,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                     "Flagged query parameters removed.",
                   );
                 }}
-                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100"
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
               >
                 Remove flagged parameters
               </button>
