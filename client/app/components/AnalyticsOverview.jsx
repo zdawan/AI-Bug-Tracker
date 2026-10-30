@@ -240,7 +240,7 @@ function WeeklyActivityChart({
                 aria-label={`Show activity for the last ${range} days`}
                 onClick={() => onRangeChange(range)}
                 aria-pressed={days === range}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
                   days === range
                     ? "bg-white text-violet-700 shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
