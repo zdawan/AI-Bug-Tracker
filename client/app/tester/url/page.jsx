@@ -173,6 +173,12 @@ export default function TesterPage() {
                 placeholder="e.g. github.com"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && url) {
+                    event.preventDefault();
+                    setUrl("");
+                  }
+                }}
                 required
                 className="h-full min-w-0 flex-1 bg-transparent text-base text-gray-900 outline-none placeholder:text-gray-400"
               />
@@ -195,7 +201,8 @@ export default function TesterPage() {
               id="test-url-hint"
               className="mt-2 px-1 text-sm leading-5 text-slate-500"
             >
-              Enter a name like github.com or a full page URL.
+              Enter a name like github.com or a full page URL. Press Escape to
+              clear it.
             </p>
             <UrlLengthIndicator value={url} />
           </div>
