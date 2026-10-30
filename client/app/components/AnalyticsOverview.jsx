@@ -297,6 +297,26 @@ function WeeklyActivityChart({
   const total = data.reduce((sum, day) => sum + (day.count || 0), 0);
   const activeDays = data.filter((day) => day.count > 0).length;
   const averagePerDay = data.length ? total / data.length : 0;
+  const dailyPattern = data.reduce(
+    (pattern, day) => {
+      const count = day.count || 0;
+      if (count > 0) {
+        pattern.currentStreak += 1;
+        pattern.longestStreak = Math.max(
+          pattern.longestStreak,
+          pattern.currentStreak,
+        );
+        if (!pattern.busiestDay || count > pattern.busiestDay.count) {
+          pattern.busiestDay = day;
+        }
+      } else {
+        pattern.quietDays += 1;
+        pattern.currentStreak = 0;
+      }
+      return pattern;
+    },
+    { busiestDay: null, quietDays: 0, currentStreak: 0, longestStreak: 0 },
+  );
   const periodChange =
     previousTotal > 0
       ? ((total - previousTotal) / previousTotal) * 100
@@ -533,7 +553,7 @@ function WeeklyActivityChart({
           role="status"
           aria-live="polite"
         >
-          <span className="text-xs font-medium text-slate-600">
+          <span className="min-w-0 flex-1 text-xs font-medium text-slate-600">
             {selectedDay.key
               ? new Date(`${selectedDay.key}T12:00:00`).toLocaleDateString(
                   "en-IN",
@@ -554,6 +574,52 @@ function WeeklyActivityChart({
               reports
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setSelectedDayKey("")}
+            aria-label="Clear selected activity day"
+            className="ml-auto inline-flex h-7 items-center rounded-lg border border-violet-200 bg-white px-2 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {data.length > 0 && (
+        <div
+          className="mt-4 grid gap-2 sm:grid-cols-3"
+          aria-label="Activity pattern highlights"
+        >
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+            <p className="text-[10px] font-medium text-slate-500">
+              Busiest day
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-800">
+              {dailyPattern.busiestDay
+                ? `${dailyPattern.busiestDay.day} · ${formatCount(
+                    dailyPattern.busiestDay.count,
+                  )} ${dailyPattern.busiestDay.count === 1 ? "report" : "reports"}`
+                : "No reports yet"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+            <p className="text-[10px] font-medium text-slate-500">
+              Quiet days
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-800">
+              {formatCount(dailyPattern.quietDays)} of {formatCount(data.length)}{" "}
+              days with no new reports
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+            <p className="text-[10px] font-medium text-slate-500">
+              Longest active streak
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-800">
+              {formatCount(dailyPattern.longestStreak)}{" "}
+              {dailyPattern.longestStreak === 1 ? "day" : "consecutive days"}
+            </p>
+          </div>
         </div>
       )}
 
