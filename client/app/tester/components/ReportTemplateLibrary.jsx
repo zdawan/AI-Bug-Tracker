@@ -238,6 +238,24 @@ function readCustomTemplates() {
     );
 }
 
+function readFavoriteTemplateIds() {
+  const savedFavorites = window.sessionStorage.getItem(
+    `${TEMPLATE_STORAGE_KEY}-favorites`,
+  );
+  if (!savedFavorites) return [];
+
+  const parsedFavorites = JSON.parse(savedFavorites);
+  if (!Array.isArray(parsedFavorites)) {
+    throw new Error("Saved template favorites have an invalid format.");
+  }
+
+  return parsedFavorites.filter(
+    (templateId) =>
+      typeof templateId === "string" &&
+      BUILT_IN_TEMPLATES.some((template) => template.id === templateId),
+  );
+}
+
 function writeCustomTemplates(templates) {
   window.sessionStorage.setItem(
     TEMPLATE_STORAGE_KEY,
@@ -839,52 +857,6 @@ export default function ReportTemplateLibrary({
     [customTemplates],
   );
 
-  const filteredTemplates = useMemo(() => {
-    const normalizedQuery = search.trim().toLowerCase();
-
-    return allTemplates
-      .filter((template) => {
-        if (
-          category !== "all" &&
-          (category === "custom"
-            ? template.source !== "custom"
-            : template.category !== category)
-        ) {
-          return false;
-        }
-        if (favoritesOnly && !template.favorite) return false;
-        if (
-          normalizedQuery &&
-          !buildTemplateSearchText(template).includes(normalizedQuery)
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .sort((left, right) => {
-        if (sortBy === "name") return left.name.localeCompare(right.name);
-        if (sortBy === "category") {
-          return (
-            getCategoryLabel(left.category).localeCompare(
-              getCategoryLabel(right.category),
-            ) || left.name.localeCompare(right.name)
-          );
-        }
-        if (sortBy === "custom-first") {
-          return (
-            Number(right.source === "custom") -
-              Number(left.source === "custom") ||
-            left.name.localeCompare(right.name)
-          );
-        }
-        return (
-          Number(right.favorite) - Number(left.favorite) ||
-          Number(right.source === "custom") - Number(left.source === "custom") ||
-          left.name.localeCompare(right.name)
-        );
-      });
-  }, [allTemplates, category, favoritesOnly, search, sortBy]);
-
   const persistTemplates = (nextTemplates) => {
     try {
       writeCustomTemplates(nextTemplates);
@@ -943,17 +915,12 @@ export default function ReportTemplateLibrary({
       return;
     }
 
-    const favoriteIds = new Set(
-      JSON.parse(
-        window.sessionStorage.getItem(`${TEMPLATE_STORAGE_KEY}-favorites`) ||
-          "[]",
-      ),
-    );
-
-    if (favoriteIds.has(templateId)) favoriteIds.delete(templateId);
-    else favoriteIds.add(templateId);
-
     try {
+      const favoriteIds = new Set(readFavoriteTemplateIds());
+
+      if (favoriteIds.has(templateId)) favoriteIds.delete(templateId);
+      else favoriteIds.add(templateId);
+
       window.sessionStorage.setItem(
         `${TEMPLATE_STORAGE_KEY}-favorites`,
         JSON.stringify([...favoriteIds]),
@@ -970,6 +937,15 @@ export default function ReportTemplateLibrary({
   };
 
   const [favoriteBuiltInIds, setFavoriteBuiltInIds] = useState([]);
+
+  useEffect(() => {
+    try {
+      setFavoriteBuiltInIds(readFavoriteTemplateIds());
+    } catch {
+      toast.error("Could not load template favorites for this session.");
+    }
+  }, []);
+
   const templatesWithFavorites = useMemo(
     () =>
       allTemplates.map((template) => ({
@@ -1251,10 +1227,10 @@ export default function ReportTemplateLibrary({
             </button>
           </div>
 
-          {filteredTemplates.length > 0 && (
+          {visibleTemplates.length > 0 && (
             <p className="text-[10px] text-slate-500" aria-live="polite">
-              Showing {filteredTemplates.length} template
-              {filteredTemplates.length === 1 ? "" : "s"}.
+              Showing {visibleTemplates.length} template
+              {visibleTemplates.length === 1 ? "" : "s"}.
             </p>
           )}
 

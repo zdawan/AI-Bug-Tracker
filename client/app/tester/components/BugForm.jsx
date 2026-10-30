@@ -523,7 +523,9 @@ export default function BugForm({ onBugCreated, testUrl }) {
           currentTitle={title}
           currentDescription={description}
           onApplyTemplate={(template, mode) => {
-            setTitle(template.title);
+            if (mode === "replace" || !title.trim()) {
+              setTitle(template.title);
+            }
             setDescription((currentDescription) => {
               if (mode === "append" && currentDescription.trim()) {
                 return `${currentDescription.trimEnd()}\n\n${template.description}`;
