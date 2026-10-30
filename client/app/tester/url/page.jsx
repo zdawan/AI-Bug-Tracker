@@ -864,6 +864,11 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                   </li>
                 ))}
               </ul>
+              <p className="sr-only" role="status" aria-live="polite">
+                {selectedParameterNames.size} query{" "}
+                {selectedParameterNames.size === 1 ? "parameter" : "parameters"}{" "}
+                selected for removal.
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {flaggedParameterNames.size > 0 && (
                   <button
@@ -871,7 +876,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                     onClick={() =>
                       setSelectedParameterNames(new Set(flaggedParameterNames))
                     }
-                    className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100"
+                    className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
                   >
                     Select flagged ({flaggedParameterNames.size})
                   </button>
@@ -887,7 +892,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                       );
                     }
                   }}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
                 >
                   {selectedParameterNames.size === queryParameters.length
                     ? "Clear selection"
@@ -907,7 +912,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                     setSelectedParameterNames(new Set());
                     toast.success("Selected query parameters removed.");
                   }}
-                  className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Remove selected ({selectedParameterNames.size})
                 </button>
