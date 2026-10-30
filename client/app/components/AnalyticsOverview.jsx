@@ -1971,7 +1971,9 @@ export default function AnalyticsOverview({
             }`}
           >
             <ArrowLeftRight size={14} aria-hidden="true" />
-            {showPeriodComparison ? "Hide comparison" : "Compare periods"}
+            {showPeriodComparison
+              ? `Hide ${activityDays}D comparison`
+              : `Compare ${activityDays}D periods`}
           </button>
         </div>
       </div>
