@@ -6,7 +6,10 @@ import AnalyticsDrilldown from "./components/AnalyticsDrilldown";
 import DuplicateReviewWorkspace from "./components/DuplicateReviewWorkspace";
 import PersonalTriageWorkspace from "./components/PersonalTriageWorkspace";
 import ReportAgingBoard from "./components/ReportAgingBoard";
-import { MetricQualityPanel } from "../../components/AnalyticsOverview";
+import {
+  ActivityFollowUpPanel,
+  MetricQualityPanel,
+} from "../../components/AnalyticsOverview";
 import {
   ArrowDown,
   ArrowDownAZ,
@@ -1914,6 +1917,11 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
         reports={bugs}
         onOpenReport={onOpenBug}
         onViewAllOpen={onViewAllOpen}
+      />
+      <ActivityFollowUpPanel
+        reports={bugs}
+        email={loadedEmail}
+        onOpenReport={onOpenBug}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

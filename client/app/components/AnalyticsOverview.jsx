@@ -1383,6 +1383,8 @@ const QUALITY_WORKFLOWS = [
 ];
 
 const QUALITY_PAGE_SIZE = 6;
+const FOLLOW_UP_STORAGE_PREFIX = "tester-report-follow-ups-v1";
+const FOLLOW_UP_PAGE_SIZE = 5;
 
 function getQualityText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -1719,6 +1721,312 @@ function QualityFindingRow({ finding }) {
         </span>
       </div>
     </article>
+  );
+}
+
+function getFollowUpActivity(reports) {
+  const now = Date.now();
+
+  return reports
+    .map((report, index) => {
+      if (!report || typeof report !== "object" || Array.isArray(report)) {
+        return null;
+      }
+
+      const createdAt = getDate(report.createdAt || report.created_at);
+      const updatedAt = getDate(report.updatedAt || report.updated_at);
+      const date = updatedAt || createdAt;
+      if (!date || date.getTime() > now + 60_000) return null;
+
+      const isUpdated =
+        Boolean(createdAt && updatedAt) &&
+        updatedAt.getTime() - createdAt.getTime() > 60_000;
+
+      return {
+        id: getQualityReportId(report, index),
+        report,
+        title: getQualityLabel(report, index),
+        category: getQualityText(report.category) || "Uncategorized",
+        status: getQualityText(report.status) || "Unknown status",
+        date,
+        type: isUpdated ? "updated" : "reported",
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.date.getTime() - left.date.getTime());
+}
+
+function getFollowUpStorageKey(email) {
+  return `${FOLLOW_UP_STORAGE_PREFIX}:${encodeURIComponent(email)}`;
+}
+
+function ActivityFollowUpPanel({ reports = [], email, onOpenReport }) {
+  const [followUpIds, setFollowUpIds] = useState([]);
+  const [loadedForEmail, setLoadedForEmail] = useState("");
+  const [canPersist, setCanPersist] = useState(false);
+  const [storageError, setStorageError] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const normalizedEmail = getQualityText(email).toLowerCase();
+  const storageKey = normalizedEmail
+    ? getFollowUpStorageKey(normalizedEmail)
+    : "";
+  const activity = useMemo(() => getFollowUpActivity(reports), [reports]);
+  const followUpSet = useMemo(() => new Set(followUpIds), [followUpIds]);
+
+  useEffect(() => {
+    setFollowUpIds([]);
+    setLoadedForEmail("");
+    setCanPersist(false);
+    setStorageError("");
+    setFilter("all");
+    setQuery("");
+    setShowAll(false);
+
+    if (!normalizedEmail) return;
+
+    try {
+      const stored = window.localStorage.getItem(
+        getFollowUpStorageKey(normalizedEmail),
+      );
+      const parsed = stored ? JSON.parse(stored) : [];
+      if (
+        !Array.isArray(parsed) ||
+        parsed.some((id) => typeof id !== "string")
+      ) {
+        throw new Error("Saved follow-up data has an invalid format.");
+      }
+      setFollowUpIds([...new Set(parsed)].slice(0, 500));
+      setCanPersist(true);
+    } catch {
+      setStorageError(
+        "Could not read personal follow-up selections from this browser.",
+      );
+    } finally {
+      setLoadedForEmail(normalizedEmail);
+    }
+  }, [normalizedEmail]);
+
+  useEffect(() => {
+    if (!canPersist || !storageKey || loadedForEmail !== normalizedEmail) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(followUpIds));
+      setStorageError("");
+    } catch {
+      setStorageError(
+        "Follow-up selections are only in memory because browser storage could not save them.",
+      );
+    }
+  }, [canPersist, followUpIds, loadedForEmail, normalizedEmail, storageKey]);
+
+  const filteredActivity = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return activity.filter((item) => {
+      if (filter === "follow-up" && !followUpSet.has(item.id)) return false;
+      if (filter === "reported" && item.type !== "reported") return false;
+      if (filter === "updated" && item.type !== "updated") return false;
+      if (!normalizedQuery) return true;
+
+      return `${item.id} ${item.title} ${item.category} ${item.status}`
+        .toLowerCase()
+        .includes(normalizedQuery);
+    });
+  }, [activity, filter, followUpSet, query]);
+
+  const visibleActivity = showAll
+    ? filteredActivity
+    : filteredActivity.slice(0, FOLLOW_UP_PAGE_SIZE);
+
+  const toggleFollowUp = (id) => {
+    setFollowUpIds((current) =>
+      current.includes(id)
+        ? current.filter((value) => value !== id)
+        : [...current, id].slice(-500),
+    );
+  };
+
+  if (!reports.length) return null;
+
+  return (
+    <section
+      className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/20 sm:p-5"
+      aria-labelledby="activity-follow-up-heading"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-600">
+            Patch 10 · Activity and follow-up
+          </p>
+          <h2
+            id="activity-follow-up-heading"
+            className="mt-1 flex items-center gap-2 text-base font-semibold text-slate-900"
+          >
+            <Activity size={17} className="text-violet-600" />
+            Report activity and follow-up
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Recent report timestamps with a private follow-up list saved for
+            this reporter in this browser.
+          </p>
+        </div>
+        <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700">
+          {followUpIds.length} marked for follow-up
+        </span>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label="Filter report activity"
+        >
+          {[
+            { value: "all", label: "All activity" },
+            { value: "follow-up", label: "Follow-up" },
+            { value: "reported", label: "New reports" },
+            { value: "updated", label: "Updated reports" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                setFilter(option.value);
+                setShowAll(false);
+              }}
+              aria-pressed={filter === option.value}
+              className={`shrink-0 rounded-lg px-3 py-2 text-[11px] font-semibold transition ${
+                filter === option.value
+                  ? "bg-violet-700 text-white"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+              }`}
+            >
+              {option.label}
+              {option.value === "follow-up" && (
+                <span className="ml-1 tabular-nums">{followUpIds.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <label className="relative min-w-0 sm:w-64">
+          <span className="sr-only">Search report activity</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setShowAll(false);
+            }}
+            placeholder="Search reports"
+            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+          />
+        </label>
+      </div>
+
+      {storageError && (
+        <p role="alert" className="mt-3 text-xs text-amber-800">
+          {storageError}
+        </p>
+      )}
+      <p className="mt-2 text-[10px] text-slate-500" aria-live="polite">
+        Showing {visibleActivity.length} of {filteredActivity.length} matching
+        activity entries. Activity is inferred from report creation and update
+        timestamps; older versions are not available.
+      </p>
+
+      {visibleActivity.length ? (
+        <ul className="mt-2 divide-y divide-slate-100">
+          {visibleActivity.map((item) => {
+            const isFollowUp = followUpSet.has(item.id);
+
+            return (
+              <li
+                key={`${item.id}-${item.type}`}
+                className="flex flex-wrap items-center gap-3 py-3"
+              >
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
+                    item.type === "updated"
+                      ? "bg-sky-50 text-sky-700"
+                      : "bg-violet-50 text-violet-700"
+                  }`}
+                  aria-hidden="true"
+                >
+                  {item.type === "updated" ? (
+                    <CheckCircle2 size={16} />
+                  ) : (
+                    <CalendarDays size={16} />
+                  )}
+                </span>
+                <div className="min-w-[150px] flex-1">
+                  <button
+                    type="button"
+                    onClick={() => onOpenReport?.(item.report)}
+                    className="block max-w-full truncate text-left text-xs font-semibold text-slate-800 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                  >
+                    {item.title}
+                  </button>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-500">
+                    <span>
+                      {item.type === "updated"
+                        ? "Record last updated"
+                        : "Report submitted"}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span>{item.date.toLocaleString("en-IN")}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{item.status}</span>
+                  </p>
+                </div>
+                <span className="max-w-[150px] truncate rounded-md bg-slate-100 px-2 py-1 text-[10px] text-slate-600">
+                  {item.category}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => toggleFollowUp(item.id)}
+                  aria-pressed={isFollowUp}
+                  aria-label={`${isFollowUp ? "Remove from" : "Add to"} follow-up: ${item.title}`}
+                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                    isFollowUp
+                      ? "border-amber-200 bg-amber-50 text-amber-800"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-amber-200 hover:text-amber-800"
+                  }`}
+                >
+                  <Bell size={12} aria-hidden="true" />
+                  {isFollowUp ? "Follow-up saved" : "Follow up"}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="mt-3 rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center">
+          <p className="text-sm font-semibold text-slate-700">
+            {filter === "follow-up"
+              ? "Nothing marked for follow-up."
+              : "No activity matches these filters."}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {filter === "follow-up"
+              ? "Mark a report from All activity to keep it in your personal queue."
+              : "Try another search or activity filter."}
+          </p>
+        </div>
+      )}
+      {filteredActivity.length > visibleActivity.length && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700"
+        >
+          Show all {filteredActivity.length} activity entries
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -2761,4 +3069,4 @@ function LegacyAnalyticsOverviewPreview({
 />;
 }
 
-export { MetricQualityPanel };
+export { ActivityFollowUpPanel, MetricQualityPanel };
