@@ -49,14 +49,14 @@ const getDate = (value) => {
 
 const formatCount = (value) => new Intl.NumberFormat("en-IN").format(value);
 
-function getActivityDays(reports, numberOfDays) {
+function getActivityDays(reports, numberOfDays, offsetFromToday = 0) {
   const today = new Date();
   const days = [];
 
   for (let offset = numberOfDays - 1; offset >= 0; offset -= 1) {
     const date = new Date(today);
     date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - offset);
+    date.setDate(date.getDate() - offset - offsetFromToday);
 
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     days.push({
@@ -160,12 +160,22 @@ function MetricCard({
 
 function WeeklyActivityChart({
   data = [],
+  previousData = [],
   loading = false,
   days = 7,
   onRangeChange,
   previousTotal = 0,
 }) {
-  const maxCount = Math.max(1, ...data.map((day) => day.count || 0));
+  const [comparePrevious, setComparePrevious] = useState(false);
+  const comparisonAvailable = previousData.length === data.length;
+  const maxCount = Math.max(
+    1,
+    ...data.map((day, index) =>
+      comparePrevious
+        ? Math.max(day.count || 0, previousData[index]?.count || 0)
+        : day.count || 0,
+    ),
+  );
 
   const total = data.reduce((sum, day) => sum + (day.count || 0), 0);
   const activeDays = data.filter((day) => day.count > 0).length;
@@ -185,8 +195,18 @@ function WeeklyActivityChart({
 
     try {
       const csvRows = [
-        ["Date", "New reports"],
-        ...data.map((day) => [day.key || day.day, day.count || 0]),
+        comparisonAvailable && comparePrevious
+          ? ["Date", "New reports", "Previous period reports"]
+          : ["Date", "New reports"],
+        ...data.map((day, index) =>
+          comparisonAvailable && comparePrevious
+            ? [
+                day.key || day.day,
+                day.count || 0,
+                previousData[index]?.count || 0,
+              ]
+            : [day.key || day.day, day.count || 0],
+        ),
       ];
       const csv = csvRows
         .map((row) =>
@@ -259,6 +279,25 @@ function WeeklyActivityChart({
           </div>
           <button
             type="button"
+            onClick={() => setComparePrevious((enabled) => !enabled)}
+            disabled={!comparisonAvailable || !data.length || loading}
+            aria-pressed={comparePrevious}
+            aria-label={
+              comparePrevious
+                ? "Hide previous period comparison"
+                : `Compare with the previous ${days}-day period`
+            }
+            className={`inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+              comparePrevious
+                ? "border-violet-200 bg-violet-50 text-violet-700"
+                : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+            }`}
+          >
+            <Activity size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">Compare</span>
+          </button>
+          <button
+            type="button"
             onClick={exportActivity}
             disabled={!data.length || loading}
             aria-label={`Download ${days}-day report activity as CSV`}
@@ -286,7 +325,13 @@ function WeeklyActivityChart({
       >
         {data.map((day, index) => {
           const count = day.count || 0;
-          const height = count > 0 ? Math.max(26, (count / maxCount) * 100) : 8;
+          const previousCount = previousData[index]?.count || 0;
+          const height =
+            count > 0 ? Math.max(26, (count / maxCount) * 100) : 8;
+          const previousHeight =
+            previousCount > 0
+              ? Math.max(26, (previousCount / maxCount) * 100)
+              : 8;
           const dayKey = day.key || day.day;
           const isSelected = selectedDayKey === dayKey;
 
@@ -295,7 +340,7 @@ function WeeklyActivityChart({
               key={`${day.key || day.day}-${index}`}
               type="button"
               aria-pressed={isSelected}
-              aria-label={`${day.day}: ${count} ${count === 1 ? "report" : "reports"}. Select for details.`}
+              aria-label={`${day.day}: ${count} ${count === 1 ? "report" : "reports"}${comparePrevious ? `, previous period ${previousCount} ${previousCount === 1 ? "report" : "reports"}` : ""}. Select for details.`}
               onClick={() =>
                 setSelectedDayKey((current) =>
                   current === dayKey ? "" : dayKey,
@@ -310,18 +355,29 @@ function WeeklyActivityChart({
               </span>
 
               <div className="flex h-32 w-full max-w-12 items-end justify-center rounded-full bg-[#f6f5fa] p-1.5">
-                <div
-                  className={`relative w-full rounded-full transition-all duration-300 ${
-                    count > 0
-                      ? "bg-gradient-to-b from-violet-400 to-violet-700"
-                      : "bg-slate-200"
-                  }`}
-                  style={{ height: `${height}%` }}
-                  title={`${day.day}: ${count} reports`}
-                >
-                  {count > 0 && (
-                    <span className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-white" />
+                <div className="flex h-full w-full items-end justify-center gap-1">
+                  {comparePrevious && (
+                    <div
+                      className="w-1/2 rounded-full bg-slate-300 transition-all duration-300"
+                      style={{ height: `${previousHeight}%` }}
+                      title={`Previous period: ${previousCount} reports`}
+                    />
                   )}
+                  <div
+                    className={`relative rounded-full transition-all duration-300 ${
+                      comparePrevious ? "w-1/2" : "w-full"
+                    } ${
+                      count > 0
+                        ? "bg-gradient-to-b from-violet-400 to-violet-700"
+                        : "bg-slate-200"
+                    }`}
+                    style={{ height: `${height}%` }}
+                    title={`${day.day}: ${count} reports`}
+                  >
+                    {count > 0 && (
+                      <span className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-white" />
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -335,6 +391,22 @@ function WeeklyActivityChart({
       ) : (
         <div className="mt-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
           Activity data will appear when reports are available.
+        </div>
+      )}
+
+      {comparePrevious && data.length > 0 && (
+        <div
+          className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-slate-600"
+          aria-label="Activity chart legend"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-violet-600" />
+            Selected period
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-slate-300" />
+            Previous {days} days
+          </span>
         </div>
       )}
 
@@ -356,6 +428,15 @@ function WeeklyActivityChart({
             {formatCount(selectedDay.count || 0)}{" "}
             {(selectedDay.count || 0) === 1 ? "report" : "reports"}
           </span>
+          {comparePrevious && (
+            <span className="w-full text-right text-[11px] text-slate-500">
+              Previous period:{" "}
+              {formatCount(
+                previousData[data.indexOf(selectedDay)]?.count || 0,
+              )}{" "}
+              reports
+            </span>
+          )}
         </div>
       )}
 
@@ -1302,18 +1383,13 @@ export default function AnalyticsOverview({
         : getActivityDays(reports, activityDays),
     [activityDays, reports, weeklyActivity],
   );
+  const previousActivity = useMemo(
+    () => getActivityDays(reports, activityDays, activityDays),
+    [activityDays, reports],
+  );
   const previousPeriodTotal = useMemo(() => {
-    const periodStart = new Date();
-    periodStart.setHours(0, 0, 0, 0);
-    periodStart.setDate(periodStart.getDate() - activityDays);
-    const previousStart = new Date(periodStart);
-    previousStart.setDate(previousStart.getDate() - activityDays);
-
-    return reports.filter((report) => {
-      const date = getDate(report.createdAt || report.created_at);
-      return date && date >= previousStart && date < periodStart;
-    }).length;
-  }, [activityDays, reports]);
+    return previousActivity.reduce((sum, day) => sum + day.count, 0);
+  }, [previousActivity]);
 
   const stats = useMemo(() => {
     const resolved = reports.filter((report) => isResolved(report.status)).length;
@@ -1403,6 +1479,7 @@ export default function AnalyticsOverview({
         <div className="xl:col-span-2">
           <WeeklyActivityChart
             data={activity}
+            previousData={previousActivity}
             days={activityDays}
             loading={loading}
             onRangeChange={setActivityDays}
