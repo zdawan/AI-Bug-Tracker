@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReportDraftWorkspace from "./ReportDraftWorkspace";
+import ScreenshotEvidenceEditor from "./ScreenshotEvidenceEditor";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -19,6 +20,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [email, setEmail] = useState("");
   const [screenshot, setScreenshot] = useState(null);
   const [screenshotPreview, setScreenshotPreview] = useState("");
+  const [isScreenshotEditorOpen, setIsScreenshotEditorOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [aiSourceFileUrl, setAiSourceFileUrl] = useState("");
   const [showPopupMode, setShowPopupMode] = useState(true);
@@ -484,16 +486,26 @@ export default function BugForm({ onBugCreated, testUrl }) {
                   {Math.max(1, Math.round(screenshot.size / 1024))} KB · Ready
                   to attach
                 </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setScreenshot(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
-                  className="mt-2 text-xs font-semibold text-rose-700 underline underline-offset-2 hover:text-rose-900"
-                >
-                  Remove screenshot
-                </button>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsScreenshotEditorOpen(true)}
+                    className="text-xs font-semibold text-violet-700 underline underline-offset-2 hover:text-violet-900"
+                  >
+                    Annotate or redact
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScreenshot(null);
+                      setIsScreenshotEditorOpen(false);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className="text-xs font-semibold text-rose-700 underline underline-offset-2 hover:text-rose-900"
+                  >
+                    Remove screenshot
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -617,6 +629,17 @@ export default function BugForm({ onBugCreated, testUrl }) {
             </button>
           </div>
         </div>
+      )}
+      {isScreenshotEditorOpen && screenshot && (
+        <ScreenshotEvidenceEditor
+          file={screenshot}
+          onSave={(editedScreenshot) => {
+            setScreenshot(editedScreenshot);
+            setIsScreenshotEditorOpen(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }}
+          onCancel={() => setIsScreenshotEditorOpen(false)}
+        />
       )}
     </div>
   );
