@@ -346,6 +346,39 @@ function getQueryParameterSummary(parsed) {
   return [...parameters.values()];
 }
 
+function formatPrivacyAuditSummary(checks) {
+  const attentionCount = checks.filter(
+    (check) => check.state === "attention",
+  ).length;
+  const goodCount = checks.filter((check) => check.state === "good").length;
+  const neutralCount = checks.filter(
+    (check) => check.state === "neutral",
+  ).length;
+  const lines = [
+    "URL privacy and target review",
+    `Generated: ${new Date().toLocaleString()}`,
+    "Privacy note: this summary excludes the submitted URL, query values, and credentials.",
+    `Checks: ${checks.length} total; ${attentionCount} to review; ${goodCount} good; ${neutralCount} informational.`,
+    "",
+  ];
+
+  checks.forEach((check, index) => {
+    const stateLabel =
+      check.state === "attention"
+        ? "REVIEW"
+        : check.state === "good"
+          ? "OK"
+          : "NOTE";
+
+    lines.push(`${index + 1}. [${stateLabel}] ${check.title}`);
+    lines.push(`   ${check.detail}`);
+    lines.push(`   Suggested next step: ${check.recommendation}`);
+    lines.push("");
+  });
+
+  return lines.join("\n").trim();
+}
+
 function getUrlAuditChecks(value) {
   const entered = value.trim();
 
@@ -747,6 +780,44 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
 
   const canUndoCleanup =
     lastCleanup !== null && url.trim() === lastCleanup.cleanedUrl;
+  const auditSummary = formatPrivacyAuditSummary(checks);
+
+  const copyAuditSummary = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      await navigator.clipboard.writeText(auditSummary);
+      toast.success("Privacy-safe audit summary copied.");
+    } catch {
+      toast.error("Could not copy the audit summary. Please try again.");
+    }
+  };
+
+  const downloadAuditSummary = () => {
+    let downloadUrl;
+
+    try {
+      const reportBlob = new Blob([auditSummary], {
+        type: "text/plain;charset=utf-8",
+      });
+      downloadUrl = URL.createObjectURL(reportBlob);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = downloadUrl;
+      downloadLink.download = "url-privacy-review.txt";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadUrl = null;
+      toast.success("Privacy-safe audit summary downloaded.");
+    } catch {
+      toast.error("Could not download the audit summary.");
+    } finally {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    }
+  };
 
   return (
     <section
@@ -795,6 +866,28 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
             destination. Query values and credentials are never displayed by
             the review panel.
           </p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-100 bg-white px-3 py-2">
+            <p className="text-[10px] leading-4 text-slate-600">
+              Share audit findings without exposing the URL or its private
+              values.
+            </p>
+            <div className="flex shrink-0 gap-2">
+              <button
+                type="button"
+                onClick={copyAuditSummary}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+              >
+                Copy findings
+              </button>
+              <button
+                type="button"
+                onClick={downloadAuditSummary}
+                className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-[10px] font-semibold text-violet-800 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+              >
+                Download summary
+              </button>
+            </div>
+          </div>
           {canUndoCleanup && (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
               <p className="text-[11px] leading-5 text-sky-900">
