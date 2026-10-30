@@ -1368,6 +1368,20 @@ const QUALITY_FILTERS = [
   { value: "details", label: "Details" },
 ];
 
+const QUALITY_WORKFLOWS = [
+  { value: "all", label: "All workflows" },
+  {
+    value: "metrics",
+    label: "Metric reliability",
+    categories: ["status", "severity", "submissions", "activity"],
+  },
+  {
+    value: "records",
+    label: "Record integrity",
+    categories: ["identity", "details"],
+  },
+];
+
 const QUALITY_PAGE_SIZE = 6;
 
 function getQualityText(value) {
@@ -1709,6 +1723,7 @@ function QualityFindingRow({ finding }) {
 }
 
 function MetricQualityPanel({ reports = [] }) {
+  const [activeWorkflow, setActiveWorkflow] = useState("all");
   const [activeFilter, setActiveFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [showDefinitions, setShowDefinitions] = useState(false);
@@ -1716,10 +1731,44 @@ function MetricQualityPanel({ reports = [] }) {
   const [exportError, setExportError] = useState("");
   const quality = useMemo(() => analyzeReportQuality(reports), [reports]);
   const normalizedQuery = query.trim().toLowerCase();
+  const workflowFindings = useMemo(() => {
+    const workflow = QUALITY_WORKFLOWS.find(
+      (item) => item.value === activeWorkflow,
+    );
+    return workflow?.categories
+      ? quality.findings.filter((finding) =>
+          workflow.categories.includes(finding.category),
+        )
+      : quality.findings;
+  }, [activeWorkflow, quality.findings]);
+  const workflowCounts = useMemo(
+    () =>
+      QUALITY_WORKFLOWS.reduce((counts, workflow) => {
+        counts[workflow.value] =
+          workflow.value === "all"
+            ? quality.findings.length
+            : quality.findings.filter((finding) =>
+                workflow.categories.includes(finding.category),
+              ).length;
+        return counts;
+      }, {}),
+    [quality.findings],
+  );
+  const categoryCounts = useMemo(
+    () =>
+      workflowFindings.reduce(
+        (counts, finding) => {
+          counts[finding.category] = (counts[finding.category] || 0) + 1;
+          return counts;
+        },
+        { all: workflowFindings.length },
+      ),
+    [workflowFindings],
+  );
 
   const visibleFindings = useMemo(
     () =>
-      quality.findings
+      workflowFindings
         .filter(
           (finding) =>
             activeFilter === "all" || finding.category === activeFilter,
@@ -1738,7 +1787,7 @@ function MetricQualityPanel({ reports = [] }) {
             .toLowerCase()
             .includes(normalizedQuery);
         }),
-    [activeFilter, normalizedQuery, quality.findings],
+    [activeFilter, normalizedQuery, workflowFindings],
   );
 
   const pageFindings = visibleFindings.slice(0, visibleCount);
@@ -2006,13 +2055,44 @@ function MetricQualityPanel({ reports = [] }) {
 
         <div
           className="mt-4 flex gap-2 overflow-x-auto pb-2"
-          aria-label="Filter findings by metric"
+          role="group"
+          aria-label="Filter findings by workflow"
+        >
+          {QUALITY_WORKFLOWS.map((workflow) => (
+            <button
+              key={workflow.value}
+              type="button"
+              onClick={() => {
+                setActiveWorkflow(workflow.value);
+                setActiveFilter("all");
+                setVisibleCount(QUALITY_PAGE_SIZE);
+              }}
+              aria-pressed={activeWorkflow === workflow.value}
+              className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                activeWorkflow === workflow.value
+                  ? "bg-indigo-700 text-white shadow-sm"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
+              }`}
+            >
+              {workflow.label}
+              <span className="ml-1.5 tabular-nums">
+                {formatCount(workflowCounts[workflow.value] || 0)}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-1 text-[10px] text-slate-500">
+          Select a workflow first, then narrow the results by metric category.
+          Counts reflect the selected workflow.
+        </p>
+
+        <div
+          className="mt-4 flex gap-2 overflow-x-auto pb-2"
+          aria-label="Further filter findings by metric"
         >
           {QUALITY_FILTERS.map((filter) => {
-            const count =
-              filter.value === "all"
-                ? totalFindings
-                : quality.counts[filter.value] || 0;
+            const count = categoryCounts[filter.value] || 0;
 
             return (
               <button
@@ -2023,10 +2103,11 @@ function MetricQualityPanel({ reports = [] }) {
                   setVisibleCount(QUALITY_PAGE_SIZE);
                 }}
                 aria-pressed={activeFilter === filter.value}
+                disabled={count === 0 && activeFilter !== filter.value}
                 className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                   activeFilter === filter.value
                     ? "bg-violet-700 text-white shadow-sm"
-                    : "border border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+                    : "border border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
                 }`}
               >
                 {filter.label} <span className="ml-1 tabular-nums">{count}</span>
@@ -2062,13 +2143,16 @@ function MetricQualityPanel({ reports = [] }) {
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {hasFindings
-                ? "Try another metric category or clear the search."
+                ? "Try another workflow or metric category, or clear the search."
                 : "The current report records pass the checks in this panel."}
             </p>
-            {(activeFilter !== "all" || query) && (
+            {(activeWorkflow !== "all" ||
+              activeFilter !== "all" ||
+              query) && (
               <button
                 type="button"
                 onClick={() => {
+                  setActiveWorkflow("all");
                   setActiveFilter("all");
                   setQuery("");
                   setVisibleCount(QUALITY_PAGE_SIZE);
