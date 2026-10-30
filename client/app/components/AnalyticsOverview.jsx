@@ -14,6 +14,7 @@ import {
   CircleAlert,
   Activity,
   TrendingDown,
+  Download,
 } from "lucide-react";
 
 const isResolved = (status = "") =>
@@ -172,6 +173,45 @@ function WeeklyActivityChart({
     previousTotal > 0
       ? ((total - previousTotal) / previousTotal) * 100
       : null;
+  const [exportError, setExportError] = useState("");
+
+  const exportActivity = () => {
+    let downloadUrl = "";
+
+    try {
+      const csvRows = [
+        ["Date", "New reports"],
+        ...data.map((day) => [day.key || day.day, day.count || 0]),
+      ];
+      const csv = csvRows
+        .map((row) =>
+          row
+            .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+            .join(","),
+        )
+        .join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = `report-activity-${days}d-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadUrl = "";
+      setExportError("");
+    } catch {
+      setExportError("Could not export activity data. Please try again.");
+    } finally {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    }
+  };
 
   return (
     <section className="rounded-[22px] border border-white bg-white p-5 shadow-sm shadow-slate-200/50 sm:p-6">
@@ -186,29 +226,47 @@ function WeeklyActivityChart({
           </p>
         </div>
 
-        <div
-          className="inline-flex rounded-xl bg-slate-100 p-1"
-          role="group"
-          aria-label="Activity chart date range"
-        >
-          {[7, 30].map((range) => (
-            <button
-              key={range}
-              type="button"
-              aria-label={`Show activity for the last ${range} days`}
-              onClick={() => onRangeChange(range)}
-              aria-pressed={days === range}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                days === range
-                  ? "bg-white text-violet-700 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              {range}D
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div
+            className="inline-flex rounded-xl bg-slate-100 p-1"
+            role="group"
+            aria-label="Activity chart date range"
+          >
+            {[7, 30].map((range) => (
+              <button
+                key={range}
+                type="button"
+                aria-label={`Show activity for the last ${range} days`}
+                onClick={() => onRangeChange(range)}
+                aria-pressed={days === range}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  days === range
+                    ? "bg-white text-violet-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {range}D
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={exportActivity}
+            disabled={!data.length || loading}
+            aria-label={`Download ${days}-day report activity as CSV`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Download size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
         </div>
       </div>
+
+      {exportError && (
+        <p role="alert" className="mt-3 text-xs text-rose-700">
+          {exportError}
+        </p>
+      )}
 
       {data.length ? (
       <div
@@ -444,12 +502,14 @@ function ResolutionChart({ total, resolved }) {
       <div className="mt-6 flex justify-center">
         <div
           className="grid h-40 w-40 place-items-center rounded-full"
+          role="img"
+          aria-label={`Resolution overview: ${rate}% resolved, ${resolved} of ${total} reports.`}
           style={{
             background: `conic-gradient(#7c3aed ${rate * 3.6}deg, #ede9fe 0deg)`,
           }}
         >
           <div className="grid h-28 w-28 content-center justify-items-center rounded-full bg-white">
-            <span className="text-3xl font-semibold text-slate-900">
+            <span className="text-3xl font-semibold tabular-nums text-slate-900">
               {rate}%
             </span>
 
