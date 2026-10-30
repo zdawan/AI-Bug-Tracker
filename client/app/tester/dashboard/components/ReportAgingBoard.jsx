@@ -10,6 +10,7 @@ import {
   Flame,
   Search,
   ShieldAlert,
+  X,
 } from "lucide-react";
 
 const DAY_MS = 86_400_000;
@@ -588,6 +589,20 @@ export default function ReportAgingBoard({
                   className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-2 text-[11px] outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
                 />
               </label>
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setVisibleCount(INITIAL_VISIBLE_REPORTS);
+                  }}
+                  aria-label="Clear open issues search"
+                  className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                >
+                  <X size={12} aria-hidden="true" />
+                  Clear
+                </button>
+              )}
               <label className="sr-only" htmlFor="aging-severity-filter">
                 Filter open issues by severity
               </label>
