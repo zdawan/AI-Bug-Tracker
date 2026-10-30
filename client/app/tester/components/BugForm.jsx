@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ReportDraftWorkspace from "./ReportDraftWorkspace";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -503,6 +504,15 @@ export default function BugForm({ onBugCreated, testUrl }) {
           description={description}
           email={email}
           testUrl={testUrl}
+        />
+
+        <ReportDraftWorkspace
+          title={title}
+          description={description}
+          onRestore={(draft) => {
+            setTitle(draft.title);
+            setDescription(draft.description);
+          }}
         />
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
