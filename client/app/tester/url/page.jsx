@@ -305,27 +305,45 @@ function makeUrlAuditCheck({
   };
 }
 
-function getFlaggedQueryParameterNames(parsed) {
-  const flaggedNames = new Set();
-
-  for (const [key, value] of parsed.searchParams.entries()) {
-    const cleanKey = key.trim();
-    const valueLooksSensitive =
-      value &&
+function hasSensitiveQueryValue(value) {
+  return Boolean(
+    value &&
       /^(bearer\s+|eyJ[a-zA-Z0-9_-]{10,}\.|gh[pousr]_[a-zA-Z0-9]{12,})/i.test(
         value,
-      );
+      ),
+  );
+}
 
-    if (
-      SENSITIVE_PARAMETER_PATTERN.test(cleanKey) ||
-      PERSONAL_PARAMETER_PATTERN.test(cleanKey) ||
-      valueLooksSensitive
-    ) {
-      flaggedNames.add(key);
+function getSensitiveQueryParameterNames(parsed) {
+  const sensitiveNames = new Set();
+  for (const [key, value] of parsed.searchParams.entries()) {
+    const cleanKey = key.trim();
+
+    if (SENSITIVE_PARAMETER_PATTERN.test(cleanKey) || hasSensitiveQueryValue(value)) {
+      sensitiveNames.add(key);
     }
   }
 
-  return flaggedNames;
+  return sensitiveNames;
+}
+
+function getPersonalQueryParameterNames(parsed) {
+  const personalNames = new Set();
+
+  for (const [key] of parsed.searchParams.entries()) {
+    if (PERSONAL_PARAMETER_PATTERN.test(key.trim())) {
+      personalNames.add(key);
+    }
+  }
+
+  return personalNames;
+}
+
+function getFlaggedQueryParameterNames(parsed) {
+  return new Set([
+    ...getSensitiveQueryParameterNames(parsed),
+    ...getPersonalQueryParameterNames(parsed),
+  ]);
 }
 
 function getTrackingQueryParameterNames(parsed) {
@@ -341,6 +359,8 @@ function getTrackingQueryParameterNames(parsed) {
 }
 
 function getQueryParameterSummary(parsed) {
+  const sensitiveNames = getSensitiveQueryParameterNames(parsed);
+  const personalNames = getPersonalQueryParameterNames(parsed);
   const flaggedNames = getFlaggedQueryParameterNames(parsed);
   const trackingNames = getTrackingQueryParameterNames(parsed);
   const parameters = new Map();
@@ -354,6 +374,8 @@ function getQueryParameterSummary(parsed) {
       parameters.set(name, {
         name,
         occurrences: 1,
+        sensitive: sensitiveNames.has(name),
+        personal: personalNames.has(name),
         flagged: flaggedNames.has(name),
         tracking: trackingNames.has(name),
       });
@@ -490,13 +512,7 @@ function getUrlAuditChecks(value) {
       personalKeys.push(cleanKey);
     }
 
-    if (
-      queryValue &&
-      /^(bearer\s+|eyJ[a-zA-Z0-9_-]{10,}\.|gh[pousr]_[a-zA-Z0-9]{12,})/i.test(
-        queryValue,
-      ) &&
-      !sensitiveKeys.includes(cleanKey)
-    ) {
+    if (hasSensitiveQueryValue(queryValue) && !sensitiveKeys.includes(cleanKey)) {
       sensitiveKeys.push(cleanKey || "unnamed parameter");
     }
   }
@@ -844,6 +860,12 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   const flaggedParameterNames = parsedUrl
     ? getFlaggedQueryParameterNames(parsedUrl)
     : new Set();
+  const sensitiveParameterNames = parsedUrl
+    ? getSensitiveQueryParameterNames(parsedUrl)
+    : new Set();
+  const personalParameterNames = parsedUrl
+    ? getPersonalQueryParameterNames(parsedUrl)
+    : new Set();
   const trackingParameterNames = parsedUrl
     ? getTrackingQueryParameterNames(parsedUrl)
     : new Set();
@@ -880,6 +902,9 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   const canUndoCleanup =
     lastCleanup !== null && url.trim() === lastCleanup.cleanedUrl;
   const auditSummary = formatPrivacyAuditSummary(checks);
+  const selectParameters = (parameterNames) => {
+    setSelectedParameterNames(new Set(parameterNames));
+  };
 
   const copyAuditSummary = async () => {
     try {
@@ -1107,20 +1132,25 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                           {parameter.occurrences} occurrences
                         </span>
                       )}
-                      <span
-                        className={
-                          parameter.flagged
-                            ? "font-semibold text-amber-700"
-                            : parameter.tracking
-                              ? "font-semibold text-sky-700"
-                              : "text-slate-500"
-                        }
-                      >
-                        {parameter.flagged
-                          ? "Flagged"
-                          : parameter.tracking
-                            ? "Tracking"
-                            : "Not recognized"}
+                      <span className="flex flex-wrap justify-end gap-1">
+                        {parameter.sensitive && (
+                          <span className="font-semibold text-rose-700">
+                            Sensitive
+                          </span>
+                        )}
+                        {parameter.personal && (
+                          <span className="font-semibold text-amber-700">
+                            Personal
+                          </span>
+                        )}
+                        {parameter.tracking && (
+                          <span className="font-semibold text-sky-700">
+                            Tracking
+                          </span>
+                        )}
+                        {!parameter.flagged && !parameter.tracking && (
+                          <span className="text-slate-500">Not recognized</span>
+                        )}
                       </span>
                     </span>
                   </li>
@@ -1132,6 +1162,33 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                 selected for removal.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
+                {sensitiveParameterNames.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => selectParameters(sensitiveParameterNames)}
+                    className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[10px] font-semibold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+                  >
+                    Select sensitive ({sensitiveParameterNames.size})
+                  </button>
+                )}
+                {personalParameterNames.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => selectParameters(personalParameterNames)}
+                    className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                  >
+                    Select personal ({personalParameterNames.size})
+                  </button>
+                )}
+                {trackingParameterNames.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => selectParameters(trackingParameterNames)}
+                    className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-[10px] font-semibold text-sky-800 transition hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+                  >
+                    Select tracking ({trackingParameterNames.size})
+                  </button>
+                )}
                 {trackingParameterNames.size > 0 && (
                   <button
                     type="button"
