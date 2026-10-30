@@ -15,6 +15,7 @@ import {
 import { toast } from "react-toastify";
 
 const MAX_IMAGE_DIMENSION = 10_000;
+const MAX_IMAGE_PIXELS = 40_000_000;
 const MAX_HISTORY_ACTIONS = 100;
 const INITIAL_BRUSH_SIZE = 6;
 const BRUSH_SIZE_STEPS = [3, 6, 10, 16, 24];
@@ -86,6 +87,14 @@ function getCanvasPoint(event, canvas) {
   };
 }
 
+function getCanvasBrushSize(canvas, displaySize) {
+  const bounds = canvas.getBoundingClientRect();
+
+  if (!bounds.width) return displaySize;
+
+  return displaySize * (canvas.width / bounds.width);
+}
+
 function getRectangle(start, end) {
   return {
     x: Math.min(start.x, end.x),
@@ -95,7 +104,7 @@ function getRectangle(start, end) {
   };
 }
 
-function drawStroke(context, action, dimensions) {
+function drawStroke(context, action) {
   if (!action.points.length) return;
 
   context.save();
@@ -117,8 +126,6 @@ function drawStroke(context, action, dimensions) {
 
   context.stroke();
   context.restore();
-
-  if (dimensions.width < 1 || dimensions.height < 1) return;
 }
 
 function drawRedaction(context, action) {
@@ -139,13 +146,13 @@ function drawRedaction(context, action) {
   context.restore();
 }
 
-function renderAction(context, action, dimensions) {
+function renderAction(context, action) {
   if (action.tool === "redact") {
     drawRedaction(context, action);
     return;
   }
 
-  drawStroke(context, action, dimensions);
+  drawStroke(context, action);
 }
 
 function clearCanvas(canvas) {
@@ -307,10 +314,13 @@ export default function ScreenshotEvidenceEditor({
 
       if (
         image.naturalWidth > MAX_IMAGE_DIMENSION ||
-        image.naturalHeight > MAX_IMAGE_DIMENSION
+        image.naturalHeight > MAX_IMAGE_DIMENSION ||
+        image.naturalWidth * image.naturalHeight > MAX_IMAGE_PIXELS
       ) {
         setStatusMessage("This image is too large to edit in the browser.");
-        toast.error("Screenshot dimensions must be 10,000 pixels or smaller.");
+        toast.error(
+          "Screenshot must be no larger than 10,000 pixels per side or 40 megapixels total.",
+        );
         return;
       }
 
@@ -360,10 +370,7 @@ export default function ScreenshotEvidenceEditor({
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
     visibleActions.forEach((action) => {
-      renderAction(context, action, {
-        width: canvas.width,
-        height: canvas.height,
-      });
+      renderAction(context, action);
     });
   }, [actions, actionIndex, canvasSize, isImageReady]);
 
@@ -438,10 +445,7 @@ export default function ScreenshotEvidenceEditor({
       return;
     }
 
-    drawStroke(context, action, {
-      width: canvas.width,
-      height: canvas.height,
-    });
+    drawStroke(context, action);
   }, []);
 
   const handlePointerDown = (event) => {
@@ -454,7 +458,7 @@ export default function ScreenshotEvidenceEditor({
     const action = {
       tool: activeTool,
       color: activeColor,
-      size: brushSize,
+      size: getCanvasBrushSize(canvas, brushSize),
       points: [point],
     };
 
@@ -504,18 +508,17 @@ export default function ScreenshotEvidenceEditor({
       });
     }
 
-    setActions((current) => {
-      const next = [...current.slice(0, actionIndex + 1), action];
+    const nextActions = [
+      ...actions.slice(0, actionIndex + 1),
+      action,
+    ];
 
-      if (next.length > MAX_HISTORY_ACTIONS) {
-        next.shift();
-        setActionIndex(MAX_HISTORY_ACTIONS - 1);
-      } else {
-        setActionIndex(next.length - 1);
-      }
+    if (nextActions.length > MAX_HISTORY_ACTIONS) {
+      nextActions.shift();
+    }
 
-      return next;
-    });
+    setActions(nextActions);
+    setActionIndex(nextActions.length - 1);
     setStatusMessage(
       action.tool === "redact"
         ? "Redaction added. It will be permanently applied when attached."

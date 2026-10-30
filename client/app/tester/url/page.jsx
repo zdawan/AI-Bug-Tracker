@@ -346,6 +346,42 @@ function getQueryParameterSummary(parsed) {
   return [...parameters.values()];
 }
 
+function getSensitivePathSegments(parsed) {
+  const sensitiveValuePatterns = [
+    /^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/,
+    /^bearer\s+\S+/i,
+    /^eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\./,
+    /^gh[pousr]_[a-zA-Z0-9]{12,}$/i,
+    /^(token|access[_-]?token|secret|password|session|api[_-]?key)[=:_-].+/i,
+  ];
+
+  return parsed.pathname
+    .split("/")
+    .map((rawSegment, index) => {
+      if (!rawSegment) return null;
+
+      let decodedSegment = rawSegment;
+
+      try {
+        decodedSegment = decodeURIComponent(rawSegment);
+      } catch {
+        decodedSegment = rawSegment;
+      }
+
+      if (
+        !sensitiveValuePatterns.some((pattern) => pattern.test(decodedSegment))
+      ) {
+        return null;
+      }
+
+      return {
+        index: index + 1,
+        masked: maskParameterName(decodedSegment),
+      };
+    })
+    .filter(Boolean);
+}
+
 function formatPrivacyAuditSummary(checks) {
   const attentionCount = checks.filter(
     (check) => check.state === "attention",
@@ -425,6 +461,7 @@ function getUrlAuditChecks(value) {
     parsed.hostname === "[::1]";
   const sensitiveKeys = [];
   const personalKeys = [];
+  const sensitivePathSegments = getSensitivePathSegments(parsed);
 
   for (const [key, queryValue] of parsed.searchParams.entries()) {
     const cleanKey = key.trim();
@@ -524,6 +561,26 @@ function getUrlAuditChecks(value) {
       evidence: personalKeys.length
         ? personalKeys.map((key) => maskParameterName(key))
         : undefined,
+    }),
+  );
+
+  checks.push(
+    makeUrlAuditCheck({
+      id: "sensitive-path",
+      category: "privacy",
+      state: sensitivePathSegments.length ? "attention" : "good",
+      title: sensitivePathSegments.length
+        ? "Possible private value in page path"
+        : "No obvious private path values detected",
+      detail: sensitivePathSegments.length
+        ? "One or more path segments resemble contact data or a credential. The original values are not included in this finding."
+        : "No common email, token, or credential patterns were detected in path segments.",
+      recommendation: sensitivePathSegments.length
+        ? "Confirm whether the affected path segments are essential before sharing this URL."
+        : "Review unusual path values manually if the destination contains private data.",
+      evidence: sensitivePathSegments.map(
+        (segment) => `Segment ${segment.index}: ${segment.masked}`,
+      ),
     }),
   );
 
@@ -745,6 +802,9 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   const queryParameters = parsedUrl
     ? getQueryParameterSummary(parsedUrl)
     : [];
+  const sensitivePathSegments = parsedUrl
+    ? getSensitivePathSegments(parsedUrl)
+    : [];
   const flaggedParameterNames = parsedUrl
     ? getFlaggedQueryParameterNames(parsedUrl)
     : new Set();
@@ -920,6 +980,39 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
               >
                 Remove credentials
               </button>
+            </div>
+          )}
+          {sensitivePathSegments.length > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h4 className="text-[11px] font-semibold text-amber-900">
+                    Possible private data in page path
+                  </h4>
+                  <p className="mt-1 text-[10px] leading-4 text-amber-800">
+                    Some path segments resemble an email address, credential,
+                    or access token. Values are masked, and no path is changed.
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-amber-800">
+                  {sensitivePathSegments.length} segment
+                  {sensitivePathSegments.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {sensitivePathSegments.map((segment) => (
+                  <li
+                    key={`${segment.index}-${segment.masked}`}
+                    className="rounded-md border border-amber-200 bg-white px-2 py-1 font-mono text-[9px] text-amber-900"
+                  >
+                    Segment {segment.index}: {segment.masked}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[9px] leading-4 text-amber-800">
+                Check whether those values are required to reproduce the issue
+                before sharing the URL.
+              </p>
             </div>
           )}
           {queryParameters.length > 0 && (
