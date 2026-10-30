@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReportDraftWorkspace from "./ReportDraftWorkspace";
 import ScreenshotEvidenceEditor from "./ScreenshotEvidenceEditor";
+import ReportTemplateLibrary from "./ReportTemplateLibrary";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -516,6 +517,21 @@ export default function BugForm({ onBugCreated, testUrl }) {
           description={description}
           email={email}
           testUrl={testUrl}
+        />
+
+        <ReportTemplateLibrary
+          currentTitle={title}
+          currentDescription={description}
+          onApplyTemplate={(template, mode) => {
+            setTitle(template.title);
+            setDescription((currentDescription) => {
+              if (mode === "append" && currentDescription.trim()) {
+                return `${currentDescription.trimEnd()}\n\n${template.description}`;
+              }
+
+              return template.description;
+            });
+          }}
         />
 
         <ReportDraftWorkspace
