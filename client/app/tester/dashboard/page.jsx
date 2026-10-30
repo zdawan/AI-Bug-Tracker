@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AnalyticsDrilldown from "./components/AnalyticsDrilldown";
+import DuplicateReviewWorkspace from "./components/DuplicateReviewWorkspace";
 import PersonalTriageWorkspace from "./components/PersonalTriageWorkspace";
 import ReportAgingBoard from "./components/ReportAgingBoard";
 import { MetricQualityPanel } from "../../components/AnalyticsOverview";
@@ -3861,6 +3862,14 @@ export default function TesterDashboardPage() {
                 />
               )}
             </section>
+
+            {hasSearched && (
+              <DuplicateReviewWorkspace
+                bugs={bugs}
+                email={loadedEmail}
+                onOpenReport={handleOpenBug}
+              />
+            )}
 
             {hasSearched && (
               <PersonalTriageWorkspace
