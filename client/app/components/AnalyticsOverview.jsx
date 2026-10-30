@@ -826,6 +826,9 @@ function PeriodComparisonPanel({ reports, days, loading }) {
             immediately preceding period. Severity and categories reflect their
             current report values.
           </p>
+          <p className="mt-1 text-[10px] leading-4 text-slate-400">
+            A higher count is not always better; review the metric context.
+          </p>
         </div>
         <button
           type="button"
