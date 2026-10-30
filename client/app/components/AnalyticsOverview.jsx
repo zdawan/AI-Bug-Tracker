@@ -15,6 +15,9 @@ import {
   Activity,
   TrendingDown,
   Download,
+  ArrowLeftRight,
+  CalendarDays,
+  Minus,
 } from "lucide-react";
 
 const isResolved = (status = "") =>
@@ -84,6 +87,119 @@ function getActivityDays(reports, numberOfDays, offsetFromToday = 0) {
   });
 
   return days;
+}
+
+function getPeriodSummary(reports, numberOfDays, offsetFromToday = 0) {
+  const days = getActivityDays(reports, numberOfDays, offsetFromToday).map(
+    (day) => ({
+      ...day,
+      submissions: 0,
+      highSeverity: 0,
+      repeats: 0,
+      categories: new Map(),
+    }),
+  );
+  const byDate = new Map(days.map((day) => [day.key, day]));
+
+  reports.forEach((report) => {
+    const date = getDate(report.createdAt || report.created_at);
+    if (!date) return;
+
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const day = byDate.get(key);
+    if (!day) return;
+
+    const reportCount = Number(report.reports);
+    const submissions =
+      Number.isFinite(reportCount) && reportCount > 0 ? reportCount : 1;
+    day.submissions += submissions;
+    day.highSeverity += isHighSeverity(report.severity) ? 1 : 0;
+    day.repeats += Math.max(0, submissions - 1);
+
+    const category =
+      typeof report.category === "string" && report.category.trim()
+        ? report.category.trim()
+        : "Uncategorized";
+    day.categories.set(category, (day.categories.get(category) || 0) + 1);
+  });
+
+  return days.reduce(
+    (summary, day) => {
+      summary.total += day.count;
+      summary.submissions += day.submissions;
+      summary.highSeverity += day.highSeverity;
+      summary.repeats += day.repeats;
+      day.categories.forEach((count, category) => {
+        summary.categories.set(
+          category,
+          (summary.categories.get(category) || 0) + count,
+        );
+      });
+      return summary;
+    },
+    {
+      days,
+      total: 0,
+      submissions: 0,
+      highSeverity: 0,
+      repeats: 0,
+      categories: new Map(),
+    },
+  );
+}
+
+function getComparisonChange(current, previous) {
+  if (current === previous) return { value: 0, percent: 0, direction: "same" };
+  if (previous === 0) {
+    return {
+      value: current,
+      percent: null,
+      direction: current > 0 ? "up" : "same",
+    };
+  }
+
+  const value = current - previous;
+
+  return {
+    value,
+    percent: (value / previous) * 100,
+    direction: value > 0 ? "up" : "down",
+  };
+}
+
+function formatComparisonChange(change) {
+  if (change.direction === "same") return "No change";
+  if (change.percent === null) return "New this period";
+
+  const sign = change.value > 0 ? "+" : "−";
+  return `${sign}${Math.abs(change.value)} (${Math.abs(change.percent).toFixed(0)}%)`;
+}
+
+function getCategoryComparison(current, previous) {
+  const categoryNames = new Set([
+    ...current.categories.keys(),
+    ...previous.categories.keys(),
+  ]);
+
+  return [...categoryNames]
+    .map((name) => {
+      const currentCount = current.categories.get(name) || 0;
+      const previousCount = previous.categories.get(name) || 0;
+
+      return {
+        name,
+        current: currentCount,
+        previous: previousCount,
+        change: getComparisonChange(currentCount, previousCount),
+      };
+    })
+    .sort(
+      (left, right) =>
+        right.current - left.current ||
+        Math.abs(right.change.value) - Math.abs(left.change.value) ||
+        left.name.localeCompare(right.name),
+    )
+    .slice(0, 6);
 }
 
 const metricStyles = {
@@ -487,6 +603,380 @@ function WeeklyActivityChart({
           {Math.abs(periodChange).toFixed(0)}% vs previous {days} days
         </p>
       )}
+    </section>
+  );
+}
+
+function formatPeriodRange(days, offsetFromToday = 0) {
+  const end = new Date();
+  end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() - offsetFromToday);
+  const start = new Date(end);
+  start.setDate(start.getDate() - days + 1);
+
+  const formatDate = (date) =>
+    date.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+    });
+
+  return `${formatDate(start)} – ${formatDate(end)}`;
+}
+
+function ComparisonMetricCard({ label, current, previous, note }) {
+  const change = getComparisonChange(current, previous);
+  const changeStyle =
+    change.direction === "up"
+      ? "text-violet-700"
+      : change.direction === "down"
+        ? "text-sky-700"
+        : "text-slate-500";
+  const ChangeIcon =
+    change.direction === "up"
+      ? TrendingUp
+      : change.direction === "down"
+        ? TrendingDown
+        : Minus;
+
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-3.5">
+      <p className="text-[11px] font-medium text-slate-500">{label}</p>
+      <div className="mt-2 flex items-baseline justify-between gap-2">
+        <span className="text-2xl font-semibold tabular-nums text-slate-900">
+          {formatCount(current)}
+        </span>
+        <span
+          className={`inline-flex items-center gap-1 text-[10px] font-semibold tabular-nums ${changeStyle}`}
+          aria-label={`Change: ${formatComparisonChange(change)}`}
+        >
+          <ChangeIcon size={12} aria-hidden="true" />
+          {formatComparisonChange(change)}
+        </span>
+      </div>
+      <p className="mt-1 text-[10px] text-slate-400">
+        Previous period: {formatCount(previous)}
+      </p>
+      {note && (
+        <p className="mt-2 border-t border-slate-100 pt-2 text-[10px] leading-4 text-slate-500">
+          {note}
+        </p>
+      )}
+    </article>
+  );
+}
+
+function DailyComparisonRow({ currentDay, previousDay, maximum }) {
+  const currentCount = currentDay?.count || 0;
+  const previousCount = previousDay?.count || 0;
+  const currentWidth = maximum ? (currentCount / maximum) * 100 : 0;
+  const previousWidth = maximum ? (previousCount / maximum) * 100 : 0;
+
+  return (
+    <div className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 py-2">
+      <span className="text-[10px] font-medium text-slate-500">
+        {currentDay?.day || "—"}
+      </span>
+      <div className="space-y-1.5" aria-hidden="true">
+        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-violet-600 transition-all"
+            style={{ width: `${currentWidth}%` }}
+          />
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-slate-300 transition-all"
+            style={{ width: `${previousWidth}%` }}
+          />
+        </div>
+      </div>
+      <span className="min-w-[58px] text-right text-[10px] tabular-nums text-slate-600">
+        {formatCount(currentCount)} / {formatCount(previousCount)}
+      </span>
+    </div>
+  );
+}
+
+function PeriodComparisonPanel({ reports, days, loading }) {
+  const [exportError, setExportError] = useState("");
+  const current = useMemo(
+    () => getPeriodSummary(reports, days),
+    [reports, days],
+  );
+  const previous = useMemo(
+    () => getPeriodSummary(reports, days, days),
+    [reports, days],
+  );
+  const categories = useMemo(
+    () => getCategoryComparison(current, previous),
+    [current, previous],
+  );
+  const dailyMaximum = Math.max(
+    1,
+    ...current.days.map((day, index) =>
+      Math.max(day.count, previous.days[index]?.count || 0),
+    ),
+  );
+  const periodLabel = `${days}-day period`;
+
+  const exportComparison = () => {
+    let downloadUrl = "";
+
+    try {
+      const rows = [
+        ["Metric", "Current period", "Previous period", "Change"],
+        [
+          "New issues",
+          current.total,
+          previous.total,
+          formatComparisonChange(
+            getComparisonChange(current.total, previous.total),
+          ),
+        ],
+        [
+          "Total submissions",
+          current.submissions,
+          previous.submissions,
+          formatComparisonChange(
+            getComparisonChange(current.submissions, previous.submissions),
+          ),
+        ],
+        [
+          "High severity issues",
+          current.highSeverity,
+          previous.highSeverity,
+          formatComparisonChange(
+            getComparisonChange(current.highSeverity, previous.highSeverity),
+          ),
+        ],
+        [
+          "Repeat submissions",
+          current.repeats,
+          previous.repeats,
+          formatComparisonChange(
+            getComparisonChange(current.repeats, previous.repeats),
+          ),
+        ],
+        [],
+        ["Category", "Current period", "Previous period", "Change"],
+        ...categories.map((category) => [
+          category.name,
+          category.current,
+          category.previous,
+          formatComparisonChange(category.change),
+        ]),
+        [],
+        ["Date", "Current period issues", "Previous period issues"],
+        ...current.days.map((day, index) => [
+          day.key,
+          day.count,
+          previous.days[index]?.count || 0,
+        ]),
+      ];
+      const csv = rows
+        .map((row) =>
+          row
+            .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+            .join(","),
+        )
+        .join("\r\n");
+      const blob = new Blob(["\uFEFF", csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = `analytics-comparison-${days}d-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadUrl = "";
+      setExportError("");
+    } catch {
+      setExportError("Could not export period comparison. Please try again.");
+    } finally {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    }
+  };
+
+  return (
+    <section
+      className="mt-4 rounded-[22px] border border-violet-100 bg-gradient-to-br from-violet-50/60 via-white to-slate-50 p-4 shadow-sm shadow-violet-900/[0.03] sm:p-5"
+      aria-labelledby="period-comparison-heading"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-100 text-violet-700">
+              <ArrowLeftRight size={15} aria-hidden="true" />
+            </span>
+            <h3
+              id="period-comparison-heading"
+              className="text-sm font-semibold text-slate-900"
+            >
+              Period comparison
+            </h3>
+          </div>
+          <p className="mt-2 text-[11px] leading-5 text-slate-500">
+            Compare newly created reports in the current {periodLabel} with the
+            immediately preceding period. Severity and categories reflect their
+            current report values.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={exportComparison}
+          disabled={loading}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Download size={14} aria-hidden="true" />
+          Export comparison
+        </button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-slate-500">
+        <span className="inline-flex items-center gap-1.5">
+          <CalendarDays size={12} aria-hidden="true" />
+          Current: {formatPeriodRange(days)}
+        </span>
+        <span>Previous: {formatPeriodRange(days, days)}</span>
+        {loading && <span className="font-medium text-violet-700">Updating…</span>}
+      </div>
+
+      {exportError && (
+        <p role="alert" className="mt-3 text-xs text-rose-700">
+          {exportError}
+        </p>
+      )}
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <ComparisonMetricCard
+          label="New issues"
+          current={current.total}
+          previous={previous.total}
+          note="Unique reports created in each period"
+        />
+        <ComparisonMetricCard
+          label="Total submissions"
+          current={current.submissions}
+          previous={previous.submissions}
+          note="Includes repeat submissions recorded on each issue"
+        />
+        <ComparisonMetricCard
+          label="High severity"
+          current={current.highSeverity}
+          previous={previous.highSeverity}
+          note="Current severity for issues created in each period"
+        />
+        <ComparisonMetricCard
+          label="Repeat submissions"
+          current={current.repeats}
+          previous={previous.repeats}
+          note="Submissions beyond the first report per issue"
+        />
+      </div>
+
+      <div className="mt-3 grid gap-3 xl:grid-cols-2">
+        <section className="rounded-2xl border border-slate-200 bg-white p-3.5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h4 className="text-xs font-semibold text-slate-800">
+                Daily issue volume
+              </h4>
+              <p className="mt-1 text-[10px] text-slate-500">
+                Current and previous period, aligned by day
+              </p>
+            </div>
+            <span className="text-[10px] tabular-nums text-slate-500">
+              Current / previous
+            </span>
+          </div>
+          <div className="mt-3 divide-y divide-slate-100">
+            {current.days.map((day, index) => (
+              <DailyComparisonRow
+                key={day.key}
+                currentDay={day}
+                previousDay={previous.days[index]}
+                maximum={dailyMaximum}
+              />
+            ))}
+          </div>
+          <div
+            className="mt-3 flex flex-wrap gap-4 border-t border-slate-100 pt-3 text-[10px] text-slate-500"
+            aria-label="Daily comparison legend"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-violet-600" />
+              Current
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-slate-300" />
+              Previous
+            </span>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-3.5">
+          <div>
+            <h4 className="text-xs font-semibold text-slate-800">
+              Category movement
+            </h4>
+            <p className="mt-1 text-[10px] text-slate-500">
+              Categories with the most issues across either period
+            </p>
+          </div>
+          {categories.length ? (
+            <div className="mt-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_54px_54px_90px] gap-2 border-b border-slate-100 pb-2 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                <span>Category</span>
+                <span className="text-right">Current</span>
+                <span className="text-right">Previous</span>
+                <span className="text-right">Change</span>
+              </div>
+              <ul className="divide-y divide-slate-100">
+                {categories.map((category) => (
+                  <li
+                    key={category.name}
+                    className="grid grid-cols-[minmax(0,1fr)_54px_54px_90px] items-center gap-2 py-2"
+                  >
+                    <span
+                      className="truncate text-[10px] font-medium text-slate-700"
+                      title={category.name}
+                    >
+                      {category.name}
+                    </span>
+                    <span className="text-right text-[10px] tabular-nums text-slate-700">
+                      {formatCount(category.current)}
+                    </span>
+                    <span className="text-right text-[10px] tabular-nums text-slate-500">
+                      {formatCount(category.previous)}
+                    </span>
+                    <span
+                      className={`truncate text-right text-[9px] font-semibold ${
+                        category.change.direction === "up"
+                          ? "text-violet-700"
+                          : category.change.direction === "down"
+                            ? "text-sky-700"
+                            : "text-slate-400"
+                      }`}
+                    >
+                      {formatComparisonChange(category.change)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-6 text-center text-[10px] text-slate-500">
+              Category comparisons appear when reports have category data.
+            </p>
+          )}
+        </section>
+      </div>
     </section>
   );
 }
@@ -1376,6 +1866,7 @@ export default function AnalyticsOverview({
   onViewReport,
 }) {
   const [activityDays, setActivityDays] = useState(7);
+  const [showPeriodComparison, setShowPeriodComparison] = useState(false);
   const activity = useMemo(
     () =>
       activityDays === 7 && weeklyActivity.length
@@ -1449,7 +1940,7 @@ export default function AnalyticsOverview({
 
   return (
     <section className="space-y-4">
-      <div className="flex items-end justify-between gap-2">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-600">
             Overview
@@ -1462,9 +1953,27 @@ export default function AnalyticsOverview({
           </p>
         </div>
 
-        <span className="text-xs text-slate-400">
-          {loading ? "Refreshing..." : "Live dashboard data"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">
+            {loading ? "Refreshing..." : "Live dashboard data"}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setShowPeriodComparison((visible) => !visible)
+            }
+            aria-expanded={showPeriodComparison}
+            aria-controls="analytics-period-comparison"
+            className={`inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+              showPeriodComparison
+                ? "border-violet-200 bg-violet-50 text-violet-700"
+                : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+            }`}
+          >
+            <ArrowLeftRight size={14} aria-hidden="true" />
+            {showPeriodComparison ? "Hide comparison" : "Compare periods"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -1472,6 +1981,16 @@ export default function AnalyticsOverview({
           <MetricCard key={card.label} {...card} />
         ))}
       </div>
+
+      {showPeriodComparison && (
+        <div id="analytics-period-comparison">
+          <PeriodComparisonPanel
+            reports={reports}
+            days={activityDays}
+            loading={loading}
+          />
+        </div>
+      )}
 
       <MetricQualityPanel reports={reports} />
 
