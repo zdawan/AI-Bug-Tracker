@@ -1135,6 +1135,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
                 {trackingParameterNames.size > 0 && (
                   <button
                     type="button"
+                    aria-label={`Remove ${trackingParameterNames.size} detected tracking ${trackingParameterNames.size === 1 ? "parameter" : "parameters"}`}
                     onClick={() => {
                       const cleaned = new URL(parsedUrl.href);
 
