@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ClipboardPaste,
+  Activity,
   Eye,
   EyeOff,
   RefreshCw,
@@ -12,10 +13,12 @@ import {
 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
+import OtpActivityPanel from "./OtpActivityPanel";
 
 const CODE_REVEAL_SECONDS = 15;
 const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
 const RESEND_COOLDOWN_SECONDS = 30;
+const MAX_ACTIVITY_EVENTS = 50;
 
 export default function OtpForm({
   email,
@@ -38,11 +41,75 @@ export default function OtpForm({
   const [autoVerifyPreferenceMessage, setAutoVerifyPreferenceMessage] =
     useState("");
   const [revealSeconds, setRevealSeconds] = useState(0);
+  const [activityEvents, setActivityEvents] = useState([]);
+  const activitySequence = useRef(0);
+  const previousRequestState = useRef(false);
+  const previousVerifyState = useRef(false);
   const inputRefs = useRef([]);
   const focusedInputIndex = useRef(0);
   const revealTimer = useRef(null);
   const enteredDigits = otp.filter(Boolean).length;
   const visibleError = codeError || error;
+
+  const recordActivity = (type, detail, source = "") => {
+    activitySequence.current += 1;
+    const entry = {
+      id: `otp-event-${Date.now()}-${activitySequence.current}`,
+      type,
+      detail,
+      source,
+      timestamp: Date.now(),
+    };
+    setActivityEvents((current) =>
+      [entry, ...current].slice(0, MAX_ACTIVITY_EVENTS),
+    );
+  };
+
+  useEffect(() => {
+    const requestStarted =
+      isSending && !previousRequestState.current;
+    const requestFinished =
+      !isSending && previousRequestState.current;
+
+    if (requestStarted) {
+      recordActivity(
+        "request_started",
+        "A request was sent to deliver a verification code.",
+      );
+    } else if (requestFinished) {
+      recordActivity(
+        error ? "request_failed" : "request_finished",
+        error
+          ? "The code request returned an error. Review the message above."
+          : "The code request completed successfully.",
+      );
+    }
+
+    previousRequestState.current = isSending;
+  }, [error, isSending]);
+
+  useEffect(() => {
+    const verificationStarted =
+      isVerifying && !previousVerifyState.current;
+    const verificationFinished =
+      !isVerifying && previousVerifyState.current;
+
+    if (verificationStarted) {
+      recordActivity(
+        "verify_started",
+        "The six-digit code was submitted for verification.",
+      );
+    } else if (verificationFinished) {
+      recordActivity(
+        error ? "verify_failed" : "verify_succeeded",
+        error
+          ? "The code was not accepted. The code itself is never recorded."
+          : "The server accepted the verification request.",
+      );
+    }
+
+    previousVerifyState.current = isVerifying;
+  }, [error, isVerifying]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
