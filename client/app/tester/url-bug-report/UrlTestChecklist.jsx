@@ -338,6 +338,27 @@ function ScenarioCard({
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
           <button
             type="button"
+            onClick={async () => {
+              try {
+                if (!navigator.clipboard?.writeText) {
+                  throw new Error("Clipboard access is unavailable.");
+                }
+
+                await navigator.clipboard.writeText(makeSafeUrl(scenario.url));
+                toast.success("Sanitized page URL copied.");
+              } catch {
+                toast.error("Could not copy this page URL.");
+              }
+            }}
+            disabled={!parsedUrl}
+            aria-label={`Copy sanitized URL for ${scenario.title}`}
+            className={`${PANEL_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+          >
+            <Clipboard size={13} aria-hidden="true" />
+            Copy safe URL
+          </button>
+          <button
+            type="button"
             onClick={onSelect}
             disabled={!parsedUrl || isActive}
             className={`${PANEL_BUTTON} border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100`}
