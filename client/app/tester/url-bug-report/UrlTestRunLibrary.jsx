@@ -518,6 +518,10 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
           >
             Comparing {leftRun.name} with {rightRun.name}
           </h4>
+          <p className="mt-1 text-[9px] text-slate-500">
+            Baseline updated {formatRunDate(leftRun.updatedAt)} · Comparison
+            updated {formatRunDate(rightRun.updatedAt)}
+          </p>
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-600">
             <span>{counts.added} added</span>
             <span>{counts.removed} removed</span>
