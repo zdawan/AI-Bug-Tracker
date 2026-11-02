@@ -525,6 +525,35 @@ function WeeklyActivityChart({
           );
         })}
       </div>
+      ) : loading ? (
+        <div
+          className={`mt-6 grid animate-pulse gap-2 sm:gap-4 ${
+            days === 7 ? "grid-cols-7" : "grid-cols-6 sm:grid-cols-10"
+          }`}
+          role="status"
+          aria-label="Loading report activity"
+          aria-busy="true"
+        >
+          {Array.from({ length: days }, (_, index) => (
+            <div
+              key={`activity-skeleton-${index}`}
+              className="flex flex-col items-center rounded-xl px-1 pb-1 pt-2"
+              aria-hidden="true"
+            >
+              <span className="mb-2 h-3 w-5 rounded bg-slate-200" />
+              <div className="flex h-32 w-full max-w-12 items-end justify-center rounded-full bg-[#f6f5fa] p-1.5">
+                <span
+                  className="w-full rounded-full bg-slate-200"
+                  style={{
+                    height: `${24 + ((index * 17) % 65)}%`,
+                  }}
+                />
+              </div>
+              <span className="mt-2 h-3 w-8 rounded bg-slate-200" />
+            </div>
+          ))}
+          <span className="sr-only">Loading activity data...</span>
+        </div>
       ) : (
         <div className="mt-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
           Activity data will appear when reports are available.
