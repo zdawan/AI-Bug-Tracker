@@ -9,6 +9,7 @@ import {
   EyeOff,
   RefreshCw,
   Clock3,
+  WifiOff,
 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
@@ -40,6 +41,7 @@ export default function OtpForm({
   const [autoVerifyPreferenceMessage, setAutoVerifyPreferenceMessage] =
     useState("");
   const [revealSeconds, setRevealSeconds] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
   const [activityEvents, setActivityEvents] = useState([]);
   const activitySequence = useRef(0);
   const previousRequestState = useRef(false);
@@ -112,6 +114,21 @@ export default function OtpForm({
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
+  }, []);
+
+  useEffect(() => {
+    const updateConnection = () => {
+      setIsOnline(navigator.onLine);
+    };
+
+    updateConnection();
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+
+    return () => {
+      window.removeEventListener("online", updateConnection);
+      window.removeEventListener("offline", updateConnection);
+    };
   }, []);
 
   useEffect(() => {
@@ -464,6 +481,16 @@ export default function OtpForm({
     inputRefs.current[0]?.focus();
   };
 
+  const focusCodeForCorrection = () => {
+    const firstEmptyIndex = otp.findIndex((digit) => !digit);
+    const targetIndex = firstEmptyIndex < 0 ? 0 : firstEmptyIndex;
+    const targetInput = inputRefs.current[targetIndex];
+
+    focusedInputIndex.current = targetIndex;
+    targetInput?.focus();
+    targetInput?.select();
+  };
+
   const toggleCodeVisibility = () => {
     recordActivity(
       "visibility_changed",
@@ -554,6 +581,23 @@ export default function OtpForm({
         noValidate
         className="space-y-6"
       >
+        {!isOnline && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-900"
+          >
+            <WifiOff
+              size={16}
+              className="mt-0.5 shrink-0"
+              aria-hidden="true"
+            />
+            <p className="text-xs leading-5">
+              You’re offline. Your entered code will stay on this page. Check
+              your connection before verifying or requesting another code.
+            </p>
+          </div>
+        )}
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <label
@@ -626,7 +670,9 @@ export default function OtpForm({
                 autoCapitalize="off"
                 spellCheck={false}
                 autoComplete={index === 0 ? "one-time-code" : "off"}
-                aria-label={`OTP digit ${index + 1}`}
+                aria-label={`OTP digit ${index + 1} of 6, ${
+                  digit ? "filled" : "empty"
+                }`}
                 aria-invalid={Boolean(visibleError)}
                 aria-describedby={`tester-otp-progress${visibleError ? " tester-otp-error" : ""}`}
                 maxLength={index === 0 ? 6 : 1}
@@ -758,14 +804,22 @@ export default function OtpForm({
           Tip: press Ctrl+Enter or ⌘+Enter to verify.
         </p>
         {visibleError && (
-          <p
+          <div
             id="tester-otp-error"
             role="alert"
             aria-live="assertive"
-            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-center text-sm text-rose-800"
+            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-center text-sm text-rose-800"
           >
-            {visibleError}
-          </p>
+            <span className="block">{visibleError}</span>
+            <button
+              type="button"
+              onClick={focusCodeForCorrection}
+              disabled={isVerifying || isSending}
+              className="mt-2 inline-flex min-h-9 items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Edit verification code
+            </button>
+          </div>
         )}
       </form>
 
