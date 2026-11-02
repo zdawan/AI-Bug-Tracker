@@ -15,6 +15,7 @@ import OtpHelpPanel from "./OtpHelpPanel";
 
 const CODE_REVEAL_SECONDS = 15;
 const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
+const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function OtpForm({
   email,
@@ -611,18 +612,46 @@ export default function OtpForm({
 
       <div className="mt-6 flex flex-col items-center gap-4 text-sm">
         {resendCooldown > 0 ? (
-          <p className="inline-flex items-center gap-2 text-slate-500">
-            <Clock3 size={15} />
-            Resend code in{" "}
-            <span className="font-semibold tabular-nums text-slate-800">
-              {formatTime(resendCooldown)}
-            </span>
-          </p>
+          <div className="w-full max-w-[280px]">
+            <p className="inline-flex w-full items-center justify-center gap-2 text-slate-500">
+              <Clock3 size={15} aria-hidden="true" />
+              Resend code in{" "}
+              <span className="font-semibold tabular-nums text-slate-800">
+                {formatTime(resendCooldown)}
+              </span>
+            </p>
+            <div
+              className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"
+              role="progressbar"
+              aria-label="Resend code cooldown"
+              aria-valuemin={0}
+              aria-valuemax={RESEND_COOLDOWN_SECONDS}
+              aria-valuenow={Math.min(
+                RESEND_COOLDOWN_SECONDS,
+                Math.max(0, RESEND_COOLDOWN_SECONDS - resendCooldown),
+              )}
+              aria-valuetext={`${formatTime(resendCooldown)} remaining before another code can be sent`}
+            >
+              <div
+                className="h-full rounded-full bg-violet-600 transition-[width] duration-300"
+                style={{
+                  width: `${
+                    (Math.min(
+                      RESEND_COOLDOWN_SECONDS,
+                      Math.max(0, RESEND_COOLDOWN_SECONDS - resendCooldown),
+                    ) /
+                      RESEND_COOLDOWN_SECONDS) *
+                    100
+                  }%`,
+                }}
+              />
+            </div>
+          </div>
         ) : (
           <button
             type="button"
             onClick={handleResendCode}
-            disabled={isSending}
+            disabled={isSending || isVerifying}
             className="inline-flex cursor-pointer items-center gap-2 font-semibold text-purple-700 hover:text-purple-900 disabled:cursor-wait disabled:opacity-60"
           >
             <RefreshCw size={15} />
