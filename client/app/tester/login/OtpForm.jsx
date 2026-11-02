@@ -20,6 +20,33 @@ const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
 const RESEND_COOLDOWN_SECONDS = 30;
 const MAX_ACTIVITY_EVENTS = 50;
 
+function extractOtpDigits(value) {
+  const text = value.trim();
+  if (!text) return "";
+
+  const completeCodes = [
+    ...text.matchAll(/(?:^|[^A-Za-z0-9])(\d{6})(?![A-Za-z0-9])/g),
+  ].map((match) => match[1]);
+  const uniqueCompleteCodes = [...new Set(completeCodes)];
+  if (uniqueCompleteCodes.length === 1) return uniqueCompleteCodes[0];
+  if (uniqueCompleteCodes.length > 1) return "";
+
+  const separatedCodes = [
+    ...text.matchAll(
+      /(?:^|[^A-Za-z0-9])(\d(?:[\s-]+\d){5})(?![\s-]*\d)/g,
+    ),
+  ].map((match) => match[1].replace(/\D/g, ""));
+  const uniqueSeparatedCodes = [...new Set(separatedCodes)];
+  if (uniqueSeparatedCodes.length === 1) return uniqueSeparatedCodes[0];
+  if (uniqueSeparatedCodes.length > 1) return "";
+
+  if (!/^[\d\s-]+$/.test(text)) return "";
+  const partialDigits = text.replace(/\D/g, "");
+  return partialDigits.length > 0 && partialDigits.length < 6
+    ? partialDigits
+    : "";
+}
+
 export default function OtpForm({
   email,
   onBack,
@@ -235,7 +262,7 @@ export default function OtpForm({
   };
 
   const applyPastedCode = (value, currentIndex) => {
-    const digits = value.replace(/\D/g, "");
+    const digits = extractOtpDigits(value);
     if (!digits) return false;
 
     const isCompleteCode = digits.length >= otp.length;
@@ -383,7 +410,7 @@ export default function OtpForm({
     if (!completedCode) {
       recordActivity(
         "code_pasted",
-        "No digits were found in the pasted text. No clipboard contents were saved.",
+        "A single verification code could not be identified. Clipboard contents were not saved.",
         "Paste",
       );
     }
@@ -406,7 +433,7 @@ export default function OtpForm({
 
       if (!pastedCode) {
         setClipboardMessage(
-          "No digits were found. Copy the code first, then try again.",
+          "Could not identify one six-digit code. Copy just the code and try again.",
         );
         return;
       }
