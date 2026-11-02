@@ -199,7 +199,16 @@ export async function verifyOtp(req, res) {
       },
     );
 
-    await TesterOtp.deleteMany({ email });
+    const consumedOtp = await TesterOtp.findOneAndDelete({
+      _id: record._id,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!consumedOtp) {
+      return res.status(400).json({
+        message: "The verification code was already used or has expired.",
+      });
+    }
 
     return res.status(200).json({ token });
   } catch (error) {
