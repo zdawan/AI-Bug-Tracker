@@ -980,6 +980,13 @@ export default function UrlTestChecklist({
         </div>
 
         {scenarios.length > 0 && (
+          <p className="text-[10px] text-slate-500" aria-live="polite">
+            Showing {filteredScenarios.length} of {scenarios.length} page
+            {scenarios.length === 1 ? "" : "s"}
+          </p>
+        )}
+
+        {scenarios.length > 0 && (
           <section
             aria-label="Bulk checklist actions"
             className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:flex-row sm:items-center sm:justify-between"
