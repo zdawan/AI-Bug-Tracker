@@ -72,6 +72,7 @@ export default function OtpForm({
   const [autoVerifyPreferenceMessage, setAutoVerifyPreferenceMessage] =
     useState("");
   const [revealSeconds, setRevealSeconds] = useState(0);
+  const [revealNotice, setRevealNotice] = useState("");
   const [isOnline, setIsOnline] = useState(true);
   const [networkMessage, setNetworkMessage] = useState("");
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
@@ -85,6 +86,8 @@ export default function OtpForm({
   const inputRefs = useRef([]);
   const focusedInputIndex = useRef(0);
   const revealTimer = useRef(null);
+  const revealSecondsRemaining = useRef(0);
+  const revealWarningAnnounced = useRef(false);
   const idleExpiryHandled = useRef(false);
   const lastFormActivityAt = useRef(Date.now());
   const enteredDigits = otp.filter(Boolean).length;
@@ -344,22 +347,35 @@ export default function OtpForm({
       window.clearInterval(revealTimer.current);
       revealTimer.current = null;
     }
+    revealSecondsRemaining.current = 0;
   };
 
   const startRevealTimer = () => {
     if (!isCodeVisible) return;
 
     stopRevealTimer();
+    revealWarningAnnounced.current = false;
+    setRevealNotice("");
+    revealSecondsRemaining.current = CODE_REVEAL_SECONDS;
     setRevealSeconds(CODE_REVEAL_SECONDS);
     revealTimer.current = window.setInterval(() => {
-      setRevealSeconds((remaining) => {
-        if (remaining <= 1) {
-          stopRevealTimer();
-          setIsCodeVisible(false);
-          return 0;
-        }
-        return remaining - 1;
-      });
+      const remaining = Math.max(0, revealSecondsRemaining.current - 1);
+      revealSecondsRemaining.current = remaining;
+      setRevealSeconds(remaining);
+
+      if (remaining === 0) {
+        stopRevealTimer();
+        setIsCodeVisible(false);
+        setRevealNotice("The verification code was hidden for privacy.");
+        recordActivity(
+          "visibility_changed",
+          "The verification code was hidden automatically after the reveal timer ended.",
+          "Privacy timer",
+        );
+      } else if (remaining === 5 && !revealWarningAnnounced.current) {
+        revealWarningAnnounced.current = true;
+        setRevealNotice("The verification code will be hidden in five seconds.");
+      }
     }, 1000);
   };
 
@@ -631,6 +647,7 @@ export default function OtpForm({
     if (sent) {
       stopRevealTimer();
       setRevealSeconds(0);
+      setRevealNotice("");
       setOtp(["", "", "", "", "", ""]);
       setIsCodeVisible(true);
       setCodeError("");
@@ -650,6 +667,7 @@ export default function OtpForm({
     }
     stopRevealTimer();
     setRevealSeconds(0);
+    setRevealNotice("");
     setOtp(["", "", "", "", "", ""]);
     setIsCodeVisible(true);
     setCodeError("");
@@ -691,6 +709,7 @@ export default function OtpForm({
       stopRevealTimer();
       setRevealSeconds(0);
       setIsCodeVisible(false);
+      setRevealNotice("The verification code is hidden.");
     } else {
       setIsCodeVisible(true);
       startRevealTimer();
@@ -848,8 +867,28 @@ export default function OtpForm({
             </div>
           </div>
           {isCodeVisible && revealSeconds > 0 && (
-            <p className="text-right text-[10px] text-slate-500">
-              Code hides in {formatTime(revealSeconds)} for privacy.
+            <div className="text-right">
+              <p className="text-[10px] text-slate-500">
+                Code hides in {formatTime(revealSeconds)} for privacy.
+              </p>
+              {revealNotice && (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="mt-1 text-[10px] font-medium text-amber-700"
+                >
+                  {revealNotice}
+                </p>
+              )}
+            </div>
+          )}
+          {!isCodeVisible && revealNotice && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-right text-[10px] text-slate-500"
+            >
+              {revealNotice}
             </p>
           )}
 
