@@ -51,6 +51,24 @@ export default function OtpForm({
     [],
   );
 
+  useEffect(() => {
+    const hideCodeWhenUnfocused = () => {
+      if (!isCodeVisible) return;
+
+      stopRevealTimer();
+      setRevealSeconds(0);
+      setIsCodeVisible(false);
+    };
+
+    window.addEventListener("blur", hideCodeWhenUnfocused);
+    document.addEventListener("visibilitychange", hideCodeWhenUnfocused);
+
+    return () => {
+      window.removeEventListener("blur", hideCodeWhenUnfocused);
+      document.removeEventListener("visibilitychange", hideCodeWhenUnfocused);
+    };
+  }, [isCodeVisible]);
+
   const stopRevealTimer = () => {
     if (revealTimer.current !== null) {
       window.clearInterval(revealTimer.current);
