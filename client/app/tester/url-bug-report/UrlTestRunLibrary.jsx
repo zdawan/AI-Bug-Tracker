@@ -320,6 +320,14 @@ function compareRunScenarios(leftRun, rightRun) {
     }
 
     matchedRightIds.add(rightScenario.id);
+    const outcome =
+      leftScenario.status !== rightScenario.status &&
+      rightScenario.status === "issue-found"
+        ? "new-issue"
+        : leftScenario.status === "issue-found" &&
+            rightScenario.status === "passed"
+          ? "resolved"
+          : "";
     const details = [
       leftScenario.title !== rightScenario.title && "Name changed",
       leftScenario.url !== rightScenario.url && "Destination changed",
@@ -332,6 +340,7 @@ function compareRunScenarios(leftRun, rightRun) {
       changes.push({
         id: `changed-${leftScenario.id}`,
         kind: "changed",
+        outcome,
         title: rightScenario.title,
         details,
       });
@@ -500,10 +509,41 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
   const counts = changes.reduce(
     (result, change) => {
       result[change.kind] += 1;
+      if (change.outcome === "new-issue") result.newIssues += 1;
+      if (change.outcome === "resolved") result.resolvedIssues += 1;
       return result;
     },
-    { added: 0, removed: 0, changed: 0 },
+    { added: 0, removed: 0, changed: 0, newIssues: 0, resolvedIssues: 0 },
   );
+  const copyComparison = async () => {
+    const changeLines = changes.length
+      ? changes.map(
+          (change) =>
+            `- ${change.kind}: ${change.title} (${change.details.join(", ")})`,
+        )
+      : ["- No page changes detected."];
+    const summary = [
+      "Saved test run comparison",
+      `Baseline: ${leftRun.name} (updated ${formatRunDate(leftRun.updatedAt)})`,
+      `Comparison: ${rightRun.name} (updated ${formatRunDate(rightRun.updatedAt)})`,
+      `Changes: ${counts.added} added, ${counts.removed} removed, ${counts.changed} changed`,
+      `Outcomes: ${counts.newIssues} newly found issues, ${counts.resolvedIssues} issues marked passed`,
+      "",
+      ...changeLines,
+      "",
+      "Privacy: page URLs and note contents are excluded.",
+    ].join("\n");
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+      await navigator.clipboard.writeText(summary);
+      toast.success("Comparison summary copied.");
+    } catch {
+      toast.error("Could not copy the comparison summary.");
+    }
+  };
 
   return (
     <section
@@ -526,15 +566,31 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
             <span>{counts.added} added</span>
             <span>{counts.removed} removed</span>
             <span>{counts.changed} changed</span>
+            <span className="font-semibold text-rose-700">
+              {counts.newIssues} newly found issues
+            </span>
+            <span className="font-semibold text-emerald-700">
+              {counts.resolvedIssues} issues marked passed
+            </span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onClear}
-          className="rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-        >
-          Clear comparison
-        </button>
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            onClick={copyComparison}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          >
+            <Copy size={11} aria-hidden="true" />
+            Copy summary
+          </button>
+          <button
+            type="button"
+            onClick={onClear}
+            className="rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          >
+            Clear comparison
+          </button>
+        </div>
       </div>
 
       {changes.length ? (
@@ -544,16 +600,24 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
               key={change.id}
               className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border border-violet-100 bg-white px-2.5 py-2 text-[10px]"
             >
-              <span
-                className={`font-semibold ${
-                  change.kind === "added"
-                    ? "text-emerald-800"
-                    : change.kind === "removed"
-                      ? "text-rose-800"
-                      : "text-violet-800"
-                }`}
-              >
-                {change.details.join(" · ")}
+              <span className="font-semibold">
+                {change.outcome === "new-issue" && (
+                  <span className="mr-1 text-rose-700">New issue ·</span>
+                )}
+                {change.outcome === "resolved" && (
+                  <span className="mr-1 text-emerald-700">Marked passed ·</span>
+                )}
+                <span
+                  className={
+                    change.kind === "added"
+                      ? "text-emerald-800"
+                      : change.kind === "removed"
+                        ? "text-rose-800"
+                        : "text-violet-800"
+                  }
+                >
+                  {change.details.join(" · ")}
+                </span>
               </span>
               <span className="break-words text-slate-700">{change.title}</span>
             </li>
