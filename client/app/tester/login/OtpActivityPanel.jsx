@@ -88,6 +88,12 @@ const EVENT_PRESENTATION = {
     icon: Eraser,
     tone: "slate",
   },
+  code_incomplete: {
+    category: "input",
+    label: "Incomplete code",
+    icon: AlertCircle,
+    tone: "amber",
+  },
   auto_verify_changed: {
     category: "verification",
     label: "Auto-verify preference changed",
