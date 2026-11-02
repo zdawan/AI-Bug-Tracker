@@ -733,7 +733,16 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                 href={currentUrl.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Preview test destination in a new tab"
+                aria-label={`Preview test destination in a new tab${
+                  currentUrl.protocol === "http:"
+                    ? " (connection is not encrypted)"
+                    : ""
+                }`}
+                title={
+                  currentUrl.protocol === "http:"
+                    ? "This destination uses HTTP and is not encrypted."
+                    : "Open the test destination in a new tab."
+                }
                 className={`${ACTION_CLASS} border-slate-200 bg-white text-slate-700 hover:border-violet-200 hover:text-violet-800`}
               >
                 <ExternalLink size={13} aria-hidden="true" />
