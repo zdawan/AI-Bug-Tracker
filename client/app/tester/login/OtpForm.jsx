@@ -818,12 +818,12 @@ export default function OtpForm({
         )}
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <label
+            <span
               id="tester-otp-label"
               className="block text-sm font-semibold text-slate-800"
             >
               Verification code
-            </label>
+            </span>
 
             <div className="flex items-center gap-2 sm:gap-3">
               <button
@@ -894,6 +894,9 @@ export default function OtpForm({
 
           <div
             id="tester-otp-fields"
+            role="group"
+            aria-labelledby="tester-otp-label"
+            aria-describedby="tester-otp-help"
             className="flex justify-center gap-2 sm:gap-3"
           >
             {otp.map((digit, index) => (
@@ -1023,7 +1026,10 @@ export default function OtpForm({
             </p>
           )}
 
-          <p className="text-center text-xs text-slate-500">
+          <p
+            id="tester-otp-help"
+            className="text-center text-xs text-slate-500"
+          >
             Paste the full code into any box, or enter each digit. Check your
             spam folder if the message is missing.
           </p>
