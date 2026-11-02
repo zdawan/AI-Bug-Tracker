@@ -58,6 +58,23 @@ export default function OtpForm({
     }
   };
 
+  const startRevealTimer = () => {
+    if (!isCodeVisible) return;
+
+    stopRevealTimer();
+    setRevealSeconds(CODE_REVEAL_SECONDS);
+    revealTimer.current = window.setInterval(() => {
+      setRevealSeconds((remaining) => {
+        if (remaining <= 1) {
+          stopRevealTimer();
+          setIsCodeVisible(false);
+          return 0;
+        }
+        return remaining - 1;
+      });
+    }, 1000);
+  };
+
   const applyPastedCode = (value, currentIndex) => {
     const digits = value.replace(/\D/g, "");
     if (!digits) return false;
@@ -78,6 +95,7 @@ export default function OtpForm({
     setOtp(updatedOtp);
     setCodeError("");
     setClipboardMessage("");
+    startRevealTimer();
     onCodeChange?.();
 
     const firstEmptyIndex = updatedOtp.findIndex(
@@ -115,6 +133,7 @@ export default function OtpForm({
     const updatedOtp = [...otp];
     updatedOtp[index] = digits;
     setOtp(updatedOtp);
+    if (digits) startRevealTimer();
     onCodeChange?.();
     maybeAutoVerify(event, updatedOtp.join(""));
 
@@ -265,19 +284,8 @@ export default function OtpForm({
       setRevealSeconds(0);
       setIsCodeVisible(false);
     } else {
-      stopRevealTimer();
       setIsCodeVisible(true);
-      setRevealSeconds(CODE_REVEAL_SECONDS);
-      revealTimer.current = window.setInterval(() => {
-        setRevealSeconds((remaining) => {
-          if (remaining <= 1) {
-            stopRevealTimer();
-            setIsCodeVisible(false);
-            return 0;
-          }
-          return remaining - 1;
-        });
-      }, 1000);
+      startRevealTimer();
     }
 
     window.requestAnimationFrame(() => {
