@@ -6,9 +6,9 @@ import {
   CheckCircle2,
   ChevronDown,
   Clipboard,
-  ExternalLink,
   Inbox,
   Mail,
+  RotateCcw,
   Search,
   ShieldCheck,
 } from "lucide-react";
