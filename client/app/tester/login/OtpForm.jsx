@@ -1,30 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { ArrowLeft, ArrowRight, RefreshCw, Clock3 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 
-const RESEND_COOLDOWN = 30;
-
-export default function OtpForm({ email, onBack }) {
-  const router = useRouter();
-
+export default function OtpForm({
+  email,
+  onBack,
+  onResend,
+  resendCooldown = 0,
+  isSending = false,
+  isVerifying = false,
+  error = "",
+  onCodeChange,
+  onVerify,
+}) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN);
   const inputRefs = useRef([]);
-
-  // Countdown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-
-    const timer = setTimeout(() => {
-      setResendCooldown((current) => Math.max(0, current - 1));
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [resendCooldown]);
 
   const handleOtpChange = (value, index) => {
     const digits = value.replace(/\D/g, "");
@@ -39,6 +32,7 @@ export default function OtpForm({ email, onBack }) {
       });
 
       setOtp(updatedOtp);
+      onCodeChange?.();
       inputRefs.current[Math.min(pastedDigits.length, 5)]?.focus();
       return;
     }
@@ -46,6 +40,7 @@ export default function OtpForm({ email, onBack }) {
     const updatedOtp = [...otp];
     updatedOtp[index] = digits;
     setOtp(updatedOtp);
+    onCodeChange?.();
 
     if (digits && index < 5) {
       inputRefs.current[index + 1]?.focus();
@@ -83,6 +78,7 @@ export default function OtpForm({ email, onBack }) {
     });
 
     setOtp(updatedOtp);
+    onCodeChange?.();
     inputRefs.current[Math.min(digits.length, 5)]?.focus();
   };
 
@@ -90,36 +86,27 @@ export default function OtpForm({ email, onBack }) {
     event.preventDefault();
 
     const enteredOtp = otp.join("");
-
-    // Temporary test mode: the OTP is optional.
-    if (enteredOtp.length > 0 && enteredOtp.length !== 6) {
-      toast.error("Enter all 6 digits or leave the code empty.");
+    if (!/^\d{6}$/.test(enteredOtp)) {
+      toast.error("Enter the complete 6-digit verification code.");
       return;
     }
 
-    try {
-      sessionStorage.setItem("testerEmail", email.trim().toLowerCase());
-      sessionStorage.setItem("testerToken", "TEST_MODE");
-
-      router.push("/tester/url");
-    } catch {
-      toast.error("Unable to continue. Please try again.");
-    }
+    onVerify?.(event, enteredOtp);
   };
 
-  const handleResendCode = () => {
-    if (resendCooldown > 0) return;
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || isSending || !onResend) return;
 
-    // Temporary test mode: no email is sent.
-    setOtp(["", "", "", "", "", ""]);
-    setResendCooldown(RESEND_COOLDOWN);
-    inputRefs.current[0]?.focus();
-
-    toast.success("Test code reset. You can enter a new code.");
+    const sent = await onResend();
+    if (sent) {
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    }
   };
 
   const handleResetCode = () => {
     setOtp(["", "", "", "", "", ""]);
+    onCodeChange?.();
     inputRefs.current[0]?.focus();
   };
 
@@ -157,7 +144,7 @@ export default function OtpForm({ email, onBack }) {
         </h1>
 
         <p className="mx-auto mt-4 max-w-[340px] text-base leading-7 text-slate-600">
-          Enter any six-digit number to continue, or leave it empty to skip.
+          Enter the six-digit verification code sent to your email.
         </p>
 
         {email.trim() && (
@@ -170,7 +157,10 @@ export default function OtpForm({ email, onBack }) {
       <form onSubmit={handleSubmit} noValidate className="space-y-6">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <label className="block text-sm font-semibold text-slate-800">
+            <label
+              id="tester-otp-label"
+              className="block text-sm font-semibold text-slate-800"
+            >
               Verification code
             </label>
 
@@ -195,7 +185,10 @@ export default function OtpForm({ email, onBack }) {
                 inputMode="numeric"
                 autoComplete={index === 0 ? "one-time-code" : "off"}
                 aria-label={`OTP digit ${index + 1}`}
-                maxLength={6}
+                aria-labelledby="tester-otp-label"
+                aria-invalid={Boolean(error)}
+                maxLength={index === 0 ? 6 : 1}
+                disabled={isVerifying}
                 value={digit}
                 onChange={(event) => handleOtpChange(event.target.value, index)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
@@ -211,20 +204,29 @@ export default function OtpForm({ email, onBack }) {
           </div>
 
           <p className="text-center text-xs text-slate-500">
-            Enter six digits, or skip the code in test mode.
+            Check your inbox and spam folder. A code is required to continue.
           </p>
         </div>
 
         <button
           type="submit"
-          className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800"
+          disabled={isVerifying || isSending}
+          className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 disabled:cursor-wait disabled:opacity-60"
         >
-          Verify and continue
-          <ArrowRight size={19} />
+          {isVerifying ? "Verifying..." : "Verify and continue"}
+          {!isVerifying && <ArrowRight size={19} aria-hidden="true" />}
         </button>
+        {error && (
+          <p
+            role="alert"
+            aria-live="assertive"
+            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-center text-sm text-rose-800"
+          >
+            {error}
+          </p>
+        )}
       </form>
 
-      {/* Resend countdown */}
       <div className="mt-6 flex flex-col items-center gap-4 text-sm">
         {resendCooldown > 0 ? (
           <p className="inline-flex items-center gap-2 text-slate-500">
@@ -238,10 +240,11 @@ export default function OtpForm({ email, onBack }) {
           <button
             type="button"
             onClick={handleResendCode}
-            className="inline-flex cursor-pointer items-center gap-2 font-semibold text-purple-700 hover:text-purple-900"
+            disabled={isSending}
+            className="inline-flex cursor-pointer items-center gap-2 font-semibold text-purple-700 hover:text-purple-900 disabled:cursor-wait disabled:opacity-60"
           >
             <RefreshCw size={15} />
-            Resend code
+            {isSending ? "Sending new code..." : "Resend code"}
           </button>
         )}
 
@@ -256,7 +259,8 @@ export default function OtpForm({ email, onBack }) {
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950"
+          disabled={isSending || isVerifying}
+          className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ArrowLeft size={16} />
           Change email address
