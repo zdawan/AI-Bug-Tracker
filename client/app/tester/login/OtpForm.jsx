@@ -25,22 +25,40 @@ export default function OtpForm({
     inputRefs.current[0]?.focus();
   }, []);
 
+  const applyPastedCode = (value, currentIndex) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return false;
+
+    const isCompleteCode = digits.length >= otp.length;
+    const startIndex = isCompleteCode ? 0 : currentIndex;
+    const pastedDigits = digits
+      .slice(0, otp.length - startIndex)
+      .split("");
+    const updatedOtp = isCompleteCode
+      ? Array(otp.length).fill("")
+      : [...otp];
+
+    pastedDigits.forEach((digit, offset) => {
+      updatedOtp[startIndex + offset] = digit;
+    });
+
+    setOtp(updatedOtp);
+    setCodeError("");
+    onCodeChange?.();
+
+    const firstEmptyIndex = updatedOtp.findIndex(
+      (digit, index) => index >= startIndex && !digit,
+    );
+    inputRefs.current[firstEmptyIndex < 0 ? otp.length - 1 : firstEmptyIndex]?.focus();
+    return true;
+  };
+
   const handleOtpChange = (value, index) => {
     setCodeError("");
     const digits = value.replace(/\D/g, "");
 
-    // Support pasting a complete OTP
     if (digits.length > 1) {
-      const pastedDigits = digits.slice(0, 6).split("");
-      const updatedOtp = ["", "", "", "", "", ""];
-
-      pastedDigits.forEach((digit, i) => {
-        updatedOtp[i] = digit;
-      });
-
-      setOtp(updatedOtp);
-      onCodeChange?.();
-      inputRefs.current[Math.min(pastedDigits.length, 5)]?.focus();
+      applyPastedCode(digits, index);
       return;
     }
 
@@ -108,26 +126,9 @@ export default function OtpForm({
     }
   };
 
-  const handlePaste = (event) => {
+  const handlePaste = (event, index) => {
     event.preventDefault();
-
-    const digits = event.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 6);
-
-    if (!digits) return;
-
-    const updatedOtp = ["", "", "", "", "", ""];
-
-    digits.split("").forEach((digit, index) => {
-      updatedOtp[index] = digit;
-    });
-
-    setOtp(updatedOtp);
-    setCodeError("");
-    onCodeChange?.();
-    inputRefs.current[Math.min(digits.length, 5)]?.focus();
+    applyPastedCode(event.clipboardData.getData("text"), index);
   };
 
   const handleSubmit = (event) => {
@@ -238,6 +239,9 @@ export default function OtpForm({
                 }}
                 type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
+                autoCapitalize="off"
+                spellCheck={false}
                 autoComplete={index === 0 ? "one-time-code" : "off"}
                 aria-label={`OTP digit ${index + 1}`}
                 aria-invalid={Boolean(visibleError)}
@@ -247,7 +251,7 @@ export default function OtpForm({
                 value={digit}
                 onChange={(event) => handleOtpChange(event.target.value, index)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
-                onPaste={handlePaste}
+                onPaste={(event) => handlePaste(event, index)}
                 onFocus={(event) => event.target.select()}
                 className={`h-12 w-10 rounded-xl border bg-white text-center text-xl font-semibold text-slate-950 outline-none transition sm:h-14 sm:w-12 ${
                   digit
@@ -285,7 +289,8 @@ export default function OtpForm({
           </div>
 
           <p className="text-center text-xs text-slate-500">
-            Check your inbox and spam folder. A code is required to continue.
+            Paste the full code into any box, or enter each digit. Check your
+            spam folder if the message is missing.
           </p>
         </div>
 
