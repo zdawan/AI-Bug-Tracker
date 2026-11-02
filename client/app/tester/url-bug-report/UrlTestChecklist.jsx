@@ -7,6 +7,7 @@ import {
   Check,
   CheckCircle2,
   Clipboard,
+  Clock3,
   Download,
   ExternalLink,
   FileCheck2,
@@ -85,6 +86,7 @@ function createScenario(url, title = "") {
     title: title.trim() || lastSegment || "Home page",
     url: parsedUrl.href,
     status: "not-tested",
+    checkedAt: null,
     notes: "",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -166,6 +168,8 @@ function makeChecklistExport(scenarios, activeUrl) {
       "Not tested";
     lines.push(`${index + 1}. ${scenario.title}`);
     lines.push(`   Result: ${status}`);
+    const checkedAt = formatCheckedAt(scenario.checkedAt);
+    if (checkedAt) lines.push(`   Last checked: ${checkedAt}`);
     lines.push(`   Page: ${makeSafeUrl(scenario.url)}`);
     if (scenario.notes.trim()) {
       lines.push(`   Notes: ${scenario.notes.trim().replace(/\s+/g, " ")}`);
@@ -179,6 +183,18 @@ function makeChecklistExport(scenarios, activeUrl) {
 function getStatusLabel(statusId) {
   return TEST_STATUSES.find((status) => status.id === statusId)?.label ||
     "Not tested";
+}
+
+function formatCheckedAt(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function StatusBadge({ status }) {
@@ -309,8 +325,38 @@ function ScenarioCard({
           scenario={scenario}
           onChange={(status) => onUpdate(scenario.id, { status })}
         />
+        {scenario.checkedAt && formatCheckedAt(scenario.checkedAt) && (
+          <p className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
+            <Clock3 size={11} aria-hidden="true" />
+            Last checked{" "}
+            <time dateTime={scenario.checkedAt}>
+              {formatCheckedAt(scenario.checkedAt)}
+            </time>
+          </p>
+        )}
 
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                if (!navigator.clipboard?.writeText) {
+                  throw new Error("Clipboard access is unavailable.");
+                }
+
+                await navigator.clipboard.writeText(makeSafeUrl(scenario.url));
+                toast.success("Sanitized page URL copied.");
+              } catch {
+                toast.error("Could not copy this page URL.");
+              }
+            }}
+            disabled={!parsedUrl}
+            aria-label={`Copy sanitized URL for ${scenario.title}`}
+            className={`${PANEL_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+          >
+            <Clipboard size={13} aria-hidden="true" />
+            Copy safe URL
+          </button>
           <button
             type="button"
             onClick={onSelect}
@@ -463,6 +509,14 @@ export default function UrlTestChecklist({
           ? {
               ...scenario,
               ...changes,
+              ...(Object.prototype.hasOwnProperty.call(changes, "status")
+                ? {
+                    checkedAt:
+                      changes.status === "not-tested"
+                        ? null
+                        : new Date().toISOString(),
+                  }
+                : {}),
               updatedAt: new Date().toISOString(),
             }
           : scenario,
@@ -637,6 +691,8 @@ export default function UrlTestChecklist({
           ? {
               ...scenario,
               status,
+              checkedAt:
+                status === "not-tested" ? null : new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             }
           : scenario,
