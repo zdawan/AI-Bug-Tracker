@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { ArrowLeft, ArrowRight, RefreshCw, Clock3 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
@@ -19,6 +19,10 @@ export default function OtpForm({
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
   const enteredDigits = otp.filter(Boolean).length;
+
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
 
   const handleOtpChange = (value, index) => {
     const digits = value.replace(/\D/g, "");
