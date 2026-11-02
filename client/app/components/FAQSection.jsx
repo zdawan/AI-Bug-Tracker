@@ -5,8 +5,10 @@ import {
   ArrowUpRight,
   ChevronDown,
   CircleHelp,
+  Search,
   ShieldCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 
 const faqItems = [
@@ -87,6 +89,15 @@ function FAQItem({ item, isOpen, onToggle, index }) {
 
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState(0);
+  const [search, setSearch] = useState("");
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredItems = faqItems
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) =>
+      `${item.question} ${item.answer} ${item.category}`
+        .toLowerCase()
+        .includes(normalizedSearch),
+    );
 
   return (
     <section className="faq-section" aria-labelledby="faq-heading">
@@ -115,8 +126,46 @@ export default function FAQSection() {
           </div>
         </div>
 
-        <div className="faq-list">
-          {faqItems.map((item, index) => (
+        <div className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <label className="relative min-w-[220px] flex-1">
+              <Search
+                size={16}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <span className="sr-only">Search frequently asked questions</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search questions or topics..."
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white/80 pl-10 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label="Clear FAQ search"
+                  className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
+              )}
+            </label>
+            <p
+              className="text-xs tabular-nums text-slate-500"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {filteredItems.length}{" "}
+              {filteredItems.length === 1 ? "answer" : "answers"}
+            </p>
+          </div>
+
+          {filteredItems.length > 0 ? (
+            <div className="faq-list">
+              {filteredItems.map(({ item, index }) => (
             <FAQItem
               key={item.question}
               item={item}
@@ -126,7 +175,33 @@ export default function FAQSection() {
                 setOpenIndex((current) => (current === index ? -1 : index))
               }
             />
-          ))}
+              ))}
+            </div>
+          ) : (
+            <div
+              role="status"
+              className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-5 py-10 text-center"
+            >
+              <CircleHelp
+                size={22}
+                aria-hidden="true"
+                className="mx-auto text-slate-400"
+              />
+              <p className="mt-3 text-sm font-semibold text-slate-700">
+                No answers found
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Try a different keyword or browse all questions.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="mt-3 inline-flex min-h-9 items-center rounded-lg px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              >
+                Clear search
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
