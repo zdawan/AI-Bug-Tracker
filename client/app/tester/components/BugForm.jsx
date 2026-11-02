@@ -25,6 +25,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [loading, setLoading] = useState(false);
   const [aiSourceFileUrl, setAiSourceFileUrl] = useState("");
   const [showPopupMode, setShowPopupMode] = useState(true);
+  const [submissionNotice, setSubmissionNotice] = useState(null);
 
   // NEW — AI Bug Popup
   const [aiBugs, setAiBugs] = useState([]);
@@ -164,6 +165,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
   // ----------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmissionNotice(null);
 
     if (!title || !description) {
       toast.error("Please provide a title and description");
@@ -188,7 +190,19 @@ export default function BugForm({ onBugCreated, testUrl }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      toast.success("Bug reported successfully!");
+      const duplicateBug =
+        res.data?.bug && typeof res.data.bug === "object" ? res.data.bug : null;
+      const savedBug = duplicateBug || res.data;
+
+      if (duplicateBug) {
+        setSubmissionNotice({ type: "duplicate", bug: duplicateBug });
+        toast.success(
+          res.data.message ||
+            "This matched an existing report. Its submission count was updated.",
+        );
+      } else {
+        toast.success("Bug reported successfully!");
+      }
 
       // Reset form
       setTitle("");
@@ -202,13 +216,29 @@ export default function BugForm({ onBugCreated, testUrl }) {
         toast.info("The submitted report succeeded, but its saved draft remains in this session.");
       }
 
-      if (onBugCreated) onBugCreated(res.data);
+      if (onBugCreated) onBugCreated(savedBug);
     } catch (err) {
-      toast.error(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Failed to submit bug"
-      );
+      const resolvedInfo = err.response?.data?.resolvedInfo;
+
+      if (resolvedInfo && typeof resolvedInfo === "object") {
+        setSubmissionNotice({
+          type: "resolved",
+          bug: resolvedInfo,
+          message:
+            err.response?.data?.message ||
+            "A matching report is already resolved. Verify the fix before submitting again.",
+        });
+        toast.info(
+          err.response?.data?.message ||
+            "A matching report is already resolved. Your form has been kept.",
+        );
+      } else {
+        toast.error(
+          err.response?.data?.message ||
+            err.response?.data?.error ||
+            "Failed to submit bug",
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -277,6 +307,73 @@ export default function BugForm({ onBugCreated, testUrl }) {
     <div className="relative w-full max-w-xl mx-auto mt-12">
       {/* Glow */}
       <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-pink-300/40 via-purple-300/40 to-blue-300/40 blur-2xl opacity-70"></div>
+      {submissionNotice && (
+        <section
+          role={submissionNotice.type === "resolved" ? "alert" : "status"}
+          aria-live={submissionNotice.type === "resolved" ? "assertive" : "polite"}
+          className={`relative mb-4 rounded-2xl border p-4 shadow-sm ${
+            submissionNotice.type === "resolved"
+              ? "border-amber-200 bg-amber-50 text-amber-950"
+              : "border-emerald-200 bg-emerald-50 text-emerald-950"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold">
+                {submissionNotice.type === "resolved"
+                  ? "Matching report already resolved"
+                  : "Existing report updated"}
+              </h3>
+              <p className="mt-1 text-xs leading-5">
+                {submissionNotice.type === "resolved"
+                  ? submissionNotice.message
+                  : `Your report was added to “${submissionNotice.bug.title || "the matching issue"}”.`}
+              </p>
+              {submissionNotice.type === "duplicate" &&
+                Number.isFinite(Number(submissionNotice.bug.reports)) && (
+                  <p className="mt-2 text-xs font-medium">
+                    {submissionNotice.bug.reports} total submissions
+                    {submissionNotice.bug.severity
+                      ? ` · ${submissionNotice.bug.severity} severity`
+                      : ""}
+                  </p>
+                )}
+              {submissionNotice.type === "resolved" && (
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                  {submissionNotice.bug.title && (
+                    <span className="font-semibold">
+                      {submissionNotice.bug.title}
+                    </span>
+                  )}
+                  {submissionNotice.bug.resolvedAt &&
+                    !Number.isNaN(
+                      new Date(submissionNotice.bug.resolvedAt).getTime(),
+                    ) && (
+                      <span>
+                        Resolved{" "}
+                        {new Date(
+                          submissionNotice.bug.resolvedAt,
+                        ).toLocaleDateString()}
+                      </span>
+                    )}
+                  {submissionNotice.bug.severity && (
+                    <span>
+                      {submissionNotice.bug.severity} severity
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setSubmissionNotice(null)}
+              className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold opacity-70 transition hover:bg-black/5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            >
+              Dismiss
+            </button>
+          </div>
+        </section>
+      )}
       {/* CARD */}
       <form
         onSubmit={handleSubmit}
