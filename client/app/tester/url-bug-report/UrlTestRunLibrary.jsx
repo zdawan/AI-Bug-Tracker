@@ -6,11 +6,13 @@ import {
   Check,
   Clock3,
   Copy,
+  Download,
   FolderOpen,
   Pencil,
   Save,
   Search,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -19,6 +21,7 @@ const STORAGE_KEY_PREFIX = "tester-url-test-runs-v1";
 const MAX_SAVED_RUNS = 8;
 const MAX_SCENARIOS_PER_RUN = 50;
 const MAX_RUN_NAME_LENGTH = 72;
+const MAX_IMPORT_BYTES = 1_000_000;
 
 const RUN_BUTTON =
   "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40";
@@ -143,6 +146,133 @@ function writeSavedRuns(storageKey, runs) {
     storageKey,
     JSON.stringify(runs.slice(0, MAX_SAVED_RUNS)),
   );
+}
+
+function makeRunsExport(runs, origin) {
+  return {
+    format: "tester-url-test-runs",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    origin,
+    privacyNote:
+      "Includes full page URLs, query values, fragments, and tester notes. Keep this backup private.",
+    runs: runs.map((run) => ({
+      id: run.id,
+      name: run.name,
+      origin: run.origin,
+      scenarios: run.scenarios,
+      activeScenarioId: run.activeScenarioId,
+      createdAt: run.createdAt,
+      updatedAt: run.updatedAt,
+    })),
+  };
+}
+
+function parseRunsImport(text, origin) {
+  const payload = JSON.parse(text);
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    Array.isArray(payload) ||
+    payload.format !== "tester-url-test-runs" ||
+    payload.version !== 1 ||
+    payload.origin !== origin ||
+    !Array.isArray(payload.runs) ||
+    payload.runs.length === 0
+  ) {
+    throw new Error(
+      "Choose a version 1 test-run backup created for this exact website.",
+    );
+  }
+
+  if (payload.runs.length > MAX_SAVED_RUNS) {
+    throw new Error(
+      `The backup has more than ${MAX_SAVED_RUNS} test runs and cannot be imported.`,
+    );
+  }
+
+  return payload.runs.map((run, runIndex) => {
+    if (
+      !run ||
+      typeof run !== "object" ||
+      Array.isArray(run) ||
+      run.origin !== origin ||
+      typeof run.name !== "string" ||
+      !run.name.trim() ||
+      !Array.isArray(run.scenarios) ||
+      run.scenarios.length === 0 ||
+      run.scenarios.length > MAX_SCENARIOS_PER_RUN
+    ) {
+      throw new Error(`Test run ${runIndex + 1} has invalid or unsupported data.`);
+    }
+
+    const invalidScenario = run.scenarios.some(
+      (scenario) => !isValidScenario(scenario, origin),
+    );
+    if (invalidScenario) {
+      throw new Error(
+        `Test run “${run.name.slice(0, MAX_RUN_NAME_LENGTH)}” contains a page from another website or invalid page data.`,
+      );
+    }
+
+    const originalScenarioIds = run.scenarios.map((scenario) => scenario.id);
+    if (new Set(originalScenarioIds).size !== originalScenarioIds.length) {
+      throw new Error(
+        `Test run “${run.name.slice(0, MAX_RUN_NAME_LENGTH)}” contains duplicate page identifiers.`,
+      );
+    }
+    if (
+      run.activeScenarioId &&
+      !originalScenarioIds.includes(run.activeScenarioId)
+    ) {
+      throw new Error(
+        `Test run “${run.name.slice(0, MAX_RUN_NAME_LENGTH)}” references a missing active page.`,
+      );
+    }
+
+    const scenarioIds = new Map(
+      run.scenarios.map((scenario) => [scenario.id, createRunId()]),
+    );
+    const scenarios = run.scenarios.map((scenario) =>
+      normalizeScenario({
+        ...scenario,
+        id: scenarioIds.get(scenario.id),
+      }),
+    );
+
+    return normalizeRun(
+      {
+        ...run,
+        id: createRunId(),
+        name: `${run.name.trim()} (imported)`.slice(
+          0,
+          MAX_RUN_NAME_LENGTH,
+        ),
+        scenarios,
+        activeScenarioId:
+          scenarioIds.get(run.activeScenarioId) || "",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      origin,
+    );
+  });
+}
+
+function downloadRunsFile(runs, origin) {
+  const content = JSON.stringify(makeRunsExport(runs, origin), null, 2);
+  const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+  const downloadUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = downloadUrl;
+  anchor.download = `tester-url-test-runs-${new Date()
+    .toISOString()
+    .slice(0, 10)}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
 }
 
 function getRunCounts(scenarios) {
@@ -522,6 +652,7 @@ export default function UrlTestRunLibrary({
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
   const [confirmDiscardChanges, setConfirmDiscardChanges] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const importInputRef = useRef(null);
 
   const currentSnapshot = useMemo(
     () => makeSnapshot(scenarios, activeScenarioId),
@@ -763,6 +894,62 @@ export default function UrlTestRunLibrary({
     toast.info("Current checklist changes are not saved to a run.");
   };
 
+  const handleExportRuns = () => {
+    if (!runs.length) {
+      toast.info("There are no saved test runs to export.");
+      return;
+    }
+
+    try {
+      downloadRunsFile(runs, origin);
+      toast.success(
+        `Exported ${runs.length} saved test run${runs.length === 1 ? "" : "s"}.`,
+      );
+    } catch {
+      toast.error("Could not export saved test runs.");
+    }
+  };
+
+  const handleImportRuns = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.size > MAX_IMPORT_BYTES) {
+      toast.error("Test-run backup files must be smaller than 1 MB.");
+      return;
+    }
+    if (!isLoaded) {
+      toast.error("Wait for saved test runs to finish loading before importing.");
+      return;
+    }
+
+    try {
+      const importedRuns = parseRunsImport(await file.text(), origin);
+      if (runs.length + importedRuns.length > MAX_SAVED_RUNS) {
+        toast.error(
+          `Import would exceed the ${MAX_SAVED_RUNS}-run limit. Delete saved runs first.`,
+        );
+        return;
+      }
+
+      if (commitRuns([...importedRuns, ...runs])) {
+        setAnnouncement(
+          `Imported ${importedRuns.length} test run${importedRuns.length === 1 ? "" : "s"}.`,
+        );
+        toast.success(
+          `Imported ${importedRuns.length} test run${importedRuns.length === 1 ? "" : "s"}.`,
+        );
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not import this test-run backup.",
+      );
+    }
+  };
+
   const handleClearSearch = () => setSearch("");
 
   const canSaveNewRun = scenarios.length > 0 && runs.length < MAX_SAVED_RUNS;
@@ -814,6 +1001,14 @@ export default function UrlTestRunLibrary({
           id="url-test-run-library-content"
           className="space-y-4 border-t border-sky-100 p-4 sm:p-5"
         >
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportRuns}
+            aria-label="Import test-run backup file"
+            className="sr-only"
+          />
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(220px,1fr)]">
             <form
               onSubmit={handleSaveRun}
@@ -951,23 +1146,43 @@ export default function UrlTestRunLibrary({
                 Stored in this tab only and scoped to {origin || "this website"}.
               </p>
             </div>
-            {runs.length > 0 && (
-              <label className="relative min-w-0 sm:w-64">
-                <Search
-                  size={13}
-                  aria-hidden="true"
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <span className="sr-only">Search saved test runs</span>
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search runs or pages"
-                  className="min-h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[10px] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-                />
-              </label>
-            )}
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => importInputRef.current?.click()}
+                disabled={!isLoaded || !origin}
+                className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}
+              >
+                <Upload size={12} aria-hidden="true" />
+                Import backup
+              </button>
+              <button
+                type="button"
+                onClick={handleExportRuns}
+                disabled={!runs.length}
+                className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}
+              >
+                <Download size={12} aria-hidden="true" />
+                Export backup
+              </button>
+              {runs.length > 0 && (
+                <label className="relative min-w-0 sm:w-52">
+                  <Search
+                    size={13}
+                    aria-hidden="true"
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <span className="sr-only">Search saved test runs</span>
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search runs or pages"
+                    className="min-h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[10px] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                  />
+                </label>
+              )}
+            </div>
           </div>
 
           {!isLoaded ? (
@@ -1036,10 +1251,11 @@ export default function UrlTestRunLibrary({
               !
             </span>
             <p className="text-[10px] leading-5 text-amber-900">
-              Saved runs include page names, notes, results, and destination
-              URLs. They stay in session storage for this tab, are not sent
-              with bug reports, and are cleared when the browser session ends.
-              Treat notes as potentially sensitive.
+              Saved runs include page names, notes, results, and full
+              destination URLs. Backups also include query values and
+              fragments. Keep exported files private and review notes before
+              sharing. Runs stay in this tab’s session storage and are not sent
+              with bug reports.
             </p>
           </div>
         </div>
