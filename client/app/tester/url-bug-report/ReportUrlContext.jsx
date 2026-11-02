@@ -13,17 +13,20 @@ import {
   Globe,
   LockKeyhole,
   Monitor,
+  Redo2,
   RefreshCw,
   RotateCcw,
   Search,
   ShieldAlert,
   SlidersHorizontal,
+  Undo2,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
 const PRIVATE_QUERY_KEY =
   /token|secret|password|passwd|auth|session|credential|email|code|key/i;
+const MAX_DESTINATION_HISTORY = 20;
 const QUERY_VALUE_REVEAL_SECONDS = 20;
 
 const ACTION_CLASS =
@@ -464,6 +467,10 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
   const [queryRevealSeconds, setQueryRevealSeconds] = useState(0);
   const [querySearch, setQuerySearch] = useState("");
   const [browserSnapshot, setBrowserSnapshot] = useState(null);
+  const [destinationHistory, setDestinationHistory] = useState(() => ({
+    entries: initialValue ? [initialValue] : [],
+    index: 0,
+  }));
   const currentUrl = useMemo(() => parseHttpUrl(value), [value]);
   const startingUrl = useMemo(
     () => parseHttpUrl(initialValue),
@@ -492,6 +499,13 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
     currentUrl.href !== startingUrl.href;
 
   const closeEditor = useCallback(() => setIsEditorOpen(false), []);
+
+  useEffect(() => {
+    setDestinationHistory({
+      entries: initialValue ? [initialValue] : [],
+      index: 0,
+    });
+  }, [initialValue]);
 
   useEffect(() => {
     if (!showQueryValues) {
@@ -534,9 +548,45 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
     setShowQueryValues(true);
   };
 
-  const applyEditedUrl = (editedUrl) => {
-    onChange(editedUrl.href);
+  const commitDestination = (nextValue) => {
+    if (nextValue === value) return;
+
+    setDestinationHistory((history) => {
+      const entries = history.entries.slice(0, history.index + 1);
+      entries.push(nextValue);
+      const boundedEntries = entries.slice(-MAX_DESTINATION_HISTORY);
+
+      return {
+        entries: boundedEntries,
+        index: boundedEntries.length - 1,
+      };
+    });
+    onChange(nextValue);
     setShowQueryValues(false);
+  };
+
+  const undoDestinationChange = () => {
+    if (destinationHistory.index <= 0) return;
+
+    const nextIndex = destinationHistory.index - 1;
+    setDestinationHistory((history) => ({ ...history, index: nextIndex }));
+    onChange(destinationHistory.entries[nextIndex]);
+    setShowQueryValues(false);
+  };
+
+  const redoDestinationChange = () => {
+    if (destinationHistory.index >= destinationHistory.entries.length - 1) {
+      return;
+    }
+
+    const nextIndex = destinationHistory.index + 1;
+    setDestinationHistory((history) => ({ ...history, index: nextIndex }));
+    onChange(destinationHistory.entries[nextIndex]);
+    setShowQueryValues(false);
+  };
+
+  const applyEditedUrl = (editedUrl) => {
+    commitDestination(editedUrl.href);
     closeEditor();
     toast.success("Test destination updated.");
   };
@@ -545,13 +595,12 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
     if (!currentUrl) return;
     const updatedUrl = new URL(currentUrl.href);
     updatedUrl.pathname = selectedPath;
-    onChange(updatedUrl.href);
+    commitDestination(updatedUrl.href);
   };
 
   const resetDestination = () => {
     if (!startingUrl) return;
-    onChange(startingUrl.href);
-    setShowQueryValues(false);
+    commitDestination(startingUrl.href);
     toast.info("Original test destination restored.");
   };
 
@@ -734,16 +783,43 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                 />
               </div>
             </div>
-            {hasChanged && (
+            <div className="flex flex-wrap items-center gap-1">
               <button
                 type="button"
-                onClick={resetDestination}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                onClick={undoDestinationChange}
+                disabled={destinationHistory.index <= 0}
+                aria-label="Undo the last test destination change"
+                title="Undo destination change"
+                className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <RotateCcw size={12} aria-hidden="true" />
-                Restore original
+                <Undo2 size={12} aria-hidden="true" />
+                Undo
               </button>
-            )}
+              <button
+                type="button"
+                onClick={redoDestinationChange}
+                disabled={
+                  destinationHistory.index >=
+                  destinationHistory.entries.length - 1
+                }
+                aria-label="Redo the last undone test destination change"
+                title="Redo destination change"
+                className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Redo2 size={12} aria-hidden="true" />
+                Redo
+              </button>
+              {hasChanged && (
+                <button
+                  type="button"
+                  onClick={resetDestination}
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                >
+                  <RotateCcw size={12} aria-hidden="true" />
+                  Restore original
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3">
