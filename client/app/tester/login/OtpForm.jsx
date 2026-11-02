@@ -14,6 +14,7 @@ import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
 
 const CODE_REVEAL_SECONDS = 15;
+const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
 
 export default function OtpForm({
   email,
@@ -31,6 +32,10 @@ export default function OtpForm({
   const [clipboardMessage, setClipboardMessage] = useState("");
   const [isCodeVisible, setIsCodeVisible] = useState(true);
   const [autoVerify, setAutoVerify] = useState(false);
+  const [autoVerifyPreferenceLoaded, setAutoVerifyPreferenceLoaded] =
+    useState(false);
+  const [autoVerifyPreferenceMessage, setAutoVerifyPreferenceMessage] =
+    useState("");
   const [revealSeconds, setRevealSeconds] = useState(0);
   const inputRefs = useRef([]);
   const focusedInputIndex = useRef(0);
@@ -42,6 +47,40 @@ export default function OtpForm({
     inputRefs.current[0]?.focus();
   }, []);
 
+  useEffect(() => {
+    try {
+      setAutoVerify(
+        window.localStorage.getItem(AUTO_VERIFY_STORAGE_KEY) === "true",
+      );
+    } catch {
+      setAutoVerifyPreferenceMessage(
+        "This browser does not allow saving the auto-verify preference.",
+      );
+    } finally {
+      setAutoVerifyPreferenceLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!autoVerifyPreferenceLoaded) return;
+
+    try {
+      window.localStorage.setItem(
+        AUTO_VERIFY_STORAGE_KEY,
+        String(autoVerify),
+      );
+      setAutoVerifyPreferenceMessage(
+        autoVerify
+          ? "Auto-verify preference saved in this browser."
+          : "Auto-verify preference saved as off in this browser.",
+      );
+    } catch {
+      setAutoVerifyPreferenceMessage(
+        "Could not save this preference. Auto-verify applies to this visit only.",
+      );
+    }
+  }, [autoVerify, autoVerifyPreferenceLoaded]);
+
   useEffect(
     () => () => {
       if (revealTimer.current !== null) {
@@ -52,20 +91,23 @@ export default function OtpForm({
   );
 
   useEffect(() => {
-    const hideCodeWhenUnfocused = () => {
+    const hideCode = () => {
       if (!isCodeVisible) return;
 
       stopRevealTimer();
       setRevealSeconds(0);
       setIsCodeVisible(false);
     };
+    const hideCodeWhenHidden = () => {
+      if (document.visibilityState === "hidden") hideCode();
+    };
 
-    window.addEventListener("blur", hideCodeWhenUnfocused);
-    document.addEventListener("visibilitychange", hideCodeWhenUnfocused);
+    window.addEventListener("blur", hideCode);
+    document.addEventListener("visibilitychange", hideCodeWhenHidden);
 
     return () => {
-      window.removeEventListener("blur", hideCodeWhenUnfocused);
-      document.removeEventListener("visibilitychange", hideCodeWhenUnfocused);
+      window.removeEventListener("blur", hideCode);
+      document.removeEventListener("visibilitychange", hideCodeWhenHidden);
     };
   }, [isCodeVisible]);
 
@@ -497,7 +539,9 @@ export default function OtpForm({
               type="checkbox"
               checked={autoVerify}
               onChange={(event) => setAutoVerify(event.target.checked)}
-              disabled={isVerifying || isSending}
+              disabled={
+                isVerifying || isSending || !autoVerifyPreferenceLoaded
+              }
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
             />
             <span className="min-w-0 flex-1">
@@ -505,11 +549,25 @@ export default function OtpForm({
                 Verify automatically when complete
               </span>
               <span className="mt-0.5 block text-[10px] leading-4 text-slate-500">
-                When enabled, the code is submitted as soon as all six digits
-                are entered or pasted.
+                When enabled, a complete code is submitted automatically and
+                this choice is remembered in this browser.
               </span>
             </span>
           </label>
+          {autoVerifyPreferenceMessage && (
+            <p
+              role="status"
+              aria-live="polite"
+              className={`text-center text-[10px] ${
+                autoVerifyPreferenceMessage.startsWith("Could not") ||
+                autoVerifyPreferenceMessage.startsWith("This browser")
+                  ? "text-amber-700"
+                  : "text-slate-500"
+              }`}
+            >
+              {autoVerifyPreferenceMessage}
+            </p>
+          )}
 
           {clipboardMessage && (
             <p
