@@ -9,6 +9,7 @@ import {
   EyeOff,
   RefreshCw,
   Clock3,
+  WifiOff,
 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
@@ -40,6 +41,7 @@ export default function OtpForm({
   const [autoVerifyPreferenceMessage, setAutoVerifyPreferenceMessage] =
     useState("");
   const [revealSeconds, setRevealSeconds] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
   const [activityEvents, setActivityEvents] = useState([]);
   const activitySequence = useRef(0);
   const previousRequestState = useRef(false);
@@ -112,6 +114,21 @@ export default function OtpForm({
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
+  }, []);
+
+  useEffect(() => {
+    const updateConnection = () => {
+      setIsOnline(navigator.onLine);
+    };
+
+    updateConnection();
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+
+    return () => {
+      window.removeEventListener("online", updateConnection);
+      window.removeEventListener("offline", updateConnection);
+    };
   }, []);
 
   useEffect(() => {
@@ -564,6 +581,23 @@ export default function OtpForm({
         noValidate
         className="space-y-6"
       >
+        {!isOnline && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-900"
+          >
+            <WifiOff
+              size={16}
+              className="mt-0.5 shrink-0"
+              aria-hidden="true"
+            />
+            <p className="text-xs leading-5">
+              You’re offline. Your entered code will stay on this page. Check
+              your connection before verifying or requesting another code.
+            </p>
+          </div>
+        )}
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <label
