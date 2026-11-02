@@ -562,7 +562,11 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
             Baseline updated {formatRunDate(leftRun.updatedAt)} · Comparison
             updated {formatRunDate(rightRun.updatedAt)}
           </p>
-          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-600">
+          <p
+            className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-600"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <span>{counts.added} added</span>
             <span>{counts.removed} removed</span>
             <span>{counts.changed} changed</span>
