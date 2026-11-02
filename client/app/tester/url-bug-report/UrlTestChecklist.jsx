@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   AlertCircle,
   ArrowDown,
+  ArrowRight,
   Check,
   CheckCircle2,
   Clipboard,
@@ -501,6 +502,29 @@ export default function UrlTestChecklist({
   ).length;
   const allVisibleSelected =
     visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+  const nextUntestedScenario = useMemo(() => {
+    const activeIndex = scenarios.findIndex(
+      (scenario) =>
+        scenario.id === activeScenarioId && scenario.url === value,
+    );
+    const startIndex = activeIndex < 0 ? 0 : activeIndex + 1;
+    const orderedScenarios = [
+      ...scenarios.slice(startIndex),
+      ...scenarios.slice(0, startIndex),
+    ];
+    const nextScenario = orderedScenarios.find(
+      (scenario) =>
+        scenario.status === "not-tested" &&
+        scenario.id !== activeScenarioId,
+    );
+
+    if (nextScenario) return nextScenario;
+    return scenarios.find(
+      (scenario) =>
+        scenario.status === "not-tested" &&
+        scenario.id === activeScenarioId,
+    ) || null;
+  }, [activeScenarioId, scenarios, value]);
 
   const updateScenario = (scenarioId, changes) => {
     setScenarios((current) =>
@@ -792,6 +816,32 @@ export default function UrlTestChecklist({
               className="h-full rounded-full bg-violet-600 transition-[width] duration-300"
               style={{ width: `${progress}%` }}
             />
+          </div>
+          <div className="mt-3 flex flex-col gap-2 rounded-xl border border-violet-100 bg-violet-50/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                {nextUntestedScenario ? "Next page to test" : "Checklist status"}
+              </p>
+              <p className="mt-0.5 truncate text-xs font-medium text-slate-800">
+                {nextUntestedScenario
+                  ? nextUntestedScenario.title
+                  : scenarios.length
+                    ? "All pages have a result."
+                    : "Add a page to start testing."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                nextUntestedScenario &&
+                handleSelectScenario(nextUntestedScenario)
+              }
+              disabled={!nextUntestedScenario}
+              className={`${PANEL_BUTTON} shrink-0 border-violet-700 bg-violet-700 text-white hover:bg-violet-800`}
+            >
+              <ArrowRight size={13} aria-hidden="true" />
+              {nextUntestedScenario ? "Test next page" : "No pages left"}
+            </button>
           </div>
         </div>
 
