@@ -520,6 +520,7 @@ export default function UrlTestRunLibrary({
   const [activeRunId, setActiveRunId] = useState("");
   const [renamingRunId, setRenamingRunId] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
+  const [confirmDiscardChanges, setConfirmDiscardChanges] = useState(false);
   const [announcement, setAnnouncement] = useState("");
 
   const currentSnapshot = useMemo(
@@ -661,6 +662,21 @@ export default function UrlTestRunLibrary({
       setAnnouncement(`Changes to ${updatedRun.name} saved.`);
       toast.success("Test run changes saved.");
     }
+  };
+
+  const handleDiscardChanges = () => {
+    if (!activeRun || !isActiveRunDirty) {
+      setConfirmDiscardChanges(false);
+      return;
+    }
+
+    onLoadRun({
+      scenarios: activeRun.scenarios.map((scenario) => ({ ...scenario })),
+      activeScenarioId: activeRun.activeScenarioId,
+    });
+    setConfirmDiscardChanges(false);
+    setAnnouncement(`Unsaved changes to ${activeRun.name} were discarded.`);
+    toast.info("Unsaved changes discarded; the saved run was restored.");
   };
 
   const handleLoadRun = (run) => {
@@ -874,7 +890,47 @@ export default function UrlTestRunLibrary({
                       <X size={12} aria-hidden="true" />
                       Detach run
                     </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmDiscardChanges((confirming) => !confirming)
+                      }
+                      className={`${RUN_BUTTON} border-rose-200 bg-white text-rose-700 hover:bg-rose-50`}
+                    >
+                      <X size={12} aria-hidden="true" />
+                      Discard changes
+                    </button>
                   </div>
+                  {confirmDiscardChanges && (
+                    <div
+                      role="alert"
+                      className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3"
+                    >
+                      <p className="text-xs font-semibold text-rose-900">
+                        Restore the saved version of “{activeRun.name}”?
+                      </p>
+                      <p className="mt-1 text-[10px] leading-4 text-rose-800">
+                        This replaces the current checklist with the saved
+                        pages, results, and notes. This action cannot be undone.
+                      </p>
+                      <div className="mt-2 flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDiscardChanges(false)}
+                          className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+                        >
+                          Keep my changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDiscardChanges}
+                          className={`${RUN_BUTTON} border-rose-700 bg-rose-700 text-white hover:bg-rose-800`}
+                        >
+                          Restore saved run
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <p className="mt-3 text-[10px] leading-4 text-slate-500">
