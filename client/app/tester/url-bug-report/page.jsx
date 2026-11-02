@@ -3,137 +3,31 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BugForm from "../components/BugForm";
+import ReportUrlContext from "./ReportUrlContext";
 import { ToastContainer } from "react-toastify";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function UserPageContent() {
   const searchParams = useSearchParams();
   const fullUrl = searchParams.get("url") || "";
 
-  const [base, setBase] = useState("");
-  const [path, setPath] = useState("");
   const [finalUrl, setFinalUrl] = useState(fullUrl);
 
-  // Popup state
-  const [showPopup, setShowPopup] = useState(false);
-  const [tempPath, setTempPath] = useState("");
-
-  // Extract base + path
   useEffect(() => {
-    try {
-      const u = new URL(fullUrl);
-      setBase(u.origin);
-      setPath(u.pathname);
-      setFinalUrl(fullUrl);
-    } catch (e) {
-      console.log("Invalid URL", e);
-    }
+    setFinalUrl(fullUrl);
   }, [fullUrl]);
-
-  const applyPathChange = () => {
-    const cleanedPath = tempPath.startsWith("/") ? tempPath : "/" + tempPath;
-    setPath(cleanedPath);
-    setFinalUrl(base + cleanedPath);
-    setShowPopup(false);
-  };
-
-  const copyTestUrl = async () => {
-    try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard access is unavailable.");
-      }
-
-      await navigator.clipboard.writeText(finalUrl);
-      toast.success("Test destination copied.");
-    } catch {
-      toast.error("Could not copy the destination. Please copy it manually.");
-    }
-  };
 
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="relative z-10 max-w-3xl mx-auto">
-        {base && (
-          <div className="mb-6 p-4 bg-white outline-1 outline-orange-600 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-800">
-            <div className="text-center sm:text-left min-w-0">
-              <span className="text-gray-500 text-sm block sm:inline">Testing on: </span>
-              <span className="font-semibold break-all">
-                {base}
-                {path}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <a
-                href={finalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 text-black font-medium underline transition text-sm"
-              >
-                Preview
-              </a>
-              <button
-                type="button"
-                onClick={copyTestUrl}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-              >
-                Copy URL
-              </button>
-              <button
-                onClick={() => {
-                  setTempPath(path);
-                  setShowPopup(true);
-                }}
-                className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 cursor-pointer text-white text-sm font-semibold rounded-lg transition-colors"
-              >
-                Edit
-              </button>
-            </div>
-          </div>
-        )}
-
+        <ReportUrlContext
+          value={finalUrl}
+          initialValue={fullUrl}
+          onChange={setFinalUrl}
+        />
         <BugForm testUrl={finalUrl} />
       </div>
-
-      {/* POPUP MODAL */}
-      {showPopup && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-80 shadow-lg text-center">
-            <h2 className="text-lg font-semibold mb-4">Edit Path</h2>
-
-            <div className="text-gray-600 text-sm mb-2">Base URL</div>
-            <div className="p-2 bg-gray-100 rounded mb-4 text-sm">{base}</div>
-
-            <input
-              type="text"
-              value={tempPath}
-              onChange={(e) => setTempPath(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
-              placeholder="/about"
-            />
-
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={() => setShowPopup(false)}
-                className="px-4 py-2 bg-gray-200 cursor-pointer rounded hover:opacity-90 transition"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={applyPathChange}
-                className="px-4 py-2 bg-orange-600 cursor-pointer text-white rounded hover:opacity-90 transition"
-              >
-                Apply
-              </button>
-            </div>
-            <div className="text-orange-500  text-sm mt-8">
-              New feature coming soon
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
