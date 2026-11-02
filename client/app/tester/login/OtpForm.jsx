@@ -15,6 +15,7 @@ import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
 import OtpActivityPanel from "./OtpActivityPanel";
 import OtpRecoveryGuide from "./OtpRecoveryGuide";
+import OtpPrivacyPanel from "./OtpPrivacyPanel";
 
 const CODE_REVEAL_SECONDS = 15;
 const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
@@ -73,6 +74,8 @@ export default function OtpForm({
   const [revealSeconds, setRevealSeconds] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
   const [networkMessage, setNetworkMessage] = useState("");
+  const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
+  const [idleSecondsRemaining, setIdleSecondsRemaining] = useState(0);
   const [activityEvents, setActivityEvents] = useState([]);
   const activitySequence = useRef(0);
   const previousRequestState = useRef(false);
@@ -80,6 +83,8 @@ export default function OtpForm({
   const inputRefs = useRef([]);
   const focusedInputIndex = useRef(0);
   const revealTimer = useRef(null);
+  const idleExpiryHandled = useRef(false);
+  const lastFormActivityAt = useRef(Date.now());
   const enteredDigits = otp.filter(Boolean).length;
   const visibleError = codeError || error;
 
@@ -95,6 +100,19 @@ export default function OtpForm({
     setActivityEvents((current) =>
       [entry, ...current].slice(0, MAX_ACTIVITY_EVENTS),
     );
+  };
+
+  const onCodeChangeRef = useRef(onCodeChange);
+  const recordActivityRef = useRef(recordActivity);
+  onCodeChangeRef.current = onCodeChange;
+  recordActivityRef.current = recordActivity;
+
+  const noteFormActivity = () => {
+    if (idleTimeoutMinutes <= 0 || enteredDigits === 0) return;
+
+    lastFormActivityAt.current = Date.now();
+    idleExpiryHandled.current = false;
+    setIdleSecondsRemaining(idleTimeoutMinutes * 60);
   };
 
   useEffect(() => {
@@ -248,6 +266,61 @@ export default function OtpForm({
       document.removeEventListener("visibilitychange", hideCodeWhenHidden);
     };
   }, [isCodeVisible]);
+
+  useEffect(() => {
+    if (
+      idleTimeoutMinutes <= 0 ||
+      enteredDigits === 0 ||
+      isSending ||
+      isVerifying
+    ) {
+      setIdleSecondsRemaining(0);
+      idleExpiryHandled.current = false;
+      return undefined;
+    }
+
+    const timeoutSeconds = idleTimeoutMinutes * 60;
+    lastFormActivityAt.current = Date.now();
+    idleExpiryHandled.current = false;
+
+    const updateIdleCountdown = () => {
+      const elapsedSeconds = Math.floor(
+        (Date.now() - lastFormActivityAt.current) / 1000,
+      );
+      const remainingSeconds = Math.max(0, timeoutSeconds - elapsedSeconds);
+      setIdleSecondsRemaining(remainingSeconds);
+
+      if (remainingSeconds > 0 || idleExpiryHandled.current) return;
+
+      idleExpiryHandled.current = true;
+      setOtp(["", "", "", "", "", ""]);
+      setIsCodeVisible(false);
+      setRevealSeconds(0);
+      setCodeError("");
+      setClipboardMessage(
+        "The code was cleared after the selected inactivity period. Enter it again to continue.",
+      );
+      if (revealTimer.current !== null) {
+        window.clearInterval(revealTimer.current);
+        revealTimer.current = null;
+      }
+      onCodeChangeRef.current?.();
+      recordActivityRef.current(
+        "code_cleared",
+        "The code was cleared after the selected inactivity period.",
+        "Privacy timer",
+      );
+    };
+
+    setIdleSecondsRemaining(timeoutSeconds);
+    const timer = window.setInterval(updateIdleCountdown, 1000);
+    return () => window.clearInterval(timer);
+  }, [
+    enteredDigits,
+    idleTimeoutMinutes,
+    isSending,
+    isVerifying,
+  ]);
 
   const stopRevealTimer = () => {
     if (revealTimer.current !== null) {
@@ -637,7 +710,12 @@ export default function OtpForm({
   };
 
   return (
-    <div>
+    <div
+      onPointerDownCapture={noteFormActivity}
+      onKeyDownCapture={noteFormActivity}
+      onFocusCapture={noteFormActivity}
+      onTouchStartCapture={noteFormActivity}
+    >
       <button
         type="button"
         onClick={onBack}
@@ -1012,6 +1090,13 @@ export default function OtpForm({
         isSending={isSending}
         isVerifying={isVerifying}
         isOnline={isOnline}
+      />
+      <OtpPrivacyPanel
+        timeoutMinutes={idleTimeoutMinutes}
+        onTimeoutChange={setIdleTimeoutMinutes}
+        hasCode={enteredDigits > 0}
+        secondsRemaining={idleSecondsRemaining}
+        isBusy={isSending || isVerifying}
       />
       <OtpRecoveryGuide
         onResend={handleResendCode}
