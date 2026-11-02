@@ -529,6 +529,9 @@ function SavedRunCard({
                   maxLength={MAX_RUN_NAME_LENGTH}
                   className="min-h-9 w-full rounded-lg border border-violet-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-violet-100"
                 />
+                <span className="mt-1 block text-right text-[9px] tabular-nums text-slate-400">
+                  {nameDraft.length}/{MAX_RUN_NAME_LENGTH}
+                </span>
               </label>
               <div className="flex gap-1.5">
                 <RunAction
@@ -1034,6 +1037,9 @@ export default function UrlTestRunLibrary({
                   disabled={!isLoaded}
                   className="mt-1.5 min-h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-normal outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                 />
+                <span className="mt-1 flex justify-end text-[9px] font-normal tabular-nums text-slate-400">
+                  {runName.length}/{MAX_RUN_NAME_LENGTH}
+                </span>
               </label>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[9px] text-slate-500">
