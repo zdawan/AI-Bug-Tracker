@@ -11,6 +11,8 @@ import {
   EyeOff,
   Globe,
   LockKeyhole,
+  Monitor,
+  RefreshCw,
   RotateCcw,
   Search,
   ShieldAlert,
@@ -83,6 +85,60 @@ function createReportContext(url, entries) {
     }`,
     `Fragment: ${url.hash ? "present (value omitted)" : "none"}`,
     "Privacy: query values and fragment contents are omitted; review the page path before sharing.",
+  ].join("\n");
+}
+
+function getBrowserEnvironment() {
+  const connection = navigator.connection;
+  const colorScheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "Dark"
+    : "Light";
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  return [
+    { label: "Browser user agent", value: navigator.userAgent },
+    {
+      label: "Platform",
+      value:
+        navigator.userAgentData?.platform ||
+        navigator.platform ||
+        "Not available",
+    },
+    {
+      label: "Viewport",
+      value: `${window.innerWidth} × ${window.innerHeight} CSS pixels`,
+    },
+    {
+      label: "Screen",
+      value: `${window.screen.width} × ${window.screen.height} pixels at ${window.devicePixelRatio || 1}×`,
+    },
+    { label: "Language", value: navigator.language || "Not available" },
+    { label: "Time zone", value: timeZone || "Not available" },
+    {
+      label: "Color scheme",
+      value: colorScheme,
+    },
+    {
+      label: "Reduced motion",
+      value: reducedMotion ? "Preferred" : "Not requested",
+    },
+    {
+      label: "Network",
+      value: navigator.onLine
+        ? connection?.effectiveType || "Online (type unavailable)"
+        : "Offline",
+    },
+  ];
+}
+
+function formatBrowserEnvironment(snapshot) {
+  return [
+    "Browser environment",
+    ...snapshot.map(({ label, value }) => `${label}: ${value}`),
+    "Privacy: collected locally only when requested. Review before sharing.",
   ].join("\n");
 }
 
@@ -391,6 +447,7 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [showQueryValues, setShowQueryValues] = useState(false);
   const [querySearch, setQuerySearch] = useState("");
+  const [browserSnapshot, setBrowserSnapshot] = useState(null);
   const currentUrl = useMemo(() => parseHttpUrl(value), [value]);
   const startingUrl = useMemo(
     () => parseHttpUrl(initialValue),
@@ -459,6 +516,18 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
   const copyReportContext = () => {
     if (!reportContext) return;
     safeCopyText(reportContext, "Safe report context copied.");
+  };
+
+  const captureBrowserSnapshot = () => {
+    setBrowserSnapshot(getBrowserEnvironment());
+  };
+
+  const copyBrowserContext = () => {
+    if (!browserSnapshot) return;
+    safeCopyText(
+      `${reportContext}\n\n${formatBrowserEnvironment(browserSnapshot)}`,
+      "Report and browser context copied.",
+    );
   };
 
   if (!currentUrl) {
@@ -778,6 +847,75 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                   </p>
                 )}
               </div>
+
+              <details
+                onToggle={(event) => {
+                  if (event.currentTarget.open && !browserSnapshot) {
+                    captureBrowserSnapshot();
+                  }
+                }}
+                className="rounded-xl border border-slate-200 bg-white"
+              >
+                <summary className="flex cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-violet-500">
+                  <Monitor
+                    size={14}
+                    aria-hidden="true"
+                    className="text-violet-600"
+                  />
+                  Browser environment
+                  <span className="ml-auto text-[10px] font-medium text-slate-400">
+                    Optional · captured on request
+                  </span>
+                </summary>
+                <div className="border-t border-slate-100 p-3">
+                  <p className="text-[10px] leading-5 text-slate-500">
+                    These details can help reproduce a bug. They are read only
+                    when you open this section, stay in this page, and are not
+                    sent with your report unless you choose to copy and share
+                    them.
+                  </p>
+                  {browserSnapshot ? (
+                    <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {browserSnapshot.map(({ label, value }) => (
+                        <div
+                          key={label}
+                          className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2"
+                        >
+                          <dt className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                            {label}
+                          </dt>
+                          <dd className="mt-1 break-all text-[10px] leading-4 text-slate-700">
+                            {value}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : (
+                    <p className="mt-3 text-xs text-slate-500">
+                      Open this section to capture the current browser details.
+                    </p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={captureBrowserSnapshot}
+                      className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                    >
+                      <RefreshCw size={12} aria-hidden="true" />
+                      Refresh snapshot
+                    </button>
+                    <button
+                      type="button"
+                      onClick={copyBrowserContext}
+                      disabled={!browserSnapshot}
+                      className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-800 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Copy size={12} aria-hidden="true" />
+                      Copy report + browser context
+                    </button>
+                  </div>
+                </div>
+              </details>
 
               {sensitiveCount > 0 && (
                 <p className="flex items-start gap-2 text-[10px] leading-5 text-amber-800">
