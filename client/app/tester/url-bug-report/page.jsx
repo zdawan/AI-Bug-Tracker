@@ -13,10 +13,29 @@ function UserPageContent() {
   const fullUrl = searchParams.get("url") || "";
 
   const [finalUrl, setFinalUrl] = useState(fullUrl);
+  const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
 
   useEffect(() => {
     setFinalUrl(fullUrl);
   }, [fullUrl]);
+
+  useEffect(() => {
+    if (!shouldFocusReportForm) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      const reportForm = document.getElementById("tester-bug-report-form");
+      reportForm?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+        block: "start",
+      });
+      reportForm?.focus({ preventScroll: true });
+      setShouldFocusReportForm(false);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [shouldFocusReportForm]);
 
   return (
     <>
@@ -27,8 +46,22 @@ function UserPageContent() {
           initialValue={fullUrl}
           onChange={setFinalUrl}
         />
-        <UrlTestChecklist value={finalUrl} onSelect={setFinalUrl} />
-        <BugForm testUrl={finalUrl} />
+        <UrlTestChecklist
+          value={finalUrl}
+          onSelect={setFinalUrl}
+          onReportIssue={(url) => {
+            setFinalUrl(url);
+            setShouldFocusReportForm(true);
+          }}
+        />
+        <div
+          id="tester-bug-report-form"
+          tabIndex={-1}
+          aria-label="Bug report form"
+          className="scroll-mt-6 outline-none"
+        >
+          <BugForm testUrl={finalUrl} />
+        </div>
       </div>
     </>
   );

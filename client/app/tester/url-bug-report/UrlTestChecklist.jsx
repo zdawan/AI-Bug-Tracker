@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   AlertCircle,
+  ArrowDown,
   Check,
   CheckCircle2,
   Clipboard,
@@ -251,7 +252,10 @@ function ScenarioStatusControls({ scenario, onChange }) {
 function ScenarioCard({
   scenario,
   isActive,
+  isSelected,
+  onToggleSelected,
   onSelect,
+  onReportIssue,
   onUpdate,
   onRemove,
 }) {
@@ -268,6 +272,13 @@ function ScenarioCard({
     >
       <div className="space-y-3 p-3 sm:p-4">
         <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(event) => onToggleSelected(event.target.checked)}
+            aria-label={`Select ${scenario.title} for bulk result updates`}
+            className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 text-violet-700 focus:ring-2 focus:ring-violet-400"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="break-words text-sm font-semibold text-slate-900">
@@ -309,6 +320,16 @@ function ScenarioCard({
             <ExternalLink size={13} aria-hidden="true" />
             {isActive ? "Currently testing" : "Test this page"}
           </button>
+          {scenario.status === "issue-found" && (
+            <button
+              type="button"
+              onClick={onReportIssue}
+              className={`${PANEL_BUTTON} border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100`}
+            >
+              <ArrowDown size={13} aria-hidden="true" />
+              Write report for this page
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setIsExpanded((expanded) => !expanded)}
@@ -371,7 +392,11 @@ function ScenarioCard({
   );
 }
 
-export default function UrlTestChecklist({ value, onSelect }) {
+export default function UrlTestChecklist({
+  value,
+  onSelect,
+  onReportIssue,
+}) {
   const [initialChecklist] = useState(() => {
     const firstScenario = createScenario(value);
     return firstScenario
@@ -386,6 +411,7 @@ export default function UrlTestChecklist({ value, onSelect }) {
   const [pageName, setPageName] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [formError, setFormError] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
@@ -423,6 +449,12 @@ export default function UrlTestChecklist({ value, onSelect }) {
   const currentPageAlreadyAdded = scenarios.some(
     (scenario) => scenario.url === value,
   );
+  const visibleIds = filteredScenarios.map((scenario) => scenario.id);
+  const selectedVisibleCount = visibleIds.filter((id) =>
+    selectedIds.has(id),
+  ).length;
+  const allVisibleSelected =
+    visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
 
   const updateScenario = (scenarioId, changes) => {
     setScenarios((current) =>
@@ -495,6 +527,11 @@ export default function UrlTestChecklist({ value, onSelect }) {
     setScenarios((current) =>
       current.filter((item) => item.id !== scenarioId),
     );
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      next.delete(scenarioId);
+      return next;
+    });
     if (activeScenarioId === scenarioId) setActiveScenarioId("");
     setAnnouncement(
       `${scenario?.title || "Page"} removed from the page checklist.`,
@@ -508,6 +545,7 @@ export default function UrlTestChecklist({ value, onSelect }) {
     }
 
     setScenarios([]);
+    setSelectedIds(new Set());
     setActiveScenarioId("");
     setConfirmClear(false);
     setAnnouncement("The page checklist was cleared.");
@@ -561,6 +599,55 @@ export default function UrlTestChecklist({ value, onSelect }) {
   const handleFilterChange = (nextFilter) => {
     setStatusFilter(nextFilter);
     setConfirmClear(false);
+  };
+
+  const toggleScenarioSelection = (scenarioId, isSelected) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (isSelected) {
+        next.add(scenarioId);
+      } else {
+        next.delete(scenarioId);
+      }
+      return next;
+    });
+  };
+
+  const toggleVisibleSelection = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) {
+        visibleIds.forEach((id) => next.delete(id));
+      } else {
+        visibleIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const updateSelectedResults = (status) => {
+    if (!selectedIds.size) return;
+
+    const updatedCount = scenarios.filter((scenario) =>
+      selectedIds.has(scenario.id),
+    ).length;
+    setScenarios((current) =>
+      current.map((scenario) =>
+        selectedIds.has(scenario.id)
+          ? {
+              ...scenario,
+              status,
+              updatedAt: new Date().toISOString(),
+            }
+          : scenario,
+      ),
+    );
+    setSelectedIds(new Set());
+    setAnnouncement(
+      `${updatedCount} selected ${
+        updatedCount === 1 ? "page was" : "pages were"
+      } marked ${getStatusLabel(status).toLowerCase()}.`,
+    );
   };
 
   return (
@@ -767,6 +854,63 @@ export default function UrlTestChecklist({ value, onSelect }) {
           </label>
         </div>
 
+        {scenarios.length > 0 && (
+          <section
+            aria-label="Bulk checklist actions"
+            className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <label className="inline-flex min-h-9 cursor-pointer items-center gap-2 text-xs font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={allVisibleSelected}
+                ref={(element) => {
+                  if (element) {
+                    element.indeterminate =
+                      selectedVisibleCount > 0 && !allVisibleSelected;
+                  }
+                }}
+                onChange={toggleVisibleSelection}
+                disabled={visibleIds.length === 0}
+                aria-label={`Select all ${visibleIds.length} visible pages`}
+                className="h-4 w-4 cursor-pointer rounded border-slate-300 text-violet-700 focus:ring-2 focus:ring-violet-400 disabled:cursor-not-allowed"
+              />
+              Select visible
+              <span className="text-[10px] text-slate-500">
+                {selectedIds.size} selected
+              </span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => updateSelectedResults("passed")}
+                disabled={!selectedIds.size}
+                className={`${PANEL_BUTTON} border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50`}
+              >
+                <CheckCircle2 size={13} aria-hidden="true" />
+                Mark passed
+              </button>
+              <button
+                type="button"
+                onClick={() => updateSelectedResults("issue-found")}
+                disabled={!selectedIds.size}
+                className={`${PANEL_BUTTON} border-rose-200 bg-white text-rose-800 hover:bg-rose-50`}
+              >
+                <AlertCircle size={13} aria-hidden="true" />
+                Mark issue found
+              </button>
+              <button
+                type="button"
+                onClick={() => updateSelectedResults("not-tested")}
+                disabled={!selectedIds.size}
+                className={`${PANEL_BUTTON} border-slate-200 bg-white text-slate-700 hover:bg-slate-100`}
+              >
+                <ListChecks size={13} aria-hidden="true" />
+                Reset result
+              </button>
+            </div>
+          </section>
+        )}
+
         {scenarios.length > 0 ? (
           <ul className="space-y-2.5" aria-label="Pages in the test checklist">
             {filteredScenarios.map((scenario) => (
@@ -776,7 +920,15 @@ export default function UrlTestChecklist({ value, onSelect }) {
                 isActive={
                   activeScenarioId === scenario.id && scenario.url === value
                 }
+                isSelected={selectedIds.has(scenario.id)}
+                onToggleSelected={(isSelected) =>
+                  toggleScenarioSelection(scenario.id, isSelected)
+                }
                 onSelect={() => handleSelectScenario(scenario)}
+                onReportIssue={() => {
+                  handleSelectScenario(scenario);
+                  onReportIssue(scenario.url);
+                }}
                 onUpdate={updateScenario}
                 onRemove={handleRemoveScenario}
               />
