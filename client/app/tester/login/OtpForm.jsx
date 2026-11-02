@@ -18,6 +18,7 @@ export default function OtpForm({
 }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
+  const enteredDigits = otp.filter(Boolean).length;
 
   const handleOtpChange = (value, index) => {
     const digits = value.replace(/\D/g, "");
@@ -167,7 +168,8 @@ export default function OtpForm({
             <button
               type="button"
               onClick={handleResetCode}
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-purple-700"
+              disabled={isVerifying || isSending || enteredDigits === 0}
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw size={13} />
               Clear code
@@ -185,10 +187,10 @@ export default function OtpForm({
                 inputMode="numeric"
                 autoComplete={index === 0 ? "one-time-code" : "off"}
                 aria-label={`OTP digit ${index + 1}`}
-                aria-labelledby="tester-otp-label"
                 aria-invalid={Boolean(error)}
+                aria-describedby="tester-otp-progress"
                 maxLength={index === 0 ? 6 : 1}
-                disabled={isVerifying}
+                disabled={isVerifying || isSending}
                 value={digit}
                 onChange={(event) => handleOtpChange(event.target.value, index)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
@@ -201,6 +203,32 @@ export default function OtpForm({
                 } focus:border-purple-600 focus:ring-4 focus:ring-purple-100`}
               />
             ))}
+          </div>
+
+          <div
+            id="tester-otp-progress"
+            className="mx-auto max-w-[280px]"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <div className="mb-1.5 flex items-center justify-between text-[10px] text-slate-500">
+              <span>{enteredDigits} of 6 digits entered</span>
+              {enteredDigits === 6 && (
+                <span className="font-semibold text-emerald-700">
+                  Code ready
+                </span>
+              )}
+            </div>
+            <div
+              className="h-1.5 overflow-hidden rounded-full bg-slate-100"
+              aria-hidden="true"
+            >
+              <div
+                className="h-full rounded-full bg-violet-600 transition-[width] duration-200"
+                style={{ width: `${(enteredDigits / 6) * 100}%` }}
+              />
+            </div>
           </div>
 
           <p className="text-center text-xs text-slate-500">
@@ -251,7 +279,8 @@ export default function OtpForm({
         <button
           type="button"
           onClick={handleResetCode}
-          className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950"
+          disabled={isVerifying || isSending || enteredDigits === 0}
+          className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Clear verification code
         </button>
