@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, RefreshCw, Clock3 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
+import OtpHelpPanel from "./OtpHelpPanel";
 
 export default function OtpForm({
   email,
@@ -25,21 +26,40 @@ export default function OtpForm({
     inputRefs.current[0]?.focus();
   }, []);
 
+  const applyPastedCode = (value, currentIndex) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return false;
+
+    const isCompleteCode = digits.length >= otp.length;
+    const startIndex = isCompleteCode ? 0 : currentIndex;
+    const pastedDigits = digits
+      .slice(0, otp.length - startIndex)
+      .split("");
+    const updatedOtp = isCompleteCode
+      ? Array(otp.length).fill("")
+      : [...otp];
+
+    pastedDigits.forEach((digit, offset) => {
+      updatedOtp[startIndex + offset] = digit;
+    });
+
+    setOtp(updatedOtp);
+    setCodeError("");
+    onCodeChange?.();
+
+    const firstEmptyIndex = updatedOtp.findIndex(
+      (digit, index) => index >= startIndex && !digit,
+    );
+    inputRefs.current[firstEmptyIndex < 0 ? otp.length - 1 : firstEmptyIndex]?.focus();
+    return true;
+  };
+
   const handleOtpChange = (value, index) => {
     setCodeError("");
     const digits = value.replace(/\D/g, "");
 
     if (digits.length > 1) {
-      const pastedDigits = digits.slice(0, 6).split("");
-      const updatedOtp = ["", "", "", "", "", ""];
-
-      pastedDigits.forEach((digit, i) => {
-        updatedOtp[i] = digit;
-      });
-
-      setOtp(updatedOtp);
-      onCodeChange?.();
-      inputRefs.current[Math.min(pastedDigits.length, 5)]?.focus();
+      applyPastedCode(digits, index);
       return;
     }
 
@@ -107,33 +127,9 @@ export default function OtpForm({
     }
   };
 
-  const handlePaste = (event) => {
+  const handlePaste = (event, index) => {
     event.preventDefault();
-
-    const digits = event.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 6);
-
-    if (!digits) return;
-
-    const currentIndex = inputRefs.current.indexOf(event.currentTarget);
-    const startsAtFirstField = digits.length === 6 || currentIndex < 0;
-    const startIndex = startsAtFirstField ? 0 : currentIndex;
-    const updatedOtp = startsAtFirstField ? ["", "", "", "", "", ""] : [...otp];
-
-    digits.split("").forEach((digit, offset) => {
-      const targetIndex = startIndex + offset;
-      if (targetIndex < updatedOtp.length) updatedOtp[targetIndex] = digit;
-    });
-
-    setOtp(updatedOtp);
-    setCodeError("");
-    onCodeChange?.();
-    const nextEmptyIndex = updatedOtp.findIndex(
-      (digit, index) => index >= startIndex && !digit,
-    );
-    inputRefs.current[nextEmptyIndex < 0 ? 5 : nextEmptyIndex]?.focus();
+    applyPastedCode(event.clipboardData.getData("text"), index);
   };
 
   const handleSubmit = (event) => {
@@ -256,7 +252,7 @@ export default function OtpForm({
                 value={digit}
                 onChange={(event) => handleOtpChange(event.target.value, index)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
-                onPaste={handlePaste}
+                onPaste={(event) => handlePaste(event, index)}
                 onFocus={(event) => event.target.select()}
                 className={`h-12 w-10 rounded-xl border bg-white text-center text-xl font-semibold text-slate-950 outline-none transition sm:h-14 sm:w-12 ${
                   digit
@@ -359,6 +355,14 @@ export default function OtpForm({
           Change email address
         </button>
       </div>
+      <OtpHelpPanel
+        email={email}
+        onResend={onResend}
+        onBack={onBack}
+        resendCooldown={resendCooldown}
+        isSending={isSending}
+        isVerifying={isVerifying}
+      />
     </div>
   );
 }
