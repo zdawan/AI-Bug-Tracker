@@ -327,7 +327,10 @@ function ScenarioCard({
 
         <ScenarioStatusControls
           scenario={scenario}
-          onChange={(status) => onUpdate(scenario.id, { status })}
+          onChange={(status) => {
+            onUpdate(scenario.id, { status });
+            if (status === "issue-found") setIsExpanded(true);
+          }}
         />
         {scenario.checkedAt && formatCheckedAt(scenario.checkedAt) && (
           <p className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
