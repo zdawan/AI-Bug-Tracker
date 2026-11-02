@@ -299,6 +299,8 @@ export default function OtpForm({
   const handleSubmit = (event) => {
     event.preventDefault();
 
+    if (isVerifying || isSending) return;
+
     const enteredOtp = otp.join("");
     if (!/^\d{6}$/.test(enteredOtp)) {
       setCodeError("Enter all 6 digits before continuing.");
@@ -310,6 +312,27 @@ export default function OtpForm({
 
     setCodeError("");
     onVerify?.(event, enteredOtp);
+  };
+
+  const handleFormKeyDown = (event) => {
+    if (
+      event.key !== "Enter" ||
+      (!event.ctrlKey && !event.metaKey) ||
+      event.altKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    if (isVerifying || isSending) return;
+
+    const form = event.currentTarget;
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.querySelector('button[type="submit"]')?.click();
+    }
   };
 
   const handleResendCode = async () => {
@@ -400,7 +423,12 @@ export default function OtpForm({
         )}
       </header>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={handleFormKeyDown}
+        noValidate
+        className="space-y-6"
+      >
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <label
@@ -592,12 +620,16 @@ export default function OtpForm({
 
         <button
           type="submit"
+          aria-keyshortcuts="Control+Enter Meta+Enter"
           disabled={isVerifying || isSending}
           className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 disabled:cursor-wait disabled:opacity-60"
         >
           {isVerifying ? "Verifying..." : "Verify and continue"}
           {!isVerifying && <ArrowRight size={19} aria-hidden="true" />}
         </button>
+        <p className="text-center text-[10px] text-slate-400">
+          Tip: press Ctrl+Enter or ⌘+Enter to verify.
+        </p>
         {visibleError && (
           <p
             id="tester-otp-error"
