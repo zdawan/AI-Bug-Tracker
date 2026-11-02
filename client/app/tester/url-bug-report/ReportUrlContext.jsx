@@ -6,6 +6,7 @@ import {
   Check,
   ChevronRight,
   Copy,
+  Download,
   ExternalLink,
   Eye,
   EyeOff,
@@ -140,6 +141,19 @@ function formatBrowserEnvironment(snapshot) {
     ...snapshot.map(({ label, value }) => `${label}: ${value}`),
     "Privacy: collected locally only when requested. Review before sharing.",
   ].join("\n");
+}
+
+function downloadTextFile(content, filename) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const downloadUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = downloadUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
 }
 
 function formatUrlWithoutValues(url) {
@@ -530,6 +544,22 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
     );
   };
 
+  const downloadReportContext = () => {
+    const environmentText = browserSnapshot
+      ? formatBrowserEnvironment(browserSnapshot)
+      : "Browser environment: not captured.";
+
+    try {
+      downloadTextFile(
+        `${reportContext}\n\n${environmentText}`,
+        `tester-report-context-${new Date().toISOString().slice(0, 10)}.txt`,
+      );
+      toast.success("Diagnostic summary downloaded.");
+    } catch {
+      toast.error("Could not download the diagnostic summary.");
+    }
+  };
+
   if (!currentUrl) {
     return (
       <section
@@ -912,6 +942,14 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                     >
                       <Copy size={12} aria-hidden="true" />
                       Copy report + browser context
+                    </button>
+                    <button
+                      type="button"
+                      onClick={downloadReportContext}
+                      className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                    >
+                      <Download size={12} aria-hidden="true" />
+                      Download summary
                     </button>
                   </div>
                 </div>
