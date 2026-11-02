@@ -44,6 +44,11 @@ const faqItems = [
   },
 ];
 
+const faqCategories = [
+  "ALL TOPICS",
+  ...new Set(faqItems.map((item) => item.category)),
+];
+
 function FAQItem({ item, isOpen, onToggle, index }) {
   const answerId = `faq-answer-${index}`;
   const questionId = `faq-question-${index}`;
@@ -90,14 +95,18 @@ function FAQItem({ item, isOpen, onToggle, index }) {
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState(0);
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("ALL TOPICS");
   const normalizedSearch = search.trim().toLowerCase();
   const filteredItems = faqItems
     .map((item, index) => ({ item, index }))
-    .filter(({ item }) =>
-      `${item.question} ${item.answer} ${item.category}`
+    .filter(({ item }) => {
+      const matchesCategory =
+        activeCategory === "ALL TOPICS" || item.category === activeCategory;
+      const matchesSearch = `${item.question} ${item.answer} ${item.category}`
         .toLowerCase()
-        .includes(normalizedSearch),
-    );
+        .includes(normalizedSearch);
+      return matchesCategory && matchesSearch;
+    });
 
   return (
     <section className="faq-section" aria-labelledby="faq-heading">
@@ -162,6 +171,41 @@ export default function FAQSection() {
               {filteredItems.length === 1 ? "answer" : "answers"}
             </p>
           </div>
+          <div
+            className="mb-4 flex flex-wrap gap-2"
+            role="group"
+            aria-label="Filter FAQs by topic"
+          >
+            {faqCategories.map((category) => {
+              const isActive = activeCategory === category;
+              const categoryCount =
+                category === "ALL TOPICS"
+                  ? faqItems.length
+                  : faqItems.filter((item) => item.category === category)
+                      .length;
+
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setActiveCategory(category)}
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 ${
+                    isActive
+                      ? "border-violet-200 bg-violet-50 text-violet-700"
+                      : "border-slate-200 bg-white/70 text-slate-500 hover:border-violet-200 hover:text-violet-700"
+                  }`}
+                >
+                  {category === "ALL TOPICS"
+                    ? "All topics"
+                    : category.toLowerCase()}
+                  <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] tabular-nums">
+                    {categoryCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
           {filteredItems.length > 0 ? (
             <div className="faq-list">
@@ -195,7 +239,10 @@ export default function FAQSection() {
               </p>
               <button
                 type="button"
-                onClick={() => setSearch("")}
+                onClick={() => {
+                  setSearch("");
+                  setActiveCategory("ALL TOPICS");
+                }}
                 className="mt-3 inline-flex min-h-9 items-center rounded-lg px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
               >
                 Clear search
