@@ -394,6 +394,11 @@ function TemplateStatus({ template }) {
           Favorite
         </span>
       )}
+      {template.recentlyUsed && (
+        <span className="rounded-full bg-sky-50 px-2 py-1 text-[9px] font-semibold text-sky-700">
+          Recently used
+        </span>
+      )}
     </div>
   );
 }
@@ -835,6 +840,7 @@ export default function ReportTemplateLibrary({
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("recommended");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [recentTemplateIds, setRecentTemplateIds] = useState([]);
   const [expandedTemplateId, setExpandedTemplateId] = useState("");
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState("");
@@ -954,8 +960,9 @@ export default function ReportTemplateLibrary({
           template.source === "custom"
             ? template.favorite
             : favoriteBuiltInIds.includes(template.id),
+        recentlyUsed: recentTemplateIds.includes(template.id),
       })),
-    [allTemplates, favoriteBuiltInIds],
+    [allTemplates, favoriteBuiltInIds, recentTemplateIds],
   );
 
   const visibleTemplates = useMemo(() => {
@@ -989,6 +996,13 @@ export default function ReportTemplateLibrary({
         if (sortBy === "custom-first") {
           return Number(right.source === "custom") - Number(left.source === "custom");
         }
+        if (sortBy === "recent") {
+          return (
+            Number(right.recentlyUsed) - Number(left.recentlyUsed) ||
+            Number(right.favorite) - Number(left.favorite) ||
+            left.name.localeCompare(right.name)
+          );
+        }
 
         return (
           Number(right.favorite) - Number(left.favorite) ||
@@ -1005,6 +1019,12 @@ export default function ReportTemplateLibrary({
   ]);
 
   const handleApply = (template, mode) => {
+    setRecentTemplateIds((current) =>
+      [template.id, ...current.filter((id) => id !== template.id)].slice(
+        0,
+        BUILT_IN_TEMPLATES.length + MAX_CUSTOM_TEMPLATES,
+      ),
+    );
     onApplyTemplate(template, mode);
     setPendingApply(null);
     setShowLibrary(false);
@@ -1178,6 +1198,7 @@ export default function ReportTemplateLibrary({
                 <option value="name">Name A–Z</option>
                 <option value="category">Category</option>
                 <option value="custom-first">My templates first</option>
+                <option value="recent">Recently used</option>
               </select>
             </label>
           </div>
