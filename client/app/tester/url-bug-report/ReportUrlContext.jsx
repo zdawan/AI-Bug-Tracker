@@ -52,19 +52,38 @@ function getQueryEntries(url) {
 
 function createSanitizedUrl(url) {
   const sanitized = new URL(url.href);
-  const privateKeys = [
-    ...new Set(
-      [...sanitized.searchParams.keys()].filter((key) =>
-        PRIVATE_QUERY_KEY.test(key),
-      ),
-    ),
-  ];
-  privateKeys.forEach((key) => sanitized.searchParams.delete(key));
+  const queryEntries = [...sanitized.searchParams.entries()];
+  sanitized.search = "";
+  queryEntries.forEach(([key]) => {
+    sanitized.searchParams.append(key, "[redacted]");
+  });
   sanitized.hash = "";
   return {
     href: sanitized.href,
-    removedCount: privateKeys.length,
+    redactedCount: queryEntries.length,
   };
+}
+
+function createReportContext(url, entries) {
+  const parameterNames = [
+    ...new Set(
+      entries.map((entry) =>
+        entry.isPrivate ? "[sensitive parameter]" : entry.key || "(empty key)",
+      ),
+    ),
+  ];
+
+  return [
+    "Test context",
+    `Website: ${url.origin}`,
+    `Page path: ${url.pathname || "/"}`,
+    `Protocol: ${url.protocol}`,
+    `Query parameter names: ${
+      parameterNames.length ? parameterNames.join(", ") : "none"
+    }`,
+    `Fragment: ${url.hash ? "present (value omitted)" : "none"}`,
+    "Privacy: query values and fragment contents are omitted; review the page path before sharing.",
+  ].join("\n");
 }
 
 function formatUrlWithoutValues(url) {
@@ -391,6 +410,9 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
   const sensitiveCount = queryEntries.filter((entry) => entry.isPrivate).length;
   const sanitized = currentUrl ? createSanitizedUrl(currentUrl) : null;
   const displayUrl = currentUrl ? formatUrlWithoutValues(currentUrl) : "";
+  const reportContext = currentUrl
+    ? createReportContext(currentUrl, queryEntries)
+    : "";
   const hasChanged =
     currentUrl &&
     startingUrl &&
@@ -428,10 +450,15 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
     if (!sanitized) return;
     safeCopyText(
       sanitized.href,
-      sanitized.removedCount || currentUrl.hash
-        ? "Sanitized URL copied without query values marked sensitive or its fragment."
+      sanitized.redactedCount || currentUrl.hash
+        ? "Sanitized URL copied with query values redacted and its fragment removed."
         : "Safe URL copied.",
     );
+  };
+
+  const copyReportContext = () => {
+    if (!reportContext) return;
+    safeCopyText(reportContext, "Safe report context copied.");
   };
 
   if (!currentUrl) {
@@ -533,6 +560,15 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
               </button>
               <button
                 type="button"
+                onClick={copyReportContext}
+                aria-label="Copy report context without query values or fragment contents"
+                className={`${ACTION_CLASS} border-violet-200 bg-violet-50 text-violet-800 hover:border-violet-300 hover:bg-violet-100`}
+              >
+                <Copy size={13} aria-hidden="true" />
+                Copy report context
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsEditorOpen(true)}
                 className={`${ACTION_CLASS} border-orange-600 bg-orange-600 text-white hover:bg-orange-700`}
               >
@@ -584,7 +620,7 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
             />
           </div>
 
-          {(sensitiveCount > 0 || currentUrl.hash) && (
+          {(queryEntries.length > 0 || currentUrl.hash) && (
             <div
               role="note"
               className="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
@@ -600,8 +636,9 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                     ? `${sensitiveCount} query ${
                         sensitiveCount === 1 ? "entry is" : "entries are"
                       } marked sensitive.`
-                    : "The URL has a fragment that may contain private values."}{" "}
-                  Use the sanitized copy option before sharing.
+                    : "Query strings and fragments can contain private values."}{" "}
+                  The sanitized URL redacts every query value and removes the
+                  fragment before copying.
                 </span>
               </p>
               <button
