@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ClipboardPaste,
-  Activity,
   Eye,
   EyeOff,
   RefreshCw,
@@ -223,6 +222,11 @@ export default function OtpForm({
     setOtp(updatedOtp);
     setCodeError("");
     setClipboardMessage("");
+    recordActivity(
+      "code_pasted",
+      `${updatedOtp.filter(Boolean).length} of 6 digits were filled. The code value was not recorded.`,
+      "Paste",
+    );
     startRevealTimer();
     onCodeChange?.();
 
@@ -261,6 +265,13 @@ export default function OtpForm({
     const updatedOtp = [...otp];
     updatedOtp[index] = digits;
     setOtp(updatedOtp);
+    if (digits) {
+      recordActivity(
+        "code_edited",
+        `${updatedOtp.filter(Boolean).length} of 6 digits are currently entered.`,
+        "Keyboard",
+      );
+    }
     if (digits) startRevealTimer();
     onCodeChange?.();
     maybeAutoVerify(event, updatedOtp.join(""));
@@ -330,6 +341,13 @@ export default function OtpForm({
     event.preventDefault();
     const clipboardText = event.clipboardData.getData("text");
     const completedCode = applyPastedCode(clipboardText, index);
+    if (!completedCode) {
+      recordActivity(
+        "code_pasted",
+        "No digits were found in the pasted text. No clipboard contents were saved.",
+        "Paste",
+      );
+    }
     maybeAutoVerify(event, completedCode || "");
   };
 
@@ -372,6 +390,11 @@ export default function OtpForm({
     if (!/^\d{6}$/.test(enteredOtp)) {
       setCodeError("Enter all 6 digits before continuing.");
       setClipboardMessage("");
+      recordActivity(
+        "code_incomplete",
+        "Verification was not submitted because the code is incomplete.",
+        "Form",
+      );
       const firstEmptyIndex = otp.findIndex((digit) => !digit);
       inputRefs.current[firstEmptyIndex < 0 ? 0 : firstEmptyIndex]?.focus();
       return;
@@ -405,6 +428,11 @@ export default function OtpForm({
   const handleResendCode = async () => {
     if (resendCooldown > 0 || isSending || !onResend) return;
 
+    recordActivity(
+      "resend_requested",
+      "A request was made to send a new verification code.",
+      "Resend control",
+    );
     const sent = await onResend();
     if (sent) {
       stopRevealTimer();
@@ -419,6 +447,13 @@ export default function OtpForm({
   };
 
   const handleResetCode = () => {
+    if (enteredDigits > 0) {
+      recordActivity(
+        "code_cleared",
+        `${enteredDigits} entered digits were cleared. The code value was not recorded.`,
+        "Clear control",
+      );
+    }
     stopRevealTimer();
     setRevealSeconds(0);
     setOtp(["", "", "", "", "", ""]);
@@ -430,6 +465,13 @@ export default function OtpForm({
   };
 
   const toggleCodeVisibility = () => {
+    recordActivity(
+      "visibility_changed",
+      isCodeVisible
+        ? "The verification code was hidden."
+        : "The verification code was revealed.",
+      "Visibility control",
+    );
     if (isCodeVisible) {
       stopRevealTimer();
       setRevealSeconds(0);
@@ -444,6 +486,21 @@ export default function OtpForm({
       input?.focus();
       input?.select();
     });
+  };
+
+  const handleAutoVerifyChange = (enabled) => {
+    setAutoVerify(enabled);
+    recordActivity(
+      "auto_verify_changed",
+      enabled
+        ? "Automatic verification was enabled."
+        : "Automatic verification was disabled.",
+      "Preference",
+    );
+  };
+
+  const clearActivity = () => {
+    setActivityEvents([]);
   };
 
   const formatTime = (seconds) => {
@@ -635,7 +692,7 @@ export default function OtpForm({
               id="tester-otp-auto-verify"
               type="checkbox"
               checked={autoVerify}
-              onChange={(event) => setAutoVerify(event.target.checked)}
+              onChange={(event) => handleAutoVerifyChange(event.target.checked)}
               disabled={
                 isVerifying || isSending || !autoVerifyPreferenceLoaded
               }
@@ -788,6 +845,7 @@ export default function OtpForm({
         isSending={isSending}
         isVerifying={isVerifying}
       />
+      <OtpActivityPanel events={activityEvents} onClear={clearActivity} />
     </div>
   );
 }
