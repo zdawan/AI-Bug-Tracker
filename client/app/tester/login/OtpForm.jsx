@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, RefreshCw, Clock3 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Clock3,
+} from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
 
@@ -18,7 +25,9 @@ export default function OtpForm({
 }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [codeError, setCodeError] = useState("");
+  const [isCodeVisible, setIsCodeVisible] = useState(true);
   const inputRefs = useRef([]);
+  const focusedInputIndex = useRef(0);
   const enteredDigits = otp.filter(Boolean).length;
   const visibleError = codeError || error;
 
@@ -161,9 +170,20 @@ export default function OtpForm({
 
   const handleResetCode = () => {
     setOtp(["", "", "", "", "", ""]);
+    setIsCodeVisible(true);
     setCodeError("");
     onCodeChange?.();
     inputRefs.current[0]?.focus();
+  };
+
+  const toggleCodeVisibility = () => {
+    setIsCodeVisible((visible) => !visible);
+
+    window.requestAnimationFrame(() => {
+      const input = inputRefs.current[focusedInputIndex.current];
+      input?.focus();
+      input?.select();
+    });
   };
 
   const formatTime = (seconds) => {
@@ -220,25 +240,45 @@ export default function OtpForm({
               Verification code
             </label>
 
-            <button
-              type="button"
-              onClick={handleResetCode}
-              disabled={isVerifying || isSending || enteredDigits === 0}
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RefreshCw size={13} />
-              Clear code
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleCodeVisibility}
+                disabled={isVerifying || isSending || enteredDigits === 0}
+                aria-controls="tester-otp-fields"
+                aria-label={isCodeVisible ? "Hide verification code" : "Show verification code"}
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isCodeVisible ? (
+                  <EyeOff size={14} aria-hidden="true" />
+                ) : (
+                  <Eye size={14} aria-hidden="true" />
+                )}
+                {isCodeVisible ? "Hide" : "Show"}
+              </button>
+              <button
+                type="button"
+                onClick={handleResetCode}
+                disabled={isVerifying || isSending || enteredDigits === 0}
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshCw size={13} aria-hidden="true" />
+                Clear code
+              </button>
+            </div>
           </div>
 
-          <div className="flex justify-center gap-2 sm:gap-3">
+          <div
+            id="tester-otp-fields"
+            className="flex justify-center gap-2 sm:gap-3"
+          >
             {otp.map((digit, index) => (
               <input
                 key={index}
                 ref={(element) => {
                   inputRefs.current[index] = element;
                 }}
-                type="text"
+                type={isCodeVisible ? "text" : "password"}
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoCapitalize="off"
@@ -253,7 +293,10 @@ export default function OtpForm({
                 onChange={(event) => handleOtpChange(event.target.value, index)}
                 onKeyDown={(event) => handleKeyDown(event, index)}
                 onPaste={(event) => handlePaste(event, index)}
-                onFocus={(event) => event.target.select()}
+                onFocus={(event) => {
+                  focusedInputIndex.current = index;
+                  event.target.select();
+                }}
                 className={`h-12 w-10 rounded-xl border bg-white text-center text-xl font-semibold text-slate-950 outline-none transition sm:h-14 sm:w-12 ${
                   digit
                     ? "border-purple-500 bg-purple-50/50"
