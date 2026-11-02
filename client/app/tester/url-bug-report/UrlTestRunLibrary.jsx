@@ -184,6 +184,108 @@ function areSnapshotsEqual(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function getSnapshotChanges(savedSnapshot, currentSnapshot) {
+  const savedPages = new Map(
+    savedSnapshot.scenarios.map((scenario) => [scenario.id, scenario]),
+  );
+  const currentPages = new Map(
+    currentSnapshot.scenarios.map((scenario) => [scenario.id, scenario]),
+  );
+  const changes = [];
+
+  currentSnapshot.scenarios.forEach((currentScenario) => {
+    const savedScenario = savedPages.get(currentScenario.id);
+    if (!savedScenario) {
+      changes.push({
+        id: `added-${currentScenario.id}`,
+        kind: "added",
+        title: currentScenario.title,
+        detail: "Page added",
+      });
+      return;
+    }
+
+    const changedFields = [
+      savedScenario.title !== currentScenario.title && "name",
+      savedScenario.url !== currentScenario.url && "destination",
+      savedScenario.status !== currentScenario.status && "result",
+      savedScenario.notes !== currentScenario.notes && "notes",
+      savedScenario.checkedAt !== currentScenario.checkedAt && "check time",
+    ].filter(Boolean);
+
+    if (changedFields.length) {
+      changes.push({
+        id: `updated-${currentScenario.id}`,
+        kind: "updated",
+        title: currentScenario.title,
+        detail: `Changed: ${changedFields.join(", ")}`,
+      });
+    }
+  });
+
+  savedSnapshot.scenarios.forEach((savedScenario) => {
+    if (currentPages.has(savedScenario.id)) return;
+    changes.push({
+      id: `removed-${savedScenario.id}`,
+      kind: "removed",
+      title: savedScenario.title,
+      detail: "Page removed",
+    });
+  });
+
+  if (savedSnapshot.activeScenarioId !== currentSnapshot.activeScenarioId) {
+    changes.push({
+      id: "active-page",
+      kind: "updated",
+      title: "Active report destination",
+      detail: "The active page changed",
+    });
+  }
+
+  return changes;
+}
+
+function SnapshotChangeSummary({ changes }) {
+  const visibleChanges = changes.slice(0, 5);
+  const remainingCount = changes.length - visibleChanges.length;
+
+  return (
+    <details className="mt-3 rounded-lg border border-amber-200 bg-amber-50/60">
+      <summary className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-[10px] font-semibold text-amber-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+        <span>Review {changes.length} unsaved change{changes.length === 1 ? "" : "s"}</span>
+        <span className="text-[9px] font-medium text-amber-700">
+          Names and fields only
+        </span>
+      </summary>
+      <ul className="space-y-1.5 border-t border-amber-200 px-2.5 py-2">
+        {visibleChanges.map((change) => (
+          <li key={change.id} className="min-w-0 text-[10px] leading-4">
+            <span
+              className={`font-semibold ${
+                change.kind === "added"
+                  ? "text-emerald-800"
+                  : change.kind === "removed"
+                    ? "text-rose-800"
+                    : "text-amber-900"
+              }`}
+            >
+              {change.detail}
+            </span>
+            <span className="ml-1 break-words text-slate-700">
+              {change.title}
+            </span>
+          </li>
+        ))}
+        {remainingCount > 0 && (
+          <li className="text-[9px] text-slate-500">
+            And {remainingCount} more change{remainingCount === 1 ? "" : "s"}.
+          </li>
+        )}
+      </ul>
+    </details>
+  );
+}
+
 function RunCounts({ scenarios }) {
   const counts = getRunCounts(scenarios);
 
@@ -450,6 +552,10 @@ export default function UrlTestRunLibrary({
   const isActiveRunDirty =
     activeSnapshot !== null &&
     !areSnapshotsEqual(currentSnapshot, activeSnapshot);
+  const activeRunChanges =
+    isActiveRunDirty && activeSnapshot
+      ? getSnapshotChanges(activeSnapshot, currentSnapshot)
+      : [];
   const filteredRuns = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     if (!normalizedSearch) return runs;
@@ -749,24 +855,27 @@ export default function UrlTestRunLibrary({
                 <RunCounts scenarios={scenarios} />
               </div>
               {activeRun && isActiveRunDirty ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSaveChanges}
-                    className={`${RUN_BUTTON} border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100`}
-                  >
-                    <Check size={12} aria-hidden="true" />
-                    Save changes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearCurrent}
-                    className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
-                  >
-                    <X size={12} aria-hidden="true" />
-                    Detach run
-                  </button>
-                </div>
+                <>
+                  <SnapshotChangeSummary changes={activeRunChanges} />
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveChanges}
+                      className={`${RUN_BUTTON} border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100`}
+                    >
+                      <Check size={12} aria-hidden="true" />
+                      Save changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearCurrent}
+                      className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+                    >
+                      <X size={12} aria-hidden="true" />
+                      Detach run
+                    </button>
+                  </div>
+                </>
               ) : (
                 <p className="mt-3 text-[10px] leading-4 text-slate-500">
                   {activeRun
