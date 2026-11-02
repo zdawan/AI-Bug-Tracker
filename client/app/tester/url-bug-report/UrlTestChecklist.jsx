@@ -74,6 +74,8 @@ function parseHttpUrl(value) {
 function createScenario(url, title = "") {
   const parsedUrl = parseHttpUrl(url);
   if (!parsedUrl) return null;
+  parsedUrl.username = "";
+  parsedUrl.password = "";
 
   const lastSegment = decodePathSegment(
     parsedUrl.pathname.split("/").filter(Boolean).at(-1) || "",
