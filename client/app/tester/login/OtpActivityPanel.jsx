@@ -112,6 +112,12 @@ const EVENT_PRESENTATION = {
     icon: Send,
     tone: "blue",
   },
+  resend_ready: {
+    category: "delivery",
+    label: "Resend available",
+    icon: Clock3,
+    tone: "green",
+  },
 };
 
 const TONE_CLASSES = {

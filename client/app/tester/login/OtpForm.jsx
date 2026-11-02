@@ -76,10 +76,12 @@ export default function OtpForm({
   const [networkMessage, setNetworkMessage] = useState("");
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
   const [idleSecondsRemaining, setIdleSecondsRemaining] = useState(0);
+  const [resendReadyMessage, setResendReadyMessage] = useState("");
   const [activityEvents, setActivityEvents] = useState([]);
   const activitySequence = useRef(0);
   const previousRequestState = useRef(false);
   const previousVerifyState = useRef(false);
+  const previousResendCooldown = useRef(resendCooldown);
   const inputRefs = useRef([]);
   const focusedInputIndex = useRef(0);
   const revealTimer = useRef(null);
@@ -169,6 +171,21 @@ export default function OtpForm({
 
     previousVerifyState.current = isVerifying;
   }, [error, isVerifying, otp]);
+
+  useEffect(() => {
+    if (previousResendCooldown.current > 0 && resendCooldown === 0) {
+      setResendReadyMessage("You can now request another verification code.");
+      recordActivity(
+        "resend_ready",
+        "The resend cooldown ended. Another code can be requested.",
+        "Resend timer",
+      );
+    } else if (resendCooldown > 0) {
+      setResendReadyMessage("");
+    }
+
+    previousResendCooldown.current = resendCooldown;
+  }, [resendCooldown]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -609,6 +626,7 @@ export default function OtpForm({
       "A request was made to send a new verification code.",
       "Resend control",
     );
+    setResendReadyMessage("");
     const sent = await onResend();
     if (sent) {
       stopRevealTimer();
@@ -1061,6 +1079,15 @@ export default function OtpForm({
                 ? "Resend code"
                 : "Reconnect to resend"}
           </button>
+        )}
+        {resendReadyMessage && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-center text-[10px] font-medium text-emerald-700"
+          >
+            {resendReadyMessage}
+          </p>
         )}
 
         <button
