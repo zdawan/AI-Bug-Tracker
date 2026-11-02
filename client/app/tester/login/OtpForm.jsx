@@ -959,11 +959,15 @@ export default function OtpForm({
           <button
             type="button"
             onClick={handleResendCode}
-            disabled={isSending || isVerifying}
+            disabled={!isOnline || isSending || isVerifying}
             className="inline-flex cursor-pointer items-center gap-2 font-semibold text-purple-700 hover:text-purple-900 disabled:cursor-wait disabled:opacity-60"
           >
             <RefreshCw size={15} />
-            {isSending ? "Sending new code..." : "Resend code"}
+            {isSending
+              ? "Sending new code..."
+              : isOnline
+                ? "Resend code"
+                : "Reconnect to resend"}
           </button>
         )}
 
@@ -993,6 +997,7 @@ export default function OtpForm({
         resendCooldown={resendCooldown}
         isSending={isSending}
         isVerifying={isVerifying}
+        isOnline={isOnline}
       />
       <OtpRecoveryGuide
         onResend={handleResendCode}

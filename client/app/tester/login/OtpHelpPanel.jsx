@@ -306,6 +306,7 @@ export default function OtpHelpPanel({
   resendCooldown = 0,
   isSending = false,
   isVerifying = false,
+  isOnline = true,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -316,7 +317,8 @@ export default function OtpHelpPanel({
   const searchRef = useRef(null);
   const normalizedQuery = query.trim().toLowerCase();
   const safeEmail = typeof email === "string" ? email.trim() : "";
-  const resendDisabled = resendCooldown > 0 || isSending || isVerifying;
+  const resendDisabled =
+    resendCooldown > 0 || isSending || isVerifying || !isOnline;
 
   const filteredTopics = useMemo(
     () =>
@@ -661,7 +663,9 @@ export default function OtpHelpPanel({
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
             <p className="inline-flex items-center gap-2 text-[10px] text-slate-600">
               <Clock3 size={13} aria-hidden="true" />
-              {resendCooldown > 0
+              {!isOnline
+                ? "Reconnect to the internet before requesting another code."
+                : resendCooldown > 0
                 ? `You can request another code in ${Math.floor(
                     resendCooldown / 60,
                   )}:${String(resendCooldown % 60).padStart(2, "0")}.`
