@@ -285,6 +285,72 @@ function getRunCounts(scenarios) {
   );
 }
 
+function getStatusLabel(status) {
+  if (status === "passed") return "Passed";
+  if (status === "issue-found") return "Issue found";
+  return "Not tested";
+}
+
+function compareRunScenarios(leftRun, rightRun) {
+  const matchedRightIds = new Set();
+  const changes = [];
+
+  leftRun.scenarios.forEach((leftScenario) => {
+    const rightScenario =
+      rightRun.scenarios.find(
+        (scenario) =>
+          !matchedRightIds.has(scenario.id) &&
+          scenario.url === leftScenario.url,
+      ) ||
+      rightRun.scenarios.find(
+        (scenario) =>
+          !matchedRightIds.has(scenario.id) &&
+          scenario.title.trim().toLowerCase() ===
+            leftScenario.title.trim().toLowerCase(),
+      );
+
+    if (!rightScenario) {
+      changes.push({
+        id: `removed-${leftScenario.id}`,
+        kind: "removed",
+        title: leftScenario.title,
+        details: ["Page removed"],
+      });
+      return;
+    }
+
+    matchedRightIds.add(rightScenario.id);
+    const details = [
+      leftScenario.title !== rightScenario.title && "Name changed",
+      leftScenario.url !== rightScenario.url && "Destination changed",
+      leftScenario.status !== rightScenario.status &&
+        `Result: ${getStatusLabel(leftScenario.status)} → ${getStatusLabel(rightScenario.status)}`,
+      leftScenario.notes !== rightScenario.notes && "Notes changed",
+    ].filter(Boolean);
+
+    if (details.length) {
+      changes.push({
+        id: `changed-${leftScenario.id}`,
+        kind: "changed",
+        title: rightScenario.title,
+        details,
+      });
+    }
+  });
+
+  rightRun.scenarios.forEach((rightScenario) => {
+    if (matchedRightIds.has(rightScenario.id)) return;
+    changes.push({
+      id: `added-${rightScenario.id}`,
+      kind: "added",
+      title: rightScenario.title,
+      details: ["Page added"],
+    });
+  });
+
+  return changes;
+}
+
 function formatRunDate(value) {
   if (!isValidTimestamp(value)) return "Date unavailable";
 
@@ -426,6 +492,78 @@ function RunCounts({ scenarios }) {
       <span className="text-emerald-700">{counts.passed} passed</span>
       <span className="text-rose-700">{counts["issue-found"]} issues</span>
     </div>
+  );
+}
+
+function RunComparisonPanel({ leftRun, rightRun, onClear }) {
+  const changes = compareRunScenarios(leftRun, rightRun);
+  const counts = changes.reduce(
+    (result, change) => {
+      result[change.kind] += 1;
+      return result;
+    },
+    { added: 0, removed: 0, changed: 0 },
+  );
+
+  return (
+    <section
+      aria-labelledby="saved-run-comparison-title"
+      className="rounded-xl border border-violet-200 bg-violet-50/40 p-3"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h4
+            id="saved-run-comparison-title"
+            className="text-xs font-semibold text-slate-900"
+          >
+            Comparing {leftRun.name} with {rightRun.name}
+          </h4>
+          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-600">
+            <span>{counts.added} added</span>
+            <span>{counts.removed} removed</span>
+            <span>{counts.changed} changed</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClear}
+          className="rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        >
+          Clear comparison
+        </button>
+      </div>
+
+      {changes.length ? (
+        <ul className="mt-3 space-y-1.5" aria-label="Saved run differences">
+          {changes.map((change) => (
+            <li
+              key={change.id}
+              className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border border-violet-100 bg-white px-2.5 py-2 text-[10px]"
+            >
+              <span
+                className={`font-semibold ${
+                  change.kind === "added"
+                    ? "text-emerald-800"
+                    : change.kind === "removed"
+                      ? "text-rose-800"
+                      : "text-violet-800"
+                }`}
+              >
+                {change.details.join(" · ")}
+              </span>
+              <span className="break-words text-slate-700">{change.title}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 rounded-lg border border-violet-100 bg-white px-2.5 py-2 text-[10px] text-slate-600">
+          These saved runs have the same pages, results, destinations, and notes.
+        </p>
+      )}
+      <p className="mt-2 text-[9px] text-slate-500">
+        Note contents and full destinations are not shown.
+      </p>
+    </section>
   );
 }
 
@@ -651,6 +789,10 @@ export default function UrlTestRunLibrary({
   const [runName, setRunName] = useState("");
   const [search, setSearch] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
+  const [comparisonRunIds, setComparisonRunIds] = useState({
+    left: "",
+    right: "",
+  });
   const [activeRunId, setActiveRunId] = useState("");
   const [renamingRunId, setRenamingRunId] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
@@ -666,6 +808,9 @@ export default function UrlTestRunLibrary({
   useEffect(() => {
     setRuns([]);
     setActiveRunId("");
+    setComparisonRunIds({ left: "", right: "" });
+    setSearch("");
+    setResultFilter("all");
     setIsLoaded(false);
     if (!storageKey || !origin) {
       setIsLoaded(true);
@@ -682,6 +827,10 @@ export default function UrlTestRunLibrary({
   }, [origin, storageKey]);
 
   const activeRun = runs.find((run) => run.id === activeRunId) || null;
+  const leftComparisonRun =
+    runs.find((run) => run.id === comparisonRunIds.left) || null;
+  const rightComparisonRun =
+    runs.find((run) => run.id === comparisonRunIds.right) || null;
   const activeSnapshot = activeRun
     ? makeSnapshot(activeRun.scenarios, activeRun.activeScenarioId)
     : null;
@@ -897,6 +1046,10 @@ export default function UrlTestRunLibrary({
 
     if (commitRuns(nextRuns)) {
       if (activeRunId === runId) setActiveRunId("");
+      setComparisonRunIds((current) => ({
+        left: current.left === runId ? "" : current.left,
+        right: current.right === runId ? "" : current.right,
+      }));
       setConfirmDeleteId("");
       setAnnouncement(`${deletedRun?.name || "Test run"} deleted.`);
       toast.success("Saved test run deleted.");
@@ -1226,6 +1379,78 @@ export default function UrlTestRunLibrary({
               Showing {filteredRuns.length} of {runs.length} saved run
               {runs.length === 1 ? "" : "s"}
             </p>
+          )}
+
+          {isLoaded && runs.length > 1 && (
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+              <div>
+                <h3 className="text-xs font-semibold text-slate-800">
+                  Compare saved runs
+                </h3>
+                <p className="mt-0.5 text-[10px] text-slate-500">
+                  Choose two snapshots to review page and result differences.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="text-[10px] font-semibold text-slate-600">
+                  Baseline run
+                  <select
+                    value={comparisonRunIds.left}
+                    onChange={(event) =>
+                      setComparisonRunIds((current) => ({
+                        ...current,
+                        left: event.target.value,
+                      }))
+                    }
+                    className="mt-1 min-h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-normal text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                  >
+                    <option value="">Choose a saved run</option>
+                    {runs.map((run) => (
+                      <option
+                        key={run.id}
+                        value={run.id}
+                        disabled={run.id === comparisonRunIds.right}
+                      >
+                        {run.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-[10px] font-semibold text-slate-600">
+                  Comparison run
+                  <select
+                    value={comparisonRunIds.right}
+                    onChange={(event) =>
+                      setComparisonRunIds((current) => ({
+                        ...current,
+                        right: event.target.value,
+                      }))
+                    }
+                    className="mt-1 min-h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-normal text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                  >
+                    <option value="">Choose a saved run</option>
+                    {runs.map((run) => (
+                      <option
+                        key={run.id}
+                        value={run.id}
+                        disabled={run.id === comparisonRunIds.left}
+                      >
+                        {run.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {leftComparisonRun && rightComparisonRun && (
+                <RunComparisonPanel
+                  leftRun={leftComparisonRun}
+                  rightRun={rightComparisonRun}
+                  onClear={() =>
+                    setComparisonRunIds({ left: "", right: "" })
+                  }
+                />
+              )}
+            </div>
           )}
 
           {!isLoaded ? (
