@@ -42,6 +42,7 @@ export default function OtpForm({
     useState("");
   const [revealSeconds, setRevealSeconds] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
+  const [networkMessage, setNetworkMessage] = useState("");
   const [activityEvents, setActivityEvents] = useState([]);
   const activitySequence = useRef(0);
   const previousRequestState = useRef(false);
@@ -117,17 +118,31 @@ export default function OtpForm({
   }, []);
 
   useEffect(() => {
-    const updateConnection = () => {
-      setIsOnline(navigator.onLine);
+    const handleOnline = () => {
+      setIsOnline(true);
+      setNetworkMessage(
+        "Connection restored. Your entered code is still here; select Verify and continue to retry.",
+      );
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setNetworkMessage(
+        "You’re offline. Verification and resend are paused; your entered code will stay on this page.",
+      );
     };
 
-    updateConnection();
-    window.addEventListener("online", updateConnection);
-    window.addEventListener("offline", updateConnection);
+    setIsOnline(navigator.onLine);
+    if (!navigator.onLine) {
+      setNetworkMessage(
+        "You’re offline. Verification and resend are paused; your entered code will stay on this page.",
+      );
+    }
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener("online", updateConnection);
-      window.removeEventListener("offline", updateConnection);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -261,6 +276,13 @@ export default function OtpForm({
       isSending ||
       !/^\d{6}$/.test(code)
     ) {
+      return;
+    }
+
+    if (!isOnline) {
+      setNetworkMessage(
+        "You’re offline, so automatic verification was paused. Your code is ready to submit when you reconnect.",
+      );
       return;
     }
 
@@ -418,6 +440,13 @@ export default function OtpForm({
     }
 
     setCodeError("");
+    if (!isOnline) {
+      setNetworkMessage(
+        "You’re offline, so verification was not sent. Your code is still here; reconnect and try again.",
+      );
+      return;
+    }
+    setNetworkMessage("");
     onVerify?.(event, enteredOtp);
   };
 
@@ -444,6 +473,12 @@ export default function OtpForm({
 
   const handleResendCode = async () => {
     if (resendCooldown > 0 || isSending || !onResend) return;
+    if (!isOnline) {
+      setNetworkMessage(
+        "You’re offline, so a new code was not requested. Reconnect before trying again.",
+      );
+      return;
+    }
 
     recordActivity(
       "resend_requested",
@@ -581,20 +616,26 @@ export default function OtpForm({
         noValidate
         className="space-y-6"
       >
-        {!isOnline && (
+        {(!isOnline || networkMessage) && (
           <div
             role="status"
             aria-live="polite"
-            className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-900"
+            className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 ${
+              isOnline
+                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border-amber-200 bg-amber-50 text-amber-900"
+            }`}
           >
-            <WifiOff
-              size={16}
-              className="mt-0.5 shrink-0"
-              aria-hidden="true"
-            />
+            {!isOnline && (
+              <WifiOff
+                size={16}
+                className="mt-0.5 shrink-0"
+                aria-hidden="true"
+              />
+            )}
             <p className="text-xs leading-5">
-              You’re offline. Your entered code will stay on this page. Check
-              your connection before verifying or requesting another code.
+              {networkMessage ||
+                "You’re offline. Verification and resend are paused; your entered code will stay on this page."}
             </p>
           </div>
         )}
@@ -893,7 +934,7 @@ export default function OtpForm({
       </div>
       <OtpHelpPanel
         email={email}
-        onResend={onResend}
+        onResend={handleResendCode}
         onBack={onBack}
         resendCooldown={resendCooldown}
         isSending={isSending}
