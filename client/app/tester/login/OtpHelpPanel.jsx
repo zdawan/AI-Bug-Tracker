@@ -16,6 +16,7 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
+import OtpInboxGuide from "./OtpInboxGuide";
 
 const HELP_CATEGORIES = [
   { id: "all", label: "All topics" },
@@ -549,6 +550,8 @@ export default function OtpHelpPanel({
               </p>
             )}
           </section>
+
+          <OtpInboxGuide email={safeEmail} />
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
