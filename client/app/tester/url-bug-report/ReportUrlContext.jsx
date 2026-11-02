@@ -24,6 +24,7 @@ import { toast } from "react-toastify";
 
 const PRIVATE_QUERY_KEY =
   /token|secret|password|passwd|auth|session|credential|email|code|key/i;
+const QUERY_VALUE_REVEAL_SECONDS = 20;
 
 const ACTION_CLASS =
   "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
@@ -460,6 +461,7 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [showQueryValues, setShowQueryValues] = useState(false);
+  const [queryRevealSeconds, setQueryRevealSeconds] = useState(0);
   const [querySearch, setQuerySearch] = useState("");
   const [browserSnapshot, setBrowserSnapshot] = useState(null);
   const currentUrl = useMemo(() => parseHttpUrl(value), [value]);
@@ -490,6 +492,47 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
     currentUrl.href !== startingUrl.href;
 
   const closeEditor = useCallback(() => setIsEditorOpen(false), []);
+
+  useEffect(() => {
+    if (!showQueryValues) {
+      setQueryRevealSeconds(0);
+      return undefined;
+    }
+
+    let remainingSeconds = QUERY_VALUE_REVEAL_SECONDS;
+    setQueryRevealSeconds(remainingSeconds);
+
+    const hideQueryValues = () => {
+      setShowQueryValues(false);
+      setQueryRevealSeconds(0);
+    };
+    const hideWhenPageHidden = () => {
+      if (document.visibilityState === "hidden") hideQueryValues();
+    };
+    const timer = window.setInterval(() => {
+      remainingSeconds -= 1;
+      setQueryRevealSeconds(Math.max(0, remainingSeconds));
+      if (remainingSeconds <= 0) hideQueryValues();
+    }, 1000);
+
+    window.addEventListener("blur", hideQueryValues);
+    document.addEventListener("visibilitychange", hideWhenPageHidden);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("blur", hideQueryValues);
+      document.removeEventListener("visibilitychange", hideWhenPageHidden);
+    };
+  }, [showQueryValues]);
+
+  const toggleQueryValues = () => {
+    if (showQueryValues) {
+      setShowQueryValues(false);
+      return;
+    }
+
+    setShowQueryValues(true);
+  };
 
   const applyEditedUrl = (editedUrl) => {
     onChange(editedUrl.href);
@@ -753,7 +796,11 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
 
           <details
             open={isDetailsOpen}
-            onToggle={(event) => setIsDetailsOpen(event.currentTarget.open)}
+            onToggle={(event) => {
+              const isOpen = event.currentTarget.open;
+              setIsDetailsOpen(isOpen);
+              if (!isOpen) setShowQueryValues(false);
+            }}
             className="rounded-xl border border-slate-200 bg-slate-50/60"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-violet-500">
@@ -815,12 +862,13 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                       Query parameters
                     </h3>
                     <p className="mt-0.5 text-[10px] text-slate-500">
-                      Values remain hidden unless you explicitly reveal them.
+                      Values stay hidden unless revealed, and automatically
+                      hide after {QUERY_VALUE_REVEAL_SECONDS} seconds.
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowQueryValues((visible) => !visible)}
+                    onClick={toggleQueryValues}
                     disabled={queryEntries.length === 0}
                     aria-pressed={showQueryValues}
                     className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-40"
@@ -833,6 +881,39 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                     {showQueryValues ? "Hide values" : "Reveal values"}
                   </button>
                 </div>
+
+                {showQueryValues && (
+                  <div className="border-b border-violet-100 bg-violet-50/60 px-3 py-2">
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-violet-800">
+                      <span role="status" aria-live="polite">
+                        Values visible for privacy-limited review
+                      </span>
+                      <span className="shrink-0 font-semibold tabular-nums">
+                        Hiding in {queryRevealSeconds}s
+                      </span>
+                    </div>
+                    <div
+                      className="mt-1.5 h-1 overflow-hidden rounded-full bg-violet-100"
+                      role="progressbar"
+                      aria-label="Query value reveal time remaining"
+                      aria-valuemin={0}
+                      aria-valuemax={QUERY_VALUE_REVEAL_SECONDS}
+                      aria-valuenow={queryRevealSeconds}
+                      aria-valuetext={`${queryRevealSeconds} seconds until query values are hidden`}
+                    >
+                      <div
+                        className="h-full rounded-full bg-violet-600 transition-[width] duration-1000"
+                        style={{
+                          width: `${
+                            (queryRevealSeconds /
+                              QUERY_VALUE_REVEAL_SECONDS) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {queryEntries.length > 0 ? (
                   <>
