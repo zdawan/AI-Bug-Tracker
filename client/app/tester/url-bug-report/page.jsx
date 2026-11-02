@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BugForm from "../components/BugForm";
 import ReportUrlContext from "./ReportUrlContext";
+import UrlTestChecklist from "./UrlTestChecklist";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -26,6 +27,7 @@ function UserPageContent() {
           initialValue={fullUrl}
           onChange={setFinalUrl}
         />
+        <UrlTestChecklist value={finalUrl} onSelect={setFinalUrl} />
         <BugForm testUrl={finalUrl} />
       </div>
     </>
