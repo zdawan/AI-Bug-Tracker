@@ -464,6 +464,16 @@ export default function OtpForm({
     inputRefs.current[0]?.focus();
   };
 
+  const focusCodeForCorrection = () => {
+    const firstEmptyIndex = otp.findIndex((digit) => !digit);
+    const targetIndex = firstEmptyIndex < 0 ? 0 : firstEmptyIndex;
+    const targetInput = inputRefs.current[targetIndex];
+
+    focusedInputIndex.current = targetIndex;
+    targetInput?.focus();
+    targetInput?.select();
+  };
+
   const toggleCodeVisibility = () => {
     recordActivity(
       "visibility_changed",
@@ -626,7 +636,9 @@ export default function OtpForm({
                 autoCapitalize="off"
                 spellCheck={false}
                 autoComplete={index === 0 ? "one-time-code" : "off"}
-                aria-label={`OTP digit ${index + 1}`}
+                aria-label={`OTP digit ${index + 1} of 6, ${
+                  digit ? "filled" : "empty"
+                }`}
                 aria-invalid={Boolean(visibleError)}
                 aria-describedby={`tester-otp-progress${visibleError ? " tester-otp-error" : ""}`}
                 maxLength={index === 0 ? 6 : 1}
@@ -758,14 +770,22 @@ export default function OtpForm({
           Tip: press Ctrl+Enter or ⌘+Enter to verify.
         </p>
         {visibleError && (
-          <p
+          <div
             id="tester-otp-error"
             role="alert"
             aria-live="assertive"
-            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-center text-sm text-rose-800"
+            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-center text-sm text-rose-800"
           >
-            {visibleError}
-          </p>
+            <span className="block">{visibleError}</span>
+            <button
+              type="button"
+              onClick={focusCodeForCorrection}
+              disabled={isVerifying || isSending}
+              className="mt-2 inline-flex min-h-9 items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Edit verification code
+            </button>
+          </div>
         )}
       </form>
 
