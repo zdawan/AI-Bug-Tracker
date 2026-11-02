@@ -362,6 +362,16 @@ export default function OtpForm({
   };
 
   const handleKeyDown = (event, index) => {
+    if (
+      event.key === "Backspace" &&
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey
+    ) {
+      event.preventDefault();
+      if (enteredDigits > 0) handleResetCode();
+      return;
+    }
+
     if (event.key === "Backspace") {
       event.preventDefault();
       const targetIndex = otp[index] ? index : Math.max(0, index - 1);
@@ -881,6 +891,10 @@ export default function OtpForm({
           <p className="text-center text-xs text-slate-500">
             Paste the full code into any box, or enter each digit. Check your
             spam folder if the message is missing.
+          </p>
+          <p className="text-center text-[10px] text-slate-400">
+            Tip: press Ctrl+Backspace or ⌘+Backspace in a code box to clear all
+            digits.
           </p>
         </div>
 

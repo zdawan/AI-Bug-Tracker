@@ -108,6 +108,7 @@ const TROUBLESHOOTING_TOPICS = [
       "Enter one digit in each box; focus moves forward automatically.",
       "Use the left and right arrow keys to move between boxes.",
       "Use Backspace to clear a digit or move back to the previous box.",
+      "Press Ctrl+Backspace or Command+Backspace in a code box to clear all six digits.",
       "Paste the complete six-digit code into one box to fill the entry.",
     ],
     note: "Non-numeric characters are ignored when a code is pasted.",
