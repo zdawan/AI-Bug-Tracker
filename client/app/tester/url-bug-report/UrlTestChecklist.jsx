@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import UrlTestRunLibrary from "./UrlTestRunLibrary";
 
 const TEST_STATUSES = [
   { id: "not-tested", label: "Not tested", icon: ListChecks },
@@ -77,6 +78,8 @@ function parseHttpUrl(value) {
 function createScenario(url, title = "") {
   const parsedUrl = parseHttpUrl(url);
   if (!parsedUrl) return null;
+  parsedUrl.username = "";
+  parsedUrl.password = "";
 
   const lastSegment = decodePathSegment(
     parsedUrl.pathname.split("/").filter(Boolean).at(-1) || "",
@@ -580,6 +583,19 @@ export default function UrlTestChecklist({
     setActiveScenarioId(scenario.id);
     onSelect(scenario.url);
     setAnnouncement(`${scenario.title} is now the active report destination.`);
+  };
+
+  const handleLoadSavedRun = (run) => {
+    setScenarios(run.scenarios);
+    setSelectedIds(new Set());
+    setSearch("");
+    setStatusFilter("all");
+    const activeScenario =
+      run.scenarios.find(
+        (scenario) => scenario.id === run.activeScenarioId,
+      ) || run.scenarios[0];
+    setActiveScenarioId(activeScenario?.id || "");
+    if (activeScenario) onSelect(activeScenario.url);
   };
 
   const handleAddCurrentPage = () => {
@@ -1112,6 +1128,12 @@ export default function UrlTestChecklist({
             </div>
           </div>
         )}
+        <UrlTestRunLibrary
+          value={value}
+          scenarios={scenarios}
+          activeScenarioId={activeScenarioId}
+          onLoadRun={handleLoadSavedRun}
+        />
       </div>
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
