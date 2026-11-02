@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  ClipboardPaste,
   Eye,
   EyeOff,
   RefreshCw,
@@ -11,6 +12,8 @@ import {
 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
+
+const CODE_REVEAL_SECONDS = 15;
 
 export default function OtpForm({
   email,
@@ -25,15 +28,35 @@ export default function OtpForm({
 }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [codeError, setCodeError] = useState("");
+  const [clipboardMessage, setClipboardMessage] = useState("");
   const [isCodeVisible, setIsCodeVisible] = useState(true);
+  const [autoVerify, setAutoVerify] = useState(false);
+  const [revealSeconds, setRevealSeconds] = useState(0);
   const inputRefs = useRef([]);
   const focusedInputIndex = useRef(0);
+  const revealTimer = useRef(null);
   const enteredDigits = otp.filter(Boolean).length;
   const visibleError = codeError || error;
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(
+    () => () => {
+      if (revealTimer.current !== null) {
+        window.clearInterval(revealTimer.current);
+      }
+    },
+    [],
+  );
+
+  const stopRevealTimer = () => {
+    if (revealTimer.current !== null) {
+      window.clearInterval(revealTimer.current);
+      revealTimer.current = null;
+    }
+  };
 
   const applyPastedCode = (value, currentIndex) => {
     const digits = value.replace(/\D/g, "");
@@ -54,21 +77,38 @@ export default function OtpForm({
 
     setOtp(updatedOtp);
     setCodeError("");
+    setClipboardMessage("");
     onCodeChange?.();
 
     const firstEmptyIndex = updatedOtp.findIndex(
       (digit, index) => index >= startIndex && !digit,
     );
     inputRefs.current[firstEmptyIndex < 0 ? otp.length - 1 : firstEmptyIndex]?.focus();
-    return true;
+    return updatedOtp.join("");
   };
 
-  const handleOtpChange = (value, index) => {
+  const maybeAutoVerify = (event, code) => {
+    if (
+      !autoVerify ||
+      isVerifying ||
+      isSending ||
+      !/^\d{6}$/.test(code)
+    ) {
+      return;
+    }
+
     setCodeError("");
+    onVerify?.(event, code);
+  };
+
+  const handleOtpChange = (value, index, event) => {
+    setCodeError("");
+    setClipboardMessage("");
     const digits = value.replace(/\D/g, "");
 
     if (digits.length > 1) {
-      applyPastedCode(digits, index);
+      const completedCode = applyPastedCode(digits, index);
+      maybeAutoVerify(event, completedCode || "");
       return;
     }
 
@@ -76,6 +116,7 @@ export default function OtpForm({
     updatedOtp[index] = digits;
     setOtp(updatedOtp);
     onCodeChange?.();
+    maybeAutoVerify(event, updatedOtp.join(""));
 
     if (digits && index < 5) {
       inputRefs.current[index + 1]?.focus();
@@ -93,6 +134,7 @@ export default function OtpForm({
           return updatedOtp;
         });
         setCodeError("");
+        setClipboardMessage("");
         onCodeChange?.();
       }
       inputRefs.current[targetIndex]?.focus();
@@ -108,6 +150,7 @@ export default function OtpForm({
           return updatedOtp;
         });
         setCodeError("");
+        setClipboardMessage("");
         onCodeChange?.();
       }
       return;
@@ -138,7 +181,39 @@ export default function OtpForm({
 
   const handlePaste = (event, index) => {
     event.preventDefault();
-    applyPastedCode(event.clipboardData.getData("text"), index);
+    const clipboardText = event.clipboardData.getData("text");
+    const completedCode = applyPastedCode(clipboardText, index);
+    maybeAutoVerify(event, completedCode || "");
+  };
+
+  const handlePasteFromClipboard = async (event) => {
+    setClipboardMessage("");
+
+    try {
+      if (!navigator.clipboard?.readText) {
+        setClipboardMessage(
+          "Clipboard access is unavailable. Paste into a code box instead.",
+        );
+        return;
+      }
+
+      const clipboardText = await navigator.clipboard.readText();
+      const pastedCode = applyPastedCode(clipboardText, 0);
+
+      if (!pastedCode) {
+        setClipboardMessage(
+          "No digits were found. Copy the code first, then try again.",
+        );
+        return;
+      }
+
+      setClipboardMessage("Verification code pasted from clipboard.");
+      maybeAutoVerify(event, pastedCode);
+    } catch {
+      setClipboardMessage(
+        "Clipboard access was blocked. Paste into a code box instead.",
+      );
+    }
   };
 
   const handleSubmit = (event) => {
@@ -147,6 +222,7 @@ export default function OtpForm({
     const enteredOtp = otp.join("");
     if (!/^\d{6}$/.test(enteredOtp)) {
       setCodeError("Enter all 6 digits before continuing.");
+      setClipboardMessage("");
       const firstEmptyIndex = otp.findIndex((digit) => !digit);
       inputRefs.current[firstEmptyIndex < 0 ? 0 : firstEmptyIndex]?.focus();
       return;
@@ -161,23 +237,48 @@ export default function OtpForm({
 
     const sent = await onResend();
     if (sent) {
+      stopRevealTimer();
+      setRevealSeconds(0);
       setOtp(["", "", "", "", "", ""]);
+      setIsCodeVisible(true);
       setCodeError("");
+      setClipboardMessage("");
       onCodeChange?.();
       inputRefs.current[0]?.focus();
     }
   };
 
   const handleResetCode = () => {
+    stopRevealTimer();
+    setRevealSeconds(0);
     setOtp(["", "", "", "", "", ""]);
     setIsCodeVisible(true);
     setCodeError("");
+    setClipboardMessage("");
     onCodeChange?.();
     inputRefs.current[0]?.focus();
   };
 
   const toggleCodeVisibility = () => {
-    setIsCodeVisible((visible) => !visible);
+    if (isCodeVisible) {
+      stopRevealTimer();
+      setRevealSeconds(0);
+      setIsCodeVisible(false);
+    } else {
+      stopRevealTimer();
+      setIsCodeVisible(true);
+      setRevealSeconds(CODE_REVEAL_SECONDS);
+      revealTimer.current = window.setInterval(() => {
+        setRevealSeconds((remaining) => {
+          if (remaining <= 1) {
+            stopRevealTimer();
+            setIsCodeVisible(false);
+            return 0;
+          }
+          return remaining - 1;
+        });
+      }, 1000);
+    }
 
     window.requestAnimationFrame(() => {
       const input = inputRefs.current[focusedInputIndex.current];
@@ -240,13 +341,27 @@ export default function OtpForm({
               Verification code
             </label>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={handlePasteFromClipboard}
+                disabled={isVerifying || isSending}
+                aria-label="Paste verification code from clipboard"
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ClipboardPaste size={14} aria-hidden="true" />
+                <span className="hidden sm:inline">Paste</span>
+              </button>
               <button
                 type="button"
                 onClick={toggleCodeVisibility}
                 disabled={isVerifying || isSending || enteredDigits === 0}
                 aria-controls="tester-otp-fields"
-                aria-label={isCodeVisible ? "Hide verification code" : "Show verification code"}
+                aria-label={
+                  isCodeVisible
+                    ? "Hide verification code"
+                    : "Show verification code"
+                }
                 className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isCodeVisible ? (
@@ -267,6 +382,11 @@ export default function OtpForm({
               </button>
             </div>
           </div>
+          {isCodeVisible && revealSeconds > 0 && (
+            <p className="text-right text-[10px] text-slate-500">
+              Code hides in {formatTime(revealSeconds)} for privacy.
+            </p>
+          )}
 
           <div
             id="tester-otp-fields"
@@ -290,7 +410,9 @@ export default function OtpForm({
                 maxLength={index === 0 ? 6 : 1}
                 disabled={isVerifying || isSending}
                 value={digit}
-                onChange={(event) => handleOtpChange(event.target.value, index)}
+                onChange={(event) =>
+                  handleOtpChange(event.target.value, index, event)
+                }
                 onKeyDown={(event) => handleKeyDown(event, index)}
                 onPaste={(event) => handlePaste(event, index)}
                 onFocus={(event) => {
@@ -331,6 +453,51 @@ export default function OtpForm({
               />
             </div>
           </div>
+
+          <label
+            htmlFor="tester-otp-auto-verify"
+            className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 transition ${
+              autoVerify
+                ? "border-violet-200 bg-violet-50/60"
+                : "border-slate-200 bg-white"
+            } ${
+              isVerifying || isSending
+                ? "cursor-not-allowed opacity-60"
+                : "hover:border-violet-200"
+            }`}
+          >
+            <input
+              id="tester-otp-auto-verify"
+              type="checkbox"
+              checked={autoVerify}
+              onChange={(event) => setAutoVerify(event.target.checked)}
+              disabled={isVerifying || isSending}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-medium text-slate-700">
+                Verify automatically when complete
+              </span>
+              <span className="mt-0.5 block text-[10px] leading-4 text-slate-500">
+                When enabled, the code is submitted as soon as all six digits
+                are entered or pasted.
+              </span>
+            </span>
+          </label>
+
+          {clipboardMessage && (
+            <p
+              role="status"
+              aria-live="polite"
+              className={`text-center text-[10px] ${
+                clipboardMessage.startsWith("Verification code pasted")
+                  ? "text-emerald-700"
+                  : "text-amber-700"
+              }`}
+            >
+              {clipboardMessage}
+            </p>
+          )}
 
           <p className="text-center text-xs text-slate-500">
             Paste the full code into any box, or enter each digit. Check your
