@@ -650,6 +650,7 @@ export default function UrlTestRunLibrary({
   const [isOpen, setIsOpen] = useState(false);
   const [runName, setRunName] = useState("");
   const [search, setSearch] = useState("");
+  const [resultFilter, setResultFilter] = useState("all");
   const [activeRunId, setActiveRunId] = useState("");
   const [renamingRunId, setRenamingRunId] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
@@ -693,9 +694,20 @@ export default function UrlTestRunLibrary({
       : [];
   const filteredRuns = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) return runs;
-
     return runs.filter((run) => {
+      const counts = getRunCounts(run.scenarios);
+      const matchesResult =
+        resultFilter === "issues"
+          ? counts["issue-found"] > 0
+          : resultFilter === "passed"
+            ? run.scenarios.length > 0 &&
+              counts.passed === run.scenarios.length
+            : resultFilter === "untested"
+              ? counts["not-tested"] > 0
+              : true;
+      if (!matchesResult) return false;
+      if (!normalizedSearch) return true;
+
       const matchesName = run.name.toLowerCase().includes(normalizedSearch);
       const matchesPage = run.scenarios.some(
         (scenario) =>
@@ -704,7 +716,7 @@ export default function UrlTestRunLibrary({
       );
       return matchesName || matchesPage;
     });
-  }, [runs, search]);
+  }, [runs, search, resultFilter]);
 
   const commitRuns = (nextRuns) => {
     if (!storageKey) {
@@ -953,7 +965,10 @@ export default function UrlTestRunLibrary({
     }
   };
 
-  const handleClearSearch = () => setSearch("");
+  const handleClearFilters = () => {
+    setSearch("");
+    setResultFilter("all");
+  };
 
   const canSaveNewRun = scenarios.length > 0 && runs.length < MAX_SAVED_RUNS;
   const remainingSlots = MAX_SAVED_RUNS - runs.length;
@@ -1172,24 +1187,46 @@ export default function UrlTestRunLibrary({
                 Export backup
               </button>
               {runs.length > 0 && (
-                <label className="relative min-w-0 sm:w-52">
-                  <Search
-                    size={13}
-                    aria-hidden="true"
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <span className="sr-only">Search saved test runs</span>
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search runs or pages"
-                    className="min-h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[10px] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-                  />
-                </label>
+                <>
+                  <label>
+                    <span className="sr-only">Filter runs by result</span>
+                    <select
+                      value={resultFilter}
+                      onChange={(event) => setResultFilter(event.target.value)}
+                      className="min-h-8 max-w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    >
+                      <option value="all">All results</option>
+                      <option value="issues">Contains issues</option>
+                      <option value="passed">All pages passed</option>
+                      <option value="untested">Contains untested pages</option>
+                    </select>
+                  </label>
+                  <label className="relative min-w-0 sm:w-52">
+                    <Search
+                      size={13}
+                      aria-hidden="true"
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <span className="sr-only">Search saved test runs</span>
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Search runs or pages"
+                      className="min-h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[10px] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    />
+                  </label>
+                </>
               )}
             </div>
           </div>
+
+          {isLoaded && runs.length > 0 && (
+            <p className="text-[10px] text-slate-500" aria-live="polite">
+              Showing {filteredRuns.length} of {runs.length} saved run
+              {runs.length === 1 ? "" : "s"}
+            </p>
+          )}
 
           {!isLoaded ? (
             <div
@@ -1224,14 +1261,14 @@ export default function UrlTestRunLibrary({
             ) : (
               <div className="rounded-xl border border-dashed border-slate-300 px-4 py-5 text-center">
                 <p className="text-xs font-semibold text-slate-700">
-                  No saved runs match “{search}”.
+                  No saved runs match the current search and result filter.
                 </p>
                 <button
                   type="button"
-                  onClick={handleClearSearch}
+                  onClick={handleClearFilters}
                   className="mt-2 text-[10px] font-semibold text-violet-700 underline underline-offset-2"
                 >
-                  Clear search
+                  Clear search and filter
                 </button>
               </div>
             )
