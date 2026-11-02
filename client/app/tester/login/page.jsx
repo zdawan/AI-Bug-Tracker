@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ArrowLeft,
-  RefreshCw,
   ShieldCheck,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -322,6 +321,7 @@ export default function TesterLoginPage() {
             isSending={isSending}
             isVerifying={isVerifying}
             error={authError}
+            onCodeChange={() => setAuthError("")}
             onVerify={verifyOtp}
           />
         )}

@@ -13,6 +13,7 @@ export default function OtpForm({
   isSending = false,
   isVerifying = false,
   error = "",
+  onCodeChange,
   onVerify,
 }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -31,6 +32,7 @@ export default function OtpForm({
       });
 
       setOtp(updatedOtp);
+      onCodeChange?.();
       inputRefs.current[Math.min(pastedDigits.length, 5)]?.focus();
       return;
     }
@@ -38,6 +40,7 @@ export default function OtpForm({
     const updatedOtp = [...otp];
     updatedOtp[index] = digits;
     setOtp(updatedOtp);
+    onCodeChange?.();
 
     if (digits && index < 5) {
       inputRefs.current[index + 1]?.focus();
@@ -75,6 +78,7 @@ export default function OtpForm({
     });
 
     setOtp(updatedOtp);
+    onCodeChange?.();
     inputRefs.current[Math.min(digits.length, 5)]?.focus();
   };
 
@@ -102,6 +106,7 @@ export default function OtpForm({
 
   const handleResetCode = () => {
     setOtp(["", "", "", "", "", ""]);
+    onCodeChange?.();
     inputRefs.current[0]?.focus();
   };
 
