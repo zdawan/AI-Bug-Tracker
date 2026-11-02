@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  AlertCircle,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -15,7 +14,6 @@ import {
   KeyRound,
   LifeBuoy,
   LoaderCircle,
-  Mail,
   RefreshCw,
   ShieldCheck,
   WifiOff,
@@ -232,7 +230,14 @@ function RecoveryPathCard({ path, selected, onSelect }) {
   );
 }
 
-function RecoveryStep({ step, checked, tone, onToggle, onAction }) {
+function RecoveryStep({
+  step,
+  checked,
+  tone,
+  disabled,
+  onToggle,
+  onAction,
+}) {
   const actionStep = Boolean(step.action);
   const style = TONE_STYLES[tone];
 
@@ -271,6 +276,7 @@ function RecoveryStep({ step, checked, tone, onToggle, onAction }) {
           <button
             type="button"
             onClick={onAction}
+            disabled={disabled}
             className="mt-2 inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
           >
             {step.actionLabel}
@@ -408,6 +414,7 @@ export default function OtpRecoveryGuide({
     enteredDigits,
   });
   const RecommendedIcon = recommendedAction.icon;
+  const ActiveIcon = activePath.icon;
   const allStepsComplete = currentSteps.length === activePath.steps.length;
   const activePathIndex = RECOVERY_PATHS.findIndex(
     (path) => path.id === activePath.id,
@@ -567,10 +574,7 @@ export default function OtpRecoveryGuide({
                     TONE_STYLES[activePath.tone].icon
                   }`}
                 >
-                  {(() => {
-                    const ActiveIcon = activePath.icon;
-                    return <ActiveIcon size={15} aria-hidden="true" />;
-                  })()}
+                  <ActiveIcon size={15} aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
                   <h3 className="text-xs font-semibold text-slate-800">
@@ -617,8 +621,10 @@ export default function OtpRecoveryGuide({
                     step={step}
                     checked={completedSet.has(step.id)}
                     tone={activePath.tone}
+                    disabled={isSending || isVerifying}
                     onToggle={() => toggleStep(step.id)}
                     onAction={() => {
+                      if (isSending || isVerifying) return;
                       if (step.action === "clear") onClearCode?.();
                       if (step.action === "focus") onFocusCode?.();
                       setStatusMessage(
