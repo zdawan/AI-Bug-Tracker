@@ -392,6 +392,73 @@ function makeComparisonReport(leftRun, rightRun, changes, counts) {
   ].join("\n");
 }
 
+function makeComparisonCsv(leftRun, rightRun, changes, counts) {
+  const leftCounts = getRunCounts(leftRun.scenarios);
+  const rightCounts = getRunCounts(rightRun.scenarios);
+  const escapeCell = (value) => {
+    const text = String(value ?? "").replace(/[\r\n\t]+/g, " ");
+    const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+    return `"${safeText.replace(/"/g, '""')}"`;
+  };
+  const rows = [
+    ["Saved test run comparison"],
+    ["Baseline", leftRun.name, "Updated", formatRunDate(leftRun.updatedAt)],
+    ["Comparison", rightRun.name, "Updated", formatRunDate(rightRun.updatedAt)],
+    [
+      "Baseline pages",
+      leftRun.scenarios.length,
+      "Passed",
+      leftCounts.passed,
+      "Issues",
+      leftCounts["issue-found"],
+      "Not tested",
+      leftCounts["not-tested"],
+    ],
+    [
+      "Comparison pages",
+      rightRun.scenarios.length,
+      "Passed",
+      rightCounts.passed,
+      "Issues",
+      rightCounts["issue-found"],
+      "Not tested",
+      rightCounts["not-tested"],
+    ],
+    [
+      "Added",
+      counts.added,
+      "Removed",
+      counts.removed,
+      "Changed",
+      counts.changed,
+    ],
+    [
+      "New issues",
+      counts.newIssues,
+      "Issues marked passed",
+      counts.resolvedIssues,
+    ],
+    [],
+    ["Change type", "Outcome", "Page name", "Details"],
+    ...(changes.length
+      ? changes.map((change) => [
+          change.kind,
+          change.outcome === "new-issue"
+            ? "New issue"
+            : change.outcome === "resolved"
+              ? "Marked passed"
+              : "",
+          change.title,
+          change.details.join("; "),
+        ])
+      : [["none", "", "", "No page changes detected."]]),
+    [],
+    ["Privacy", "Full URLs, query values, fragments, and note contents are excluded. Review page names before sharing."],
+  ];
+
+  return `\uFEFF${rows.map((row) => row.map(escapeCell).join(",")).join("\r\n")}`;
+}
+
 function formatRunDate(value) {
   if (!isValidTimestamp(value)) return "Date unavailable";
 
@@ -553,6 +620,7 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
     changes,
     counts,
   );
+  const comparisonCsv = makeComparisonCsv(leftRun, rightRun, changes, counts);
   const copyComparison = async () => {
     try {
       if (!navigator.clipboard?.writeText) {
@@ -582,6 +650,26 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
       toast.success("Comparison report downloaded.");
     } catch {
       toast.error("Could not download the comparison report.");
+    }
+  };
+  const downloadComparisonCsv = () => {
+    try {
+      const blob = new Blob([comparisonCsv], {
+        type: "text/csv;charset=utf-8",
+      });
+      const downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = `tester-run-comparison-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      toast.success("Comparison CSV downloaded.");
+    } catch {
+      toast.error("Could not download the comparison CSV.");
     }
   };
 
@@ -634,6 +722,14 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
           >
             <Download size={11} aria-hidden="true" />
             Download report
+          </button>
+          <button
+            type="button"
+            onClick={downloadComparisonCsv}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-800 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          >
+            <Download size={11} aria-hidden="true" />
+            Download CSV
           </button>
           <button
             type="button"
