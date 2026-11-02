@@ -278,12 +278,15 @@ function MetricCard({
 function WeeklyActivityChart({
   data = [],
   previousData = [],
+  reports = [],
   loading = false,
   days = 7,
   onRangeChange,
+  onViewReport,
   previousTotal = 0,
 }) {
   const [comparePrevious, setComparePrevious] = useState(false);
+  const [showAllSelectedReports, setShowAllSelectedReports] = useState(false);
   const comparisonAvailable = previousData.length === data.length;
   const maxCount = Math.max(
     1,
@@ -326,6 +329,32 @@ function WeeklyActivityChart({
   const selectedDay = data.find(
     (day) => (day.key || day.day) === selectedDayKey,
   );
+  const selectedReports = useMemo(() => {
+    if (!selectedDay?.key) return [];
+
+    return reports.filter((report) => {
+      const date = getDate(report.createdAt || report.created_at);
+      if (!date) return false;
+
+      const reportDayKey = `${date.getFullYear()}-${String(
+        date.getMonth() + 1,
+      ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      return reportDayKey === selectedDay.key;
+    });
+  }, [reports, selectedDay]);
+  const selectedCategories = useMemo(() => {
+    const categories = new Map();
+    selectedReports.forEach((report) => {
+      const category =
+        typeof report.category === "string" && report.category.trim()
+          ? report.category.trim()
+          : "Uncategorized";
+      categories.set(category, (categories.get(category) || 0) + 1);
+    });
+    return [...categories.entries()].sort(
+      (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+    );
+  }, [selectedReports]);
 
   const exportActivity = () => {
     let downloadUrl = "";
@@ -478,11 +507,12 @@ function WeeklyActivityChart({
               type="button"
               aria-pressed={isSelected}
               aria-label={`${day.day}: ${count} ${count === 1 ? "report" : "reports"}${comparePrevious ? `, previous period ${previousCount} ${previousCount === 1 ? "report" : "reports"}` : ""}. Select for details.`}
-              onClick={() =>
+              onClick={() => {
+                setShowAllSelectedReports(false);
                 setSelectedDayKey((current) =>
                   current === dayKey ? "" : dayKey,
-                )
-              }
+                );
+              }}
               className={`flex min-w-0 flex-col items-center rounded-xl px-1 pb-1 pt-2 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
                 isSelected ? "bg-violet-50 ring-1 ring-violet-200" : ""
               }`}
@@ -605,13 +635,127 @@ function WeeklyActivityChart({
           )}
           <button
             type="button"
-            onClick={() => setSelectedDayKey("")}
+            onClick={() => {
+              setSelectedDayKey("");
+              setShowAllSelectedReports(false);
+            }}
             aria-label="Clear selected activity day"
             className="ml-auto inline-flex h-7 items-center rounded-lg border border-violet-200 bg-white px-2 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
           >
             Clear
           </button>
         </div>
+      )}
+
+      {selectedDay && (
+        <section
+          className="mt-3 rounded-xl border border-slate-200 bg-white p-3"
+          aria-label="Selected day report details"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-semibold text-slate-800">
+                Reports created on this day
+              </h3>
+              <p className="mt-1 text-[10px] text-slate-500">
+                {selectedReports.length
+                  ? `${formatCount(selectedReports.length)} matching reports`
+                  : "No report details are available for this date."}
+              </p>
+            </div>
+            {selectedReports.length > 0 && (
+              <p className="text-[10px] text-slate-500">
+                {formatCount(
+                  selectedReports.filter((report) =>
+                    isHighSeverity(report.severity),
+                  ).length,
+                )}{" "}
+                high severity
+              </p>
+            )}
+          </div>
+
+          {selectedCategories.length > 0 && (
+            <div
+              className="mt-3 flex flex-wrap gap-1.5"
+              aria-label="Categories"
+            >
+              {selectedCategories.slice(0, 4).map(([category, count]) => (
+                <span
+                  key={category}
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-600"
+                >
+                  {category} · {formatCount(count)}
+                </span>
+              ))}
+              {selectedCategories.length > 4 && (
+                <span className="px-1 py-1 text-[10px] text-slate-500">
+                  +{selectedCategories.length - 4} more categories
+                </span>
+              )}
+            </div>
+          )}
+
+          {selectedReports.length > 0 && (
+            <ul className="mt-2 divide-y divide-slate-100">
+              {selectedReports
+                .slice(0, showAllSelectedReports ? undefined : 5)
+                .map((report, index) => {
+                  const title =
+                    (typeof report.title === "string" && report.title.trim()) ||
+                    (typeof report.summary === "string" &&
+                      report.summary.trim()) ||
+                    `Untitled report ${index + 1}`;
+                  const reportId =
+                    report._id ||
+                    report.id ||
+                    `${selectedDay.key}-${index}`;
+                  const content = (
+                    <>
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">
+                        {title}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-slate-500">
+                        {report.severity || "Unspecified severity"}
+                      </span>
+                    </>
+                  );
+
+                  return (
+                    <li key={reportId}>
+                      {onViewReport ? (
+                        <button
+                          type="button"
+                          onClick={() => onViewReport(report)}
+                          className="flex w-full items-center gap-3 py-2 text-left transition hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3 py-2">
+                          {content}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
+          {selectedReports.length > 5 && (
+            <button
+              type="button"
+              onClick={() =>
+                setShowAllSelectedReports((showAll) => !showAll)
+              }
+              aria-expanded={showAllSelectedReports}
+              className="mt-2 rounded-lg px-2 py-1 text-[10px] font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            >
+              {showAllSelectedReports
+                ? "Show fewer reports"
+                : `Show all ${formatCount(selectedReports.length)} reports`}
+            </button>
+          )}
+        </section>
       )}
 
       {data.length > 0 && (
@@ -2950,9 +3094,11 @@ export default function AnalyticsOverview({
           <WeeklyActivityChart
             data={activity}
             previousData={previousActivity}
+            reports={reports}
             days={activityDays}
             loading={loading}
             onRangeChange={setActivityDays}
+            onViewReport={onViewReport}
             previousTotal={previousPeriodTotal}
           />
         </div>
