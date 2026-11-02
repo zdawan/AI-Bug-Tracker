@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
 import { ArrowLeft, ArrowRight, RefreshCw, Clock3 } from "lucide-react";
 import { ShieldCheck } from "lucide-react";
 
@@ -17,14 +16,17 @@ export default function OtpForm({
   onVerify,
 }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [codeError, setCodeError] = useState("");
   const inputRefs = useRef([]);
   const enteredDigits = otp.filter(Boolean).length;
+  const visibleError = codeError || error;
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
 
   const handleOtpChange = (value, index) => {
+    setCodeError("");
     const digits = value.replace(/\D/g, "");
 
     // Support pasting a complete OTP
@@ -62,6 +64,7 @@ export default function OtpForm({
           updatedOtp[targetIndex] = "";
           return updatedOtp;
         });
+        setCodeError("");
         onCodeChange?.();
       }
       inputRefs.current[targetIndex]?.focus();
@@ -76,6 +79,7 @@ export default function OtpForm({
           updatedOtp[index] = "";
           return updatedOtp;
         });
+        setCodeError("");
         onCodeChange?.();
       }
       return;
@@ -121,6 +125,7 @@ export default function OtpForm({
     });
 
     setOtp(updatedOtp);
+    setCodeError("");
     onCodeChange?.();
     inputRefs.current[Math.min(digits.length, 5)]?.focus();
   };
@@ -130,10 +135,13 @@ export default function OtpForm({
 
     const enteredOtp = otp.join("");
     if (!/^\d{6}$/.test(enteredOtp)) {
-      toast.error("Enter the complete 6-digit verification code.");
+      setCodeError("Enter all 6 digits before continuing.");
+      const firstEmptyIndex = otp.findIndex((digit) => !digit);
+      inputRefs.current[firstEmptyIndex < 0 ? 0 : firstEmptyIndex]?.focus();
       return;
     }
 
+    setCodeError("");
     onVerify?.(event, enteredOtp);
   };
 
@@ -143,12 +151,15 @@ export default function OtpForm({
     const sent = await onResend();
     if (sent) {
       setOtp(["", "", "", "", "", ""]);
+      setCodeError("");
+      onCodeChange?.();
       inputRefs.current[0]?.focus();
     }
   };
 
   const handleResetCode = () => {
     setOtp(["", "", "", "", "", ""]);
+    setCodeError("");
     onCodeChange?.();
     inputRefs.current[0]?.focus();
   };
@@ -229,8 +240,8 @@ export default function OtpForm({
                 inputMode="numeric"
                 autoComplete={index === 0 ? "one-time-code" : "off"}
                 aria-label={`OTP digit ${index + 1}`}
-                aria-invalid={Boolean(error)}
-                aria-describedby="tester-otp-progress"
+                aria-invalid={Boolean(visibleError)}
+                aria-describedby={`tester-otp-progress${visibleError ? " tester-otp-error" : ""}`}
                 maxLength={index === 0 ? 6 : 1}
                 disabled={isVerifying || isSending}
                 value={digit}
@@ -286,13 +297,14 @@ export default function OtpForm({
           {isVerifying ? "Verifying..." : "Verify and continue"}
           {!isVerifying && <ArrowRight size={19} aria-hidden="true" />}
         </button>
-        {error && (
+        {visibleError && (
           <p
+            id="tester-otp-error"
             role="alert"
             aria-live="assertive"
             className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-center text-sm text-rose-800"
           >
-            {error}
+            {visibleError}
           </p>
         )}
       </form>
