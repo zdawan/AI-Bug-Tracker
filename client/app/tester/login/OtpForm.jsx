@@ -138,10 +138,19 @@ export default function OtpForm({
           ? "The code was not accepted. The code itself is never recorded."
           : "The server accepted the verification request.",
       );
+      if (error) {
+        const firstEmptyIndex = otp.findIndex((digit) => !digit);
+        const correctionIndex = firstEmptyIndex < 0 ? 0 : firstEmptyIndex;
+        window.requestAnimationFrame(() => {
+          const correctionInput = inputRefs.current[correctionIndex];
+          correctionInput?.focus();
+          correctionInput?.select();
+        });
+      }
     }
 
     previousVerifyState.current = isVerifying;
-  }, [error, isVerifying]);
+  }, [error, isVerifying, otp]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -772,7 +781,9 @@ export default function OtpForm({
                   event.target.select();
                 }}
                 className={`h-12 w-10 rounded-xl border bg-white text-center text-xl font-semibold text-slate-950 outline-none transition sm:h-14 sm:w-12 ${
-                  digit
+                  visibleError
+                    ? "border-rose-300 bg-rose-50"
+                    : digit
                     ? "border-purple-500 bg-purple-50/50"
                     : "border-slate-300"
                 } focus:border-purple-600 focus:ring-4 focus:ring-purple-100`}
