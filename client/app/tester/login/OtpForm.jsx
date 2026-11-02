@@ -14,6 +14,7 @@ import {
 import { ShieldCheck } from "lucide-react";
 import OtpHelpPanel from "./OtpHelpPanel";
 import OtpActivityPanel from "./OtpActivityPanel";
+import OtpRecoveryGuide from "./OtpRecoveryGuide";
 
 const CODE_REVEAL_SECONDS = 15;
 const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
@@ -33,9 +34,11 @@ function extractOtpDigits(value) {
 
   const separatedCodes = [
     ...text.matchAll(
-      /(?:^|[^A-Za-z0-9])(\d(?:[\s-]+\d){5})(?![\s-]*\d)/g,
+      /(?:^|[^A-Za-z0-9])((?:\d+[\s-]+)*\d+)(?![\s-]*\d)(?![A-Za-z0-9])/g,
     ),
-  ].map((match) => match[1].replace(/\D/g, ""));
+  ]
+    .map((match) => match[1].replace(/\D/g, ""))
+    .filter((digits) => digits.length === 6);
   const uniqueSeparatedCodes = [...new Set(separatedCodes)];
   if (uniqueSeparatedCodes.length === 1) return uniqueSeparatedCodes[0];
   if (uniqueSeparatedCodes.length > 1) return "";
@@ -281,6 +284,7 @@ export default function OtpForm({
     setOtp(updatedOtp);
     setCodeError("");
     setClipboardMessage("");
+    if (isOnline) setNetworkMessage("");
     recordActivity(
       "code_pasted",
       `${updatedOtp.filter(Boolean).length} of 6 digits were filled. The code value was not recorded.`,
@@ -320,6 +324,7 @@ export default function OtpForm({
   const handleOtpChange = (value, index, event) => {
     setCodeError("");
     setClipboardMessage("");
+    if (isOnline) setNetworkMessage("");
     const digits = value.replace(/\D/g, "");
 
     if (digits.length > 1) {
@@ -551,6 +556,17 @@ export default function OtpForm({
     focusedInputIndex.current = targetIndex;
     targetInput?.focus();
     targetInput?.select();
+  };
+
+  const focusCodeFromGuide = () => {
+    setIsCodeVisible(false);
+    stopRevealTimer();
+    setRevealSeconds(0);
+    const firstEmptyIndex = otp.findIndex((digit) => !digit);
+    const targetIndex = firstEmptyIndex < 0 ? 0 : firstEmptyIndex;
+    focusedInputIndex.current = targetIndex;
+    inputRefs.current[targetIndex]?.focus();
+    inputRefs.current[targetIndex]?.select();
   };
 
   const toggleCodeVisibility = () => {
@@ -964,6 +980,16 @@ export default function OtpForm({
         onResend={handleResendCode}
         onBack={onBack}
         resendCooldown={resendCooldown}
+        isSending={isSending}
+        isVerifying={isVerifying}
+      />
+      <OtpRecoveryGuide
+        onResend={handleResendCode}
+        onFocusCode={focusCodeFromGuide}
+        onClearCode={handleResetCode}
+        resendCooldown={resendCooldown}
+        enteredDigits={enteredDigits}
+        isOnline={isOnline}
         isSending={isSending}
         isVerifying={isVerifying}
       />
