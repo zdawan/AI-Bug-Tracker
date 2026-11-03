@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import SavedRunBulkEditor from "./SavedRunBulkEditor";
 
 const STORAGE_KEY_PREFIX = "tester-url-test-runs-v1";
 const MAX_SAVED_RUNS = 8;
@@ -1101,6 +1102,7 @@ export default function UrlTestRunLibrary({
   });
   const [selectedRunIds, setSelectedRunIds] = useState(() => new Set());
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [isBulkEditorOpen, setIsBulkEditorOpen] = useState(false);
   const [activeRunId, setActiveRunId] = useState("");
   const [renamingRunId, setRenamingRunId] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
@@ -1120,6 +1122,7 @@ export default function UrlTestRunLibrary({
     setComparisonRunIds({ left: "", right: "" });
     setSelectedRunIds(new Set());
     setConfirmBulkDelete(false);
+    setIsBulkEditorOpen(false);
     setPendingLoadRunId("");
     setSearch("");
     setResultFilter("all");
@@ -1212,6 +1215,17 @@ export default function UrlTestRunLibrary({
           right.scenarios.length - left.scenarios.length ||
           Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
       );
+    }
+    if (sortOrder === "most-untested") {
+      return [...matchingRuns].sort((left, right) => {
+        const untestedDifference =
+          getRunCounts(right.scenarios)["not-tested"] -
+          getRunCounts(left.scenarios)["not-tested"];
+        return (
+          untestedDifference ||
+          Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
+        );
+      });
     }
     return matchingRuns;
   }, [runs, search, resultFilter, sortOrder]);
@@ -1432,6 +1446,9 @@ export default function UrlTestRunLibrary({
   };
 
   const visibleRunIds = filteredRuns.map((run) => run.id);
+  useEffect(() => {
+    if (selectedRunIds.size === 0) setIsBulkEditorOpen(false);
+  }, [selectedRunIds]);
   const selectedVisibleRunCount = visibleRunIds.filter((runId) =>
     selectedRunIds.has(runId),
   ).length;
@@ -1482,6 +1499,81 @@ export default function UrlTestRunLibrary({
       );
       toast.success(
         `Deleted ${deletedRuns.length} saved test run${deletedRuns.length === 1 ? "" : "s"}.`,
+      );
+    }
+  };
+
+  const handleBulkRename = (nameUpdates) => {
+    const now = new Date().toISOString();
+    const nextRuns = runs.map((run) => {
+      const nextName = nameUpdates.get(run.id);
+      if (!nextName || nextName === run.name) return run;
+
+      return {
+        ...run,
+        name: nextName,
+        updatedAt: now,
+      };
+    });
+    const renamedCount = nextRuns.filter(
+      (run, index) => run.name !== runs[index].name,
+    ).length;
+
+    if (!renamedCount) {
+      toast.info("The selected saved-run names are already up to date.");
+      return;
+    }
+
+    if (commitRuns(nextRuns)) {
+      setIsBulkEditorOpen(false);
+      setAnnouncement(
+        `Renamed ${renamedCount} saved run${renamedCount === 1 ? "" : "s"}.`,
+      );
+      toast.success(
+        `Renamed ${renamedCount} saved run${renamedCount === 1 ? "" : "s"}.`,
+      );
+    }
+  };
+
+  const handleBulkDuplicate = (duplicateRequests) => {
+    const availableSlots = MAX_SAVED_RUNS - runs.length;
+    if (duplicateRequests.length > availableSlots) {
+      toast.error(
+        `Only ${availableSlots} save slot${availableSlots === 1 ? "" : "s"} remain. Select fewer runs to duplicate.`,
+      );
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const duplicates = duplicateRequests.map(({ run, name }) => {
+      const scenarioIds = new Map(
+        run.scenarios.map((scenario) => [scenario.id, createRunId()]),
+      );
+      return normalizeRun(
+        {
+          ...run,
+          id: createRunId(),
+          name,
+          scenarios: run.scenarios.map((scenario) => ({
+            ...scenario,
+            id: scenarioIds.get(scenario.id),
+          })),
+          activeScenarioId: scenarioIds.get(run.activeScenarioId) || "",
+          createdAt: now,
+          updatedAt: now,
+        },
+        origin,
+      );
+    });
+
+    if (commitRuns([...duplicates, ...runs])) {
+      setSelectedRunIds(new Set(duplicates.map((run) => run.id)));
+      setIsBulkEditorOpen(false);
+      setAnnouncement(
+        `Created ${duplicates.length} saved-run cop${duplicates.length === 1 ? "y" : "ies"}.`,
+      );
+      toast.success(
+        `Created ${duplicates.length} saved-run cop${duplicates.length === 1 ? "y" : "ies"}.`,
       );
     }
   };
@@ -1849,6 +1941,7 @@ export default function UrlTestRunLibrary({
                       <option value="name">Name A–Z</option>
                       <option value="most-issues">Most issues</option>
                       <option value="most-pages">Most pages</option>
+                      <option value="most-untested">Most untested pages</option>
                     </select>
                   </label>
                   <label className="relative min-w-0 sm:w-52">
@@ -1908,6 +2001,14 @@ export default function UrlTestRunLibrary({
                 <div className="flex flex-wrap gap-2">
                   {selectedRunIds.size > 0 && (
                     <>
+                      <button
+                        type="button"
+                        onClick={() => setIsBulkEditorOpen(true)}
+                        className={`${RUN_BUTTON} border-violet-200 bg-white text-violet-800 hover:bg-violet-50`}
+                      >
+                        <Pencil size={12} aria-hidden="true" />
+                        Bulk edit
+                      </button>
                       <button
                         type="button"
                         onClick={handleExportSelectedRuns}
@@ -1980,6 +2081,18 @@ export default function UrlTestRunLibrary({
                 </div>
               )}
             </section>
+          )}
+
+          {isBulkEditorOpen && selectedRuns.length > 0 && (
+            <SavedRunBulkEditor
+              runs={runs}
+              selectedRuns={selectedRuns}
+              remainingSlots={remainingSlots}
+              maxRuns={MAX_SAVED_RUNS}
+              onClose={() => setIsBulkEditorOpen(false)}
+              onRename={handleBulkRename}
+              onDuplicate={handleBulkDuplicate}
+            />
           )}
 
           {isLoaded && runs.length > 1 && (
