@@ -508,6 +508,39 @@ export default function ReportDraftWorkspace({
     }
   };
 
+  const handleBulkFavorite = (favorite) => {
+    const selectedDrafts = drafts.filter((draft) => selectedIds.has(draft.id));
+    const eligibleDrafts = selectedDrafts.filter(
+      (draft) => draft.favorite !== favorite,
+    );
+
+    if (!eligibleDrafts.length) {
+      toast.info(
+        favorite
+          ? "All selected drafts are already favorites."
+          : "None of the selected drafts are favorites.",
+      );
+      return;
+    }
+
+    const updatedAt = new Date().toISOString();
+    const eligibleIds = new Set(eligibleDrafts.map((draft) => draft.id));
+    const nextDrafts = drafts.map((draft) =>
+      eligibleIds.has(draft.id)
+        ? { ...draft, favorite, updatedAt }
+        : draft,
+    );
+
+    if (saveDrafts(nextDrafts)) {
+      setConfirmBulkDelete(false);
+      toast.success(
+        `${eligibleDrafts.length} draft${eligibleDrafts.length === 1 ? "" : "s"} ${
+          favorite ? "added to" : "removed from"
+        } favorites.`,
+      );
+    }
+  };
+
   const handleConfirmDelete = (draftId) => {
     const nextDrafts = drafts.filter((draft) => draft.id !== draftId);
 
@@ -646,6 +679,10 @@ export default function ReportDraftWorkspace({
   };
 
   const handleClearSearch = () => setSearch("");
+  const selectedDrafts = drafts.filter((draft) => selectedIds.has(draft.id));
+  const selectedFavoriteCount = selectedDrafts.filter(
+    (draft) => draft.favorite,
+  ).length;
   const allVisibleSelected =
     filteredDrafts.length > 0 &&
     filteredDrafts.every((draft) => selectedIds.has(draft.id));
@@ -898,12 +935,27 @@ export default function ReportDraftWorkspace({
               disabled={!drafts.length}
             />
             {selectedIds.size > 0 && (
-              <DraftActionButton
-                icon={Trash2}
-                label={`Delete selected (${selectedIds.size})`}
-                onClick={handleBulkDelete}
-                tone="danger"
-              />
+              <>
+                <DraftActionButton
+                  icon={Star}
+                  label="Favorite selected"
+                  onClick={() => handleBulkFavorite(true)}
+                  disabled={selectedFavoriteCount === selectedDrafts.length}
+                  tone="primary"
+                />
+                <DraftActionButton
+                  icon={Star}
+                  label="Unfavorite selected"
+                  onClick={() => handleBulkFavorite(false)}
+                  disabled={selectedFavoriteCount === 0}
+                />
+                <DraftActionButton
+                  icon={Trash2}
+                  label={`Delete selected (${selectedIds.size})`}
+                  onClick={handleBulkDelete}
+                  tone="danger"
+                />
+              </>
             )}
           </div>
           <input
