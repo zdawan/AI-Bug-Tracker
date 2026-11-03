@@ -723,6 +723,65 @@ export default function UrlTestChecklist({
     }
   };
 
+  const handleShareSelected = async () => {
+    const selectedScenarios = scenarios.filter((scenario) =>
+      selectedIds.has(scenario.id),
+    );
+    if (!selectedScenarios.length) {
+      toast.info("Select at least one page before copying a summary.");
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      await navigator.clipboard.writeText(
+        makeChecklistExport(selectedScenarios, value),
+      );
+      setAnnouncement(
+        `Copied a sanitized summary of ${selectedScenarios.length} selected page${selectedScenarios.length === 1 ? "" : "s"}.`,
+      );
+      toast.success("Selected-page summary copied.");
+    } catch {
+      toast.error(
+        "Could not copy the selected pages. Try downloading the checklist instead.",
+      );
+    }
+  };
+
+  const handleDownloadSelected = () => {
+    const selectedScenarios = scenarios.filter((scenario) =>
+      selectedIds.has(scenario.id),
+    );
+    if (!selectedScenarios.length) {
+      toast.info("Select at least one page before downloading a summary.");
+      return;
+    }
+
+    try {
+      const content = makeChecklistExport(selectedScenarios, value);
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = `selected-page-checklist-${new Date()
+        .toISOString()
+        .slice(0, 10)}.txt`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      setAnnouncement(
+        `Downloaded a sanitized summary of ${selectedScenarios.length} selected page${selectedScenarios.length === 1 ? "" : "s"}.`,
+      );
+      toast.success("Selected-page checklist downloaded.");
+    } catch {
+      toast.error("Could not download the selected pages.");
+    }
+  };
+
   const handleFilterChange = (nextFilter) => {
     setStatusFilter(nextFilter);
     setConfirmClear(false);
@@ -1055,6 +1114,24 @@ export default function UrlTestChecklist({
               </span>
             </label>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleShareSelected}
+                disabled={!selectedIds.size}
+                className={`${PANEL_BUTTON} border-violet-200 bg-white text-violet-800 hover:bg-violet-50`}
+              >
+                <Clipboard size={13} aria-hidden="true" />
+                Copy selected
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadSelected}
+                disabled={!selectedIds.size}
+                className={`${PANEL_BUTTON} border-slate-200 bg-white text-slate-700 hover:bg-slate-100`}
+              >
+                <Download size={13} aria-hidden="true" />
+                Download selected
+              </button>
               <button
                 type="button"
                 onClick={() => updateSelectedResults("passed")}
