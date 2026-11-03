@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ReportDraftWorkspace from "./ReportDraftWorkspace";
 import ScreenshotEvidenceEditor from "./ScreenshotEvidenceEditor";
 import ReportTemplateLibrary from "./ReportTemplateLibrary";
+import UrlIssueReportBuilder from "./UrlIssueReportBuilder";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -492,6 +493,30 @@ export default function BugForm({ onBugCreated, testUrl }) {
         <p className="text-center text-gray-600 mb-8">
           Found something broken? Let’s fix it together.
         </p>
+
+        {testUrl && (
+          <UrlIssueReportBuilder
+            testUrl={testUrl}
+            currentDescription={description}
+            onApply={({
+              title: generatedTitle,
+              description: generatedDescription,
+              mode,
+            }) => {
+              if (mode === "append" && description.trim()) {
+                setDescription(
+                  `${description.trimEnd()}\n\n${generatedDescription}`,
+                );
+                if (!title.trim()) setTitle(generatedTitle);
+              } else {
+                setTitle(generatedTitle);
+                setDescription(generatedDescription);
+              }
+              clearFieldError("title");
+              clearFieldError("description");
+            }}
+          />
+        )}
 
         {testUrl && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
