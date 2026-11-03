@@ -9,6 +9,7 @@ import ReportDraftWorkspace from "./ReportDraftWorkspace";
 import ScreenshotEvidenceEditor from "./ScreenshotEvidenceEditor";
 import ReportTemplateLibrary from "./ReportTemplateLibrary";
 import UrlIssueReportBuilder from "./UrlIssueReportBuilder";
+import ReportPrivacyReview from "./ReportPrivacyReview";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -768,6 +769,17 @@ export default function BugForm({ onBugCreated, testUrl }) {
             Add details to description
           </button>
         </section>
+
+        <ReportPrivacyReview
+          title={title}
+          description={description}
+          onApplyRedactions={({ title: nextTitle, description: nextDescription }) => {
+            setTitle(nextTitle);
+            setDescription(nextDescription);
+            clearFieldError("title");
+            clearFieldError("description");
+          }}
+        />
 
         {/* Email */}
         <div className="mb-5">
