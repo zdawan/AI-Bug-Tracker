@@ -736,27 +736,61 @@ export default function ReportDraftWorkspace({
 
         {pendingRestore && (
           <div
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3"
+            className="rounded-xl border border-amber-200 bg-amber-50 p-3"
             role="alert"
           >
-            <p className="mr-auto text-xs leading-5 text-amber-900">
+            <p className="text-xs leading-5 text-amber-900">
               Loading “{pendingRestore.name}” replaces the current title and
-              description. Save the current text first if you need it.
+              description. Compare the summary before continuing.
             </p>
-            <button
-              type="button"
-              onClick={() => setPendingRestore(null)}
-              className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={confirmRestoreDraft}
-              className="rounded-lg bg-amber-800 px-3 py-1.5 text-[10px] font-semibold text-white"
-            >
-              Replace current text
-            </button>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {[
+                {
+                  label: "Current form",
+                  title,
+                  description,
+                  tone: "border-amber-200 bg-white",
+                },
+                {
+                  label: "Saved draft",
+                  title: pendingRestore.title,
+                  description: pendingRestore.description,
+                  tone: "border-amber-300 bg-amber-100/70",
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className={`min-w-0 rounded-lg border p-2.5 ${item.tone}`}
+                >
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-amber-800">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 break-words text-[10px] font-medium text-slate-800">
+                    {item.title.trim() || "No title"}
+                  </p>
+                  <p className="mt-1 text-[9px] text-slate-600">
+                    {countWords(item.description)} description words ·{" "}
+                    {item.description.length} characters
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingRestore(null)}
+                className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-[10px] font-semibold text-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmRestoreDraft}
+                className="rounded-lg bg-amber-800 px-3 py-1.5 text-[10px] font-semibold text-white"
+              >
+                Replace current text
+              </button>
+            </div>
           </div>
         )}
 
