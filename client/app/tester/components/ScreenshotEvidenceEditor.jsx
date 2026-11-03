@@ -9,14 +9,20 @@ import {
   Pencil,
   Redo2,
   RotateCcw,
+  Scan,
   Undo2,
   X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
 const MAX_IMAGE_DIMENSION = 10_000;
 const MAX_IMAGE_PIXELS = 40_000_000;
 const MAX_HISTORY_ACTIONS = 100;
+const MIN_ZOOM_PERCENT = 50;
+const MAX_ZOOM_PERCENT = 200;
+const ZOOM_STEP_PERCENT = 25;
 const INITIAL_BRUSH_SIZE = 6;
 const BRUSH_SIZE_STEPS = [3, 6, 10, 16, 24];
 const ANNOTATION_COLORS = [
@@ -285,6 +291,7 @@ export default function ScreenshotEvidenceEditor({
   const activePointerRef = useRef(null);
   const latestActionRef = useRef(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [zoomPercent, setZoomPercent] = useState(100);
   const [isImageReady, setIsImageReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
@@ -300,6 +307,11 @@ export default function ScreenshotEvidenceEditor({
 
   const selectedTool =
     EDITOR_TOOLS.find((tool) => tool.id === activeTool) || EDITOR_TOOLS[0];
+  const zoomScale = zoomPercent / 100;
+  const displayedCanvasSize = {
+    width: Math.round(canvasSize.width * zoomScale),
+    height: Math.round(canvasSize.height * zoomScale),
+  };
   const visibleActions = actions.slice(0, actionIndex + 1);
   const canUndo = actionIndex >= 0;
   const canRedo = actionIndex < actions.length - 1;
@@ -419,6 +431,29 @@ export default function ScreenshotEvidenceEditor({
       if (!(event.ctrlKey || event.metaKey)) return;
 
       const key = event.key.toLowerCase();
+      if (key === "+" || key === "=") {
+        event.preventDefault();
+        setZoomPercent((current) =>
+          Math.min(MAX_ZOOM_PERCENT, current + ZOOM_STEP_PERCENT),
+        );
+        setStatusMessage("Screenshot zoom increased.");
+        return;
+      }
+      if (key === "-") {
+        event.preventDefault();
+        setZoomPercent((current) =>
+          Math.max(MIN_ZOOM_PERCENT, current - ZOOM_STEP_PERCENT),
+        );
+        setStatusMessage("Screenshot zoom decreased.");
+        return;
+      }
+      if (key === "0") {
+        event.preventDefault();
+        setZoomPercent(100);
+        setStatusMessage("Screenshot returned to fit-to-screen zoom.");
+        return;
+      }
+
       const isRedoShortcut =
         (key === "z" && event.shiftKey) || (key === "y" && !event.shiftKey);
 
@@ -690,6 +725,60 @@ export default function ScreenshotEvidenceEditor({
                 onSelect={handleToolSelect}
               />
             ))}
+            <div
+              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1"
+              role="group"
+              aria-label="Screenshot zoom controls"
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomPercent((current) =>
+                    Math.max(MIN_ZOOM_PERCENT, current - ZOOM_STEP_PERCENT),
+                  )
+                }
+                disabled={zoomPercent <= MIN_ZOOM_PERCENT}
+                aria-label="Zoom out"
+                title="Zoom out (Ctrl/Cmd+-)"
+                className="grid h-7 w-7 place-items-center rounded-md text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ZoomOut size={14} aria-hidden="true" />
+              </button>
+              <span
+                className="min-w-[42px] text-center text-[10px] font-semibold tabular-nums text-slate-700"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {zoomPercent}%
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomPercent((current) =>
+                    Math.min(MAX_ZOOM_PERCENT, current + ZOOM_STEP_PERCENT),
+                  )
+                }
+                disabled={zoomPercent >= MAX_ZOOM_PERCENT}
+                aria-label="Zoom in"
+                title="Zoom in (Ctrl/Cmd++)"
+                className="grid h-7 w-7 place-items-center rounded-md text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ZoomIn size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setZoomPercent(100);
+                  setStatusMessage("Screenshot returned to fit-to-screen zoom.");
+                }}
+                disabled={zoomPercent === 100}
+                aria-label="Fit screenshot to screen"
+                title="Fit screenshot to screen (Ctrl/Cmd+0)"
+                className="grid h-7 w-7 place-items-center rounded-md text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Scan size={13} aria-hidden="true" />
+              </button>
+            </div>
             <div className="ml-auto flex flex-wrap gap-1.5">
               <EditorToolbarButton
                 icon={Undo2}
@@ -754,10 +843,19 @@ export default function ScreenshotEvidenceEditor({
           <p className="text-[9px] leading-4 text-slate-500">
             Keyboard shortcuts: Ctrl/Cmd+Z to undo, Ctrl/Cmd+Y or
             Ctrl/Cmd+Shift+Z to redo. Shortcuts are ignored while editing a
-            text or selection field.
+            text or selection field. Zoom with Ctrl/Cmd+plus or minus; use
+            Ctrl/Cmd+0 to fit the screenshot.
           </p>
 
-          <div className="overflow-auto rounded-xl border border-slate-200 bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-2 sm:p-4">
+          <div
+            className="overflow-auto rounded-xl border border-slate-200 bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-2 sm:p-4"
+            aria-label={`Screenshot canvas at ${zoomPercent}% zoom`}
+          >
+            <p className="mb-2 text-right text-[9px] tabular-nums text-slate-500">
+              {zoomPercent === 100
+                ? "Fit to available screen area"
+                : `${zoomPercent}% zoom · scroll to inspect details`}
+            </p>
             {!isImageReady && (
               <div className="flex min-h-48 items-center justify-center gap-2 text-xs text-slate-500">
                 <LoaderCircle
@@ -773,8 +871,8 @@ export default function ScreenshotEvidenceEditor({
                 isImageReady ? "block" : "hidden"
               }`}
               style={{
-                width: canvasSize.width || undefined,
-                height: canvasSize.height || undefined,
+                width: displayedCanvasSize.width || undefined,
+                height: displayedCanvasSize.height || undefined,
               }}
             >
               <canvas
@@ -784,8 +882,8 @@ export default function ScreenshotEvidenceEditor({
                   activeTool === "redact" ? "cursor-crosshair" : "cursor-cell"
                 }`}
                 style={{
-                  width: canvasSize.width || undefined,
-                  height: canvasSize.height || undefined,
+                  width: displayedCanvasSize.width || undefined,
+                  height: displayedCanvasSize.height || undefined,
                 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
@@ -797,8 +895,8 @@ export default function ScreenshotEvidenceEditor({
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 block max-w-none"
                 style={{
-                  width: canvasSize.width || undefined,
-                  height: canvasSize.height || undefined,
+                  width: displayedCanvasSize.width || undefined,
+                  height: displayedCanvasSize.height || undefined,
                 }}
               />
               <RedactionPreview
