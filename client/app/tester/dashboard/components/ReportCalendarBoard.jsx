@@ -10,6 +10,7 @@ import {
   ChevronDown,
   CircleDashed,
   Clock3,
+  Download,
   FileSearch,
   Filter,
   Layers3,
@@ -118,6 +119,50 @@ function getSeverity(report) {
 
 function getStatus(report) {
   return report?.status === "Closed" ? "Closed" : "Open";
+}
+
+function escapeCsvCell(value) {
+  const normalized = String(value ?? "").replace(/\r\n?/g, "\n");
+  const safeValue = /^[\s]*[=+\-@]/.test(normalized)
+    ? `'${normalized}`
+    : normalized;
+  return `"${safeValue.replace(/"/g, '""')}"`;
+}
+
+function downloadMonthCsv(entries, month) {
+  const headers = [
+    "Report ID",
+    "Title",
+    "Category",
+    "Severity",
+    "Status",
+    "Reported at",
+  ];
+  const rows = entries.map(({ report, date }) => [
+    getIdentifier(report),
+    getTitle(report),
+    report?.category || "Uncategorized",
+    getSeverity(report),
+    getStatus(report),
+    date.toISOString(),
+  ]);
+  const csv = [headers, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(","))
+    .join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], {
+    type: "text/csv;charset=utf-8",
+  });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = `report-activity-${month.getFullYear()}-${String(
+    month.getMonth() + 1,
+  ).padStart(2, "0")}.csv`;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
 }
 
 function getSeverityTone(severity) {
@@ -658,6 +703,8 @@ function SelectedDayPanel({
 function MonthControls({
   month,
   selectedKey,
+  canExport,
+  onExport,
   onChangeMonth,
   onSelectDate,
   onGoToToday,
@@ -720,6 +767,15 @@ function MonthControls({
           Latest activity
         </button>
       )}
+      <button
+        type="button"
+        onClick={onExport}
+        disabled={!canExport}
+        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Download size={14} aria-hidden="true" />
+        Export month
+      </button>
     </div>
   );
 }
@@ -1010,6 +1066,12 @@ export default function ReportCalendarBoard({
     setShowAllSelectedDay(false);
   };
 
+  const exportMonth = () => {
+    if (monthEntries.length > 0) {
+      downloadMonthCsv(monthEntries, month);
+    }
+  };
+
   const clearFilters = () => {
     setStatusFilter("All statuses");
     setSeverityFilter("All severity");
@@ -1094,6 +1156,8 @@ export default function ReportCalendarBoard({
             <MonthControls
               month={month}
               selectedKey={selectedKey}
+              canExport={monthEntries.length > 0}
+              onExport={exportMonth}
               onChangeMonth={changeMonth}
               onSelectDate={goToDate}
               onGoToToday={goToToday}
