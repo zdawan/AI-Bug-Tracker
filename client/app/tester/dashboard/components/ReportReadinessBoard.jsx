@@ -718,7 +718,12 @@ function ReportReadinessCard({
   );
 }
 
-function CriteriaPerformance({ items, overview }) {
+function CriteriaPerformance({
+  items,
+  overview,
+  selectedCriterion,
+  onSelectCriterion,
+}) {
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-3 sm:p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -741,19 +746,41 @@ function CriteriaPerformance({ items, overview }) {
             : 0;
           const missing = items.length - present;
 
+          const selected = selectedCriterion === criterion.id;
+
           return (
-            <div key={criterion.id}>
-              <div className="mb-1.5 flex items-center justify-between gap-3">
-                <span className="truncate text-[11px] font-medium text-slate-700">
+            <button
+              key={criterion.id}
+              type="button"
+              onClick={() =>
+                onSelectCriterion(selected ? "any" : criterion.id)
+              }
+              aria-pressed={selected}
+              className={`block w-full rounded-lg px-2 py-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                selected
+                  ? "bg-violet-50"
+                  : "hover:bg-slate-50"
+              }`}
+            >
+              <span className="mb-1.5 flex items-center justify-between gap-3">
+                <span
+                  className={`truncate text-[11px] font-medium ${
+                    selected ? "text-violet-700" : "text-slate-700"
+                  }`}
+                >
                   {criterion.label}
                 </span>
-                <span className="shrink-0 text-[10px] tabular-nums text-slate-500">
+                <span
+                  className={`shrink-0 text-[10px] tabular-nums ${
+                    selected ? "font-semibold text-violet-700" : "text-slate-500"
+                  }`}
+                >
                   {formatNumber(missing)} missing
                 </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className={`h-full rounded-full transition-[width] duration-500 ${
+              </span>
+              <span className="block h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <span
+                  className={`block h-full rounded-full transition-[width] duration-500 ${
                     percentage >= 80
                       ? "bg-emerald-500"
                       : percentage >= 50
@@ -767,8 +794,8 @@ function CriteriaPerformance({ items, overview }) {
                   aria-valuemin={0}
                   aria-valuemax={100}
                 />
-              </div>
-            </div>
+              </span>
+            </button>
           );
         })}
       </div>
@@ -1243,6 +1270,12 @@ export default function ReportReadinessBoard({
                   <CriteriaPerformance
                     items={assessments}
                     overview={overview}
+                    selectedCriterion={missingCriterion}
+                    onSelectCriterion={(criterion) => {
+                      setMissingCriterion(criterion);
+                      setCompletenessFilter("all");
+                      setVisibleCount(8);
+                    }}
                   />
                   <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/80 to-white p-4">
                     <div className="flex items-start gap-2.5">
