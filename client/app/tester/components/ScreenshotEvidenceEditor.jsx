@@ -396,21 +396,35 @@ export default function ScreenshotEvidenceEditor({
         return;
       }
 
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable || target.matches("input, textarea, select"))
+      ) {
+        return;
+      }
+
       if (!(event.ctrlKey || event.metaKey)) return;
 
-      if (event.key.toLowerCase() === "z" && event.shiftKey) {
+      const key = event.key.toLowerCase();
+      const isRedoShortcut =
+        (key === "z" && event.shiftKey) || (key === "y" && !event.shiftKey);
+
+      if (isRedoShortcut && canRedo && !isSaving) {
         event.preventDefault();
         setActionIndex((current) => Math.min(actions.length - 1, current + 1));
-      } else if (event.key.toLowerCase() === "z") {
+        setStatusMessage("Edit restored with the keyboard shortcut.");
+      } else if (key === "z" && !event.shiftKey && canUndo && !isSaving) {
         event.preventDefault();
         setActionIndex((current) => Math.max(-1, current - 1));
+        setStatusMessage("Edit undone with the keyboard shortcut.");
       }
     };
 
     window.addEventListener("keydown", handleEditorKeyDown);
 
     return () => window.removeEventListener("keydown", handleEditorKeyDown);
-  }, [actions.length, isSaving, onCancel]);
+  }, [actions.length, canRedo, canUndo, isSaving, onCancel]);
 
   const updatePreview = useCallback((action) => {
     const canvas = drawingCanvasRef.current;
@@ -718,6 +732,11 @@ export default function ScreenshotEvidenceEditor({
           )}
 
           <EditorInstructions tool={selectedTool} />
+          <p className="text-[9px] leading-4 text-slate-500">
+            Keyboard shortcuts: Ctrl/Cmd+Z to undo, Ctrl/Cmd+Y or
+            Ctrl/Cmd+Shift+Z to redo. Shortcuts are ignored while editing a
+            text or selection field.
+          </p>
 
           <div className="overflow-auto rounded-xl border border-slate-200 bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-2 sm:p-4">
             {!isImageReady && (
