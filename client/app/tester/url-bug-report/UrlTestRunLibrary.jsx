@@ -892,8 +892,10 @@ function SavedRunCard({
   run,
   isActive,
   isDirty,
+  isSelected,
   isRenaming,
   isConfirmingDelete,
+  onToggleSelection,
   onLoad,
   onDuplicate,
   onStartRename,
@@ -931,12 +933,21 @@ function SavedRunCard({
   return (
     <article
       className={`rounded-xl border p-3 ${
-        isActive
-          ? "border-violet-300 bg-violet-50/40"
-          : "border-slate-200 bg-white"
+        isSelected
+          ? "border-rose-300 bg-rose-50/40"
+          : isActive
+            ? "border-violet-300 bg-violet-50/40"
+            : "border-slate-200 bg-white"
       }`}
     >
       <div className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(event) => onToggleSelection(run.id, event.target.checked)}
+          aria-label={`Select saved run ${run.name} for bulk actions`}
+          className="mt-2 h-4 w-4 shrink-0 rounded border-slate-300 text-rose-700 focus:ring-2 focus:ring-rose-400"
+        />
         <span
           className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
             isActive
@@ -1087,6 +1098,8 @@ export default function UrlTestRunLibrary({
     left: "",
     right: "",
   });
+  const [selectedRunIds, setSelectedRunIds] = useState(() => new Set());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [activeRunId, setActiveRunId] = useState("");
   const [renamingRunId, setRenamingRunId] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
@@ -1103,6 +1116,8 @@ export default function UrlTestRunLibrary({
     setRuns([]);
     setActiveRunId("");
     setComparisonRunIds({ left: "", right: "" });
+    setSelectedRunIds(new Set());
+    setConfirmBulkDelete(false);
     setSearch("");
     setResultFilter("all");
     setIsLoaded(false);
@@ -1171,6 +1186,12 @@ export default function UrlTestRunLibrary({
       const boundedRuns = nextRuns.slice(0, MAX_SAVED_RUNS);
       writeSavedRuns(storageKey, boundedRuns);
       setRuns(boundedRuns);
+      const remainingIds = new Set(boundedRuns.map((run) => run.id));
+      setSelectedRunIds((current) => {
+        return new Set(
+          [...current].filter((runId) => remainingIds.has(runId)),
+        );
+      });
       return true;
     } catch {
       toast.error(
@@ -1347,6 +1368,61 @@ export default function UrlTestRunLibrary({
       setConfirmDeleteId("");
       setAnnouncement(`${deletedRun?.name || "Test run"} deleted.`);
       toast.success("Saved test run deleted.");
+    }
+  };
+
+  const visibleRunIds = filteredRuns.map((run) => run.id);
+  const selectedVisibleRunCount = visibleRunIds.filter((runId) =>
+    selectedRunIds.has(runId),
+  ).length;
+  const allVisibleRunsSelected =
+    visibleRunIds.length > 0 &&
+    selectedVisibleRunCount === visibleRunIds.length;
+  const toggleRunSelection = (runId, isSelected) => {
+    setSelectedRunIds((current) => {
+      const next = new Set(current);
+      if (isSelected) next.add(runId);
+      else next.delete(runId);
+      return next;
+    });
+    setConfirmBulkDelete(false);
+  };
+  const toggleVisibleRunSelection = () => {
+    setSelectedRunIds((current) => {
+      const next = new Set(current);
+      visibleRunIds.forEach((runId) => {
+        if (allVisibleRunsSelected) next.delete(runId);
+        else next.add(runId);
+      });
+      return next;
+    });
+    setConfirmBulkDelete(false);
+  };
+  const handleBulkDelete = () => {
+    const deletedRuns = runs.filter((run) => selectedRunIds.has(run.id));
+    if (!deletedRuns.length) {
+      setConfirmBulkDelete(false);
+      setSelectedRunIds(new Set());
+      return;
+    }
+
+    const deletedIds = new Set(deletedRuns.map((run) => run.id));
+    if (commitRuns(runs.filter((run) => !deletedIds.has(run.id)))) {
+      if (deletedIds.has(activeRunId)) setActiveRunId("");
+      setComparisonRunIds((current) => ({
+        left: deletedIds.has(current.left) ? "" : current.left,
+        right: deletedIds.has(current.right) ? "" : current.right,
+      }));
+      setRenamingRunId("");
+      setConfirmDeleteId("");
+      setConfirmBulkDelete(false);
+      setSelectedRunIds(new Set());
+      setAnnouncement(
+        `${deletedRuns.length} saved test run${deletedRuns.length === 1 ? "" : "s"} deleted.`,
+      );
+      toast.success(
+        `Deleted ${deletedRuns.length} saved test run${deletedRuns.length === 1 ? "" : "s"}.`,
+      );
     }
   };
 
@@ -1675,6 +1751,100 @@ export default function UrlTestRunLibrary({
             </p>
           )}
 
+          {isLoaded && runs.length > 0 && (
+            <section
+              aria-label="Bulk saved-run actions"
+              className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="inline-flex min-h-8 cursor-pointer items-center gap-2 text-[10px] font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleRunsSelected}
+                    ref={(element) => {
+                      if (element) {
+                        element.indeterminate =
+                          selectedVisibleRunCount > 0 &&
+                          !allVisibleRunsSelected;
+                      }
+                    }}
+                    onChange={toggleVisibleRunSelection}
+                    disabled={visibleRunIds.length === 0}
+                    aria-label={`Select all ${visibleRunIds.length} visible saved runs`}
+                    className="h-4 w-4 rounded border-slate-300 text-violet-700 focus:ring-2 focus:ring-violet-400 disabled:cursor-not-allowed"
+                  />
+                  Select visible runs
+                  <span className="text-slate-500">
+                    {selectedRunIds.size} selected
+                  </span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedRunIds.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRunIds(new Set());
+                        setConfirmBulkDelete(false);
+                      }}
+                      className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+                    >
+                      Clear selection
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfirmBulkDelete((confirming) => !confirming)
+                    }
+                    disabled={selectedRunIds.size === 0}
+                    className={`${RUN_BUTTON} border-rose-200 bg-white text-rose-700 hover:bg-rose-50`}
+                  >
+                    <Trash2 size={12} aria-hidden="true" />
+                    Delete selected
+                  </button>
+                </div>
+              </div>
+              {selectedRunIds.size > selectedVisibleRunCount && (
+                <p className="text-[10px] text-amber-800" role="status">
+                  {selectedRunIds.size - selectedVisibleRunCount} selected run
+                  {selectedRunIds.size - selectedVisibleRunCount === 1
+                    ? " is"
+                    : "s are"}{" "}
+                  hidden by the current search or result filter. Bulk deletion
+                  includes all selected runs.
+                </p>
+              )}
+              {confirmBulkDelete && selectedRunIds.size > 0 && (
+                <div
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3"
+                  role="alert"
+                >
+                  <p className="mr-auto min-w-0 text-[10px] leading-4 text-rose-900">
+                    Delete {selectedRunIds.size} selected saved run
+                    {selectedRunIds.size === 1 ? "" : "s"}? This cannot be
+                    undone.
+                    {selectedRunIds.has(activeRunId) &&
+                      " The current checklist stays in place but will no longer be linked to its saved snapshot."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmBulkDelete(false)}
+                    className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+                  >
+                    Keep runs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    className={`${RUN_BUTTON} border-rose-700 bg-rose-700 text-white hover:bg-rose-800`}
+                  >
+                    Delete {selectedRunIds.size} runs
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
+
           {isLoaded && runs.length > 1 && (
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
               <div>
@@ -1763,8 +1933,10 @@ export default function UrlTestRunLibrary({
                       run={run}
                       isActive={activeRunId === run.id}
                       isDirty={activeRunId === run.id && isActiveRunDirty}
+                      isSelected={selectedRunIds.has(run.id)}
                       isRenaming={renamingRunId === run.id}
                       isConfirmingDelete={confirmDeleteId === run.id}
+                      onToggleSelection={toggleRunSelection}
                       onLoad={handleLoadRun}
                       onDuplicate={handleDuplicateRun}
                       onStartRename={(runId) => setRenamingRunId(runId)}
