@@ -1094,6 +1094,7 @@ export default function UrlTestRunLibrary({
   const [runName, setRunName] = useState("");
   const [search, setSearch] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("saved-order");
   const [comparisonRunIds, setComparisonRunIds] = useState({
     left: "",
     right: "",
@@ -1122,6 +1123,7 @@ export default function UrlTestRunLibrary({
     setPendingLoadRunId("");
     setSearch("");
     setResultFilter("all");
+    setSortOrder("saved-order");
     setIsLoaded(false);
     if (!storageKey || !origin) {
       setIsLoaded(true);
@@ -1157,7 +1159,7 @@ export default function UrlTestRunLibrary({
       : [];
   const filteredRuns = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    return runs.filter((run) => {
+    const matchingRuns = runs.filter((run) => {
       const counts = getRunCounts(run.scenarios);
       const matchesResult =
         resultFilter === "issues"
@@ -1179,7 +1181,33 @@ export default function UrlTestRunLibrary({
       );
       return matchesName || matchesPage;
     });
-  }, [runs, search, resultFilter]);
+    if (sortOrder === "recently-updated") {
+      return [...matchingRuns].sort(
+        (left, right) =>
+          Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
+      );
+    }
+    if (sortOrder === "name") {
+      return [...matchingRuns].sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        }),
+      );
+    }
+    if (sortOrder === "most-issues") {
+      return [...matchingRuns].sort((left, right) => {
+        const issueDifference =
+          getRunCounts(right.scenarios)["issue-found"] -
+          getRunCounts(left.scenarios)["issue-found"];
+        return (
+          issueDifference ||
+          Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
+        );
+      });
+    }
+    return matchingRuns;
+  }, [runs, search, resultFilter, sortOrder]);
 
   const commitRuns = (nextRuns) => {
     if (!storageKey) {
@@ -1470,6 +1498,26 @@ export default function UrlTestRunLibrary({
       );
     } catch {
       toast.error("Could not export saved test runs.");
+    }
+  };
+
+  const handleExportSelectedRuns = () => {
+    const selectedRuns = runs.filter((run) => selectedRunIds.has(run.id));
+    if (!selectedRuns.length) {
+      toast.info("Select at least one saved test run to export.");
+      return;
+    }
+
+    try {
+      downloadRunsFile(selectedRuns, origin);
+      setAnnouncement(
+        `Exported ${selectedRuns.length} selected test run${selectedRuns.length === 1 ? "" : "s"}.`,
+      );
+      toast.success(
+        `Exported ${selectedRuns.length} selected test run${selectedRuns.length === 1 ? "" : "s"}.`,
+      );
+    } catch {
+      toast.error("Could not export the selected test runs.");
     }
   };
 
@@ -1782,6 +1830,19 @@ export default function UrlTestRunLibrary({
                       <option value="untested">Contains untested pages</option>
                     </select>
                   </label>
+                  <label>
+                    <span className="sr-only">Sort saved test runs</span>
+                    <select
+                      value={sortOrder}
+                      onChange={(event) => setSortOrder(event.target.value)}
+                      className="min-h-8 max-w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    >
+                      <option value="saved-order">Saved order</option>
+                      <option value="recently-updated">Recently updated</option>
+                      <option value="name">Name A–Z</option>
+                      <option value="most-issues">Most issues</option>
+                    </select>
+                  </label>
                   <label className="relative min-w-0 sm:w-52">
                     <Search
                       size={13}
@@ -1838,16 +1899,26 @@ export default function UrlTestRunLibrary({
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {selectedRunIds.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedRunIds(new Set());
-                        setConfirmBulkDelete(false);
-                      }}
-                      className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
-                    >
-                      Clear selection
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleExportSelectedRuns}
+                        className={`${RUN_BUTTON} border-sky-200 bg-white text-sky-800 hover:bg-sky-50`}
+                      >
+                        <Download size={12} aria-hidden="true" />
+                        Export selected
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRunIds(new Set());
+                          setConfirmBulkDelete(false);
+                        }}
+                        className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+                      >
+                        Clear selection
+                      </button>
+                    </>
                   )}
                   <button
                     type="button"
