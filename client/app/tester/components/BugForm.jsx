@@ -422,10 +422,14 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
         {/* Title */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="bug-report-title"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Bug Title <span className="text-pink-500">*</span>
           </label>
           <input
+            id="bug-report-title"
             type="text"
             placeholder="e.g. Login button not working"
             value={title}
@@ -442,10 +446,14 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
         {/* Description */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="bug-report-description"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Description <span className="text-pink-500">*</span>
           </label>
           <textarea
+            id="bug-report-description"
             placeholder="Describe what happened..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
