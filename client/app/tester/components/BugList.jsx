@@ -68,6 +68,13 @@ const statusStyles = {
   Closed: "bg-slate-100 text-slate-600",
 };
 
+const severityOrder = {
+  Critical: 0,
+  High: 1,
+  Medium: 2,
+  Low: 3,
+};
+
 function formatDate(date) {
   if (!date) return "—";
 
@@ -133,6 +140,7 @@ export default function BugList({
   const [search, setSearch] = useState("");
   const [severity, setSeverity] = useState("All");
   const [status, setStatus] = useState("All");
+  const [sortBy, setSortBy] = useState("recent");
   const [selectedBug, setSelectedBug] = useState(null);
   const [page, setPage] = useState(1);
   const pageSize = 7;
@@ -210,10 +218,16 @@ export default function BugList({
   const filteredBugs = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return normalizedBugs.filter((bug) => {
-      const matchesSearch = [bug._id, bug.title, bug.assignedDeveloper].some(
-        (value) => String(value).toLowerCase().includes(query),
-      );
+    const matches = normalizedBugs.filter((bug) => {
+      const matchesSearch = [
+        bug._id,
+        bug.title,
+        bug.description,
+        bug.assignedDeveloper,
+        bug.status,
+        bug.severity,
+        bug.url,
+      ].some((value) => String(value || "").toLowerCase().includes(query));
 
       const matchesSeverity = severity === "All" || bug.severity === severity;
 
@@ -221,7 +235,32 @@ export default function BugList({
 
       return matchesSearch && matchesSeverity && matchesStatus;
     });
-  }, [normalizedBugs, search, severity, status]);
+    return [...matches].sort((left, right) => {
+      if (sortBy === "title") {
+        return left.title.localeCompare(right.title, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
+      }
+      if (sortBy === "severity") {
+        const severityDifference =
+          (severityOrder[left.severity] ?? Number.MAX_SAFE_INTEGER) -
+          (severityOrder[right.severity] ?? Number.MAX_SAFE_INTEGER);
+        if (severityDifference) return severityDifference;
+      }
+
+      const leftTime = Date.parse(left.reportedAt || "");
+      const rightTime = Date.parse(right.reportedAt || "");
+      if (sortBy === "oldest") {
+        if (Number.isNaN(leftTime)) return Number.isNaN(rightTime) ? 0 : 1;
+        if (Number.isNaN(rightTime)) return -1;
+        return leftTime - rightTime;
+      }
+      if (Number.isNaN(leftTime)) return Number.isNaN(rightTime) ? 0 : 1;
+      if (Number.isNaN(rightTime)) return -1;
+      return rightTime - leftTime;
+    });
+  }, [normalizedBugs, search, severity, status, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredBugs.length / pageSize));
 
@@ -234,6 +273,7 @@ export default function BugList({
     setSearch("");
     setSeverity("All");
     setStatus("All");
+    setSortBy("recent");
     setPage(1);
   }
 
@@ -337,6 +377,21 @@ export default function BugList({
               <option value="In Progress">In Progress</option>
               <option value="Resolved">Resolved</option>
               <option value="Closed">Closed</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setPage(1);
+              }}
+              aria-label="Sort bugs"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
+            >
+              <option value="recent">Newest reported</option>
+              <option value="oldest">Oldest reported</option>
+              <option value="severity">Highest severity</option>
+              <option value="title">Title A–Z</option>
             </select>
 
             <button
