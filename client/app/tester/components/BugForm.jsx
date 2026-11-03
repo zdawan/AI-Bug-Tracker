@@ -14,6 +14,25 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const REPORT_DRAFT_STORAGE_KEY = "tester-bug-report-draft-v1";
 const MAX_SCREENSHOT_BYTES = 20 * 1024 * 1024;
 
+function getShareSafeTestUrl(value) {
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+
+    url.username = "";
+    url.password = "";
+    const queryEntries = [...url.searchParams.entries()];
+    url.search = "";
+    queryEntries.forEach(([key]) => {
+      url.searchParams.append(key, "[redacted]");
+    });
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 export default function BugForm({ onBugCreated, testUrl }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -520,9 +539,15 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
         {testUrl && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-            <p className="min-w-0 flex-1 break-all text-xs leading-5 text-gray-600">
-              Testing on: <span className="font-medium">{testUrl}</span>
-            </p>
+            <div className="min-w-0 flex-1">
+              <p className="break-all text-xs leading-5 text-gray-600">
+                Testing on: <span className="font-medium">{testUrl}</span>
+              </p>
+              <p className="mt-1 text-[10px] leading-4 text-gray-500">
+                Copy safe URL omits credentials and fragments and redacts query
+                values.
+              </p>
+            </div>
             <button
               type="button"
               onClick={async () => {
@@ -530,15 +555,19 @@ export default function BugForm({ onBugCreated, testUrl }) {
                   if (!navigator.clipboard?.writeText) {
                     throw new Error("Clipboard access is unavailable.");
                   }
-                  await navigator.clipboard.writeText(testUrl);
-                  toast.success("Test URL copied.");
+                  const safeUrl = getShareSafeTestUrl(testUrl);
+                  if (!safeUrl) throw new Error("The test URL is invalid.");
+                  await navigator.clipboard.writeText(safeUrl);
+                  toast.success("Privacy-safe test URL copied.");
                 } catch {
-                  toast.error("Could not copy the URL. Please copy it manually.");
+                  toast.error(
+                    "Could not copy a safe URL. Please review and copy it manually.",
+                  );
                 }
               }}
               className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:text-violet-700"
             >
-              Copy URL
+              Copy safe URL
             </button>
           </div>
         )}
