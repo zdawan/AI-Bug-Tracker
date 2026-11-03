@@ -647,6 +647,13 @@ function SelectedDayPanel({
     ? reports
     : reports.slice(0, MAX_DAY_REPORTS);
   const hasMonthReports = allMonthReports.length > 0;
+  const openCount = reports.filter(
+    (report) => getStatus(report) === "Open",
+  ).length;
+  const resolvedCount = reports.length - openCount;
+  const highSeverityCount = reports.filter(
+    (report) => getSeverity(report) === "High",
+  ).length;
 
   return (
     <section
@@ -679,6 +686,31 @@ function SelectedDayPanel({
           </button>
         )}
       </div>
+
+      {reports.length > 0 && (
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          <div className="rounded-xl border border-violet-100 bg-white px-2.5 py-2">
+            <p className="text-[10px] font-medium text-slate-500">Open</p>
+            <p className="mt-1 text-sm font-semibold text-violet-700 tabular-nums">
+              {formatNumber(openCount)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-emerald-100 bg-white px-2.5 py-2">
+            <p className="text-[10px] font-medium text-slate-500">Resolved</p>
+            <p className="mt-1 text-sm font-semibold text-emerald-700 tabular-nums">
+              {formatNumber(resolvedCount)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-rose-100 bg-white px-2.5 py-2">
+            <p className="text-[10px] font-medium text-slate-500">
+              High severity
+            </p>
+            <p className="mt-1 text-sm font-semibold text-rose-700 tabular-nums">
+              {formatNumber(highSeverityCount)}
+            </p>
+          </div>
+        </div>
+      )}
 
       {visibleReports.length ? (
         <div className="max-h-[540px] space-y-2 overflow-y-auto pr-1">
