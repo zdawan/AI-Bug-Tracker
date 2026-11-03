@@ -1206,6 +1206,13 @@ export default function UrlTestRunLibrary({
         );
       });
     }
+    if (sortOrder === "most-pages") {
+      return [...matchingRuns].sort(
+        (left, right) =>
+          right.scenarios.length - left.scenarios.length ||
+          Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
+      );
+    }
     return matchingRuns;
   }, [runs, search, resultFilter, sortOrder]);
 
@@ -1841,6 +1848,7 @@ export default function UrlTestRunLibrary({
                       <option value="recently-updated">Recently updated</option>
                       <option value="name">Name A–Z</option>
                       <option value="most-issues">Most issues</option>
+                      <option value="most-pages">Most pages</option>
                     </select>
                   </label>
                   <label className="relative min-w-0 sm:w-52">
