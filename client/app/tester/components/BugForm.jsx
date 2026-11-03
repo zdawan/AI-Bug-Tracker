@@ -26,6 +26,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [aiSourceFileUrl, setAiSourceFileUrl] = useState("");
   const [showPopupMode, setShowPopupMode] = useState(true);
   const [submissionNotice, setSubmissionNotice] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // NEW — AI Bug Popup
   const [aiBugs, setAiBugs] = useState([]);
@@ -33,6 +34,47 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [aiScreenshot, setAiScreenshot] = useState(null);
 
   const fileInputRef = useRef(null);
+  const titleInputRef = useRef(null);
+  const descriptionInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+
+  const validateReportFields = () => {
+    const nextErrors = {};
+    if (!title.trim()) {
+      nextErrors.title = "Enter a short title for the issue.";
+    }
+    if (!description.trim()) {
+      nextErrors.description = "Describe what happened and what you expected.";
+    }
+    if (!email.trim()) {
+      nextErrors.email = "Enter your email address.";
+    } else if (emailInputRef.current && !emailInputRef.current.validity.valid) {
+      nextErrors.email = "Enter a valid email address, such as you@example.com.";
+    }
+
+    setFieldErrors(nextErrors);
+    const firstInvalidField = Object.keys(nextErrors)[0];
+    if (firstInvalidField) {
+      const fieldRefs = {
+        title: titleInputRef,
+        description: descriptionInputRef,
+        email: emailInputRef,
+      };
+      fieldRefs[firstInvalidField]?.current?.focus();
+      return false;
+    }
+
+    return true;
+  };
+
+  const clearFieldError = (field) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const saveReportDraft = () => {
     try {
@@ -167,12 +209,8 @@ export default function BugForm({ onBugCreated, testUrl }) {
     e.preventDefault();
     setSubmissionNotice(null);
 
-    if (!title || !description) {
-      toast.error("Please provide a title and description");
-      return;
-    }
-    if (!email) {
-      toast.error("Please provide email");
+    if (!validateReportFields()) {
+      toast.error("Review the highlighted fields before submitting.");
       return;
     }
 
@@ -208,6 +246,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
       setTitle("");
       setDescription("");
       setEmail("");
+      setFieldErrors({});
       setScreenshot(null);
       if (fileInputRef.current) fileInputRef.current.value = null;
       try {
@@ -377,6 +416,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
       {/* CARD */}
       <form
         onSubmit={handleSubmit}
+        noValidate
         className="relative bg-white/70 backdrop-blur-md shadow-2xl rounded-3xl p-8 border border-white/30"
         encType="multipart/form-data" // ✅ important
       >
@@ -429,13 +469,33 @@ export default function BugForm({ onBugCreated, testUrl }) {
             Bug Title <span className="text-pink-500">*</span>
           </label>
           <input
+            ref={titleInputRef}
             id="bug-report-title"
             type="text"
             placeholder="e.g. Login button not working"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
+            aria-required="true"
+            aria-invalid={Boolean(fieldErrors.title)}
+            aria-describedby={fieldErrors.title ? "bug-report-title-error" : undefined}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              clearFieldError("title");
+            }}
+            className={`w-full rounded-2xl border px-4 py-3 focus:ring-2 ${
+              fieldErrors.title
+                ? "border-rose-400 focus:ring-rose-200"
+                : "border-gray-200 focus:ring-black"
+            } bg-white shadow-sm`}
           />
+          {fieldErrors.title && (
+            <p
+              id="bug-report-title-error"
+              className="mt-1 text-xs text-rose-700"
+              role="alert"
+            >
+              {fieldErrors.title}
+            </p>
+          )}
           <p
             className="mt-1 text-right text-xs text-gray-500"
             aria-live="polite"
@@ -453,13 +513,37 @@ export default function BugForm({ onBugCreated, testUrl }) {
             Description <span className="text-pink-500">*</span>
           </label>
           <textarea
+            ref={descriptionInputRef}
             id="bug-report-description"
             placeholder="Describe what happened..."
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
+            aria-required="true"
+            aria-invalid={Boolean(fieldErrors.description)}
+            aria-describedby={
+              fieldErrors.description
+                ? "bug-report-description-error"
+                : undefined
+            }
+            onChange={(e) => {
+              setDescription(e.target.value);
+              clearFieldError("description");
+            }}
+            className={`w-full rounded-2xl border px-4 py-3 focus:ring-2 ${
+              fieldErrors.description
+                ? "border-rose-400 focus:ring-rose-200"
+                : "border-gray-200 focus:ring-black"
+            } bg-white shadow-sm`}
             rows="4"
           ></textarea>
+          {fieldErrors.description && (
+            <p
+              id="bug-report-description-error"
+              className="mt-1 text-xs text-rose-700"
+              role="alert"
+            >
+              {fieldErrors.description}
+            </p>
+          )}
           <p
             className="mt-1 text-right text-xs text-gray-500"
             aria-live="polite"
@@ -549,16 +633,43 @@ export default function BugForm({ onBugCreated, testUrl }) {
 
         {/* Email */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="bug-report-email"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Your Email <span className="text-pink-500">*</span>
           </label>
           <input
+            ref={emailInputRef}
+            id="bug-report-email"
             type="email"
             placeholder="you@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm"
+            autoComplete="email"
+            aria-required="true"
+            aria-invalid={Boolean(fieldErrors.email)}
+            aria-describedby={
+              fieldErrors.email ? "bug-report-email-error" : undefined
+            }
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearFieldError("email");
+            }}
+            className={`w-full rounded-2xl border px-4 py-3 focus:ring-2 ${
+              fieldErrors.email
+                ? "border-rose-400 focus:ring-rose-200"
+                : "border-gray-200 focus:ring-black"
+            } bg-white shadow-sm`}
           />
+          {fieldErrors.email && (
+            <p
+              id="bug-report-email-error"
+              className="mt-1 text-xs text-rose-700"
+              role="alert"
+            >
+              {fieldErrors.email}
+            </p>
+          )}
         </div>
 
         {/* Screenshot Upload */}
