@@ -1104,6 +1104,7 @@ export default function UrlTestRunLibrary({
   const [renamingRunId, setRenamingRunId] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
   const [confirmDiscardChanges, setConfirmDiscardChanges] = useState(false);
+  const [pendingLoadRunId, setPendingLoadRunId] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const importInputRef = useRef(null);
 
@@ -1118,6 +1119,7 @@ export default function UrlTestRunLibrary({
     setComparisonRunIds({ left: "", right: "" });
     setSelectedRunIds(new Set());
     setConfirmBulkDelete(false);
+    setPendingLoadRunId("");
     setSearch("");
     setResultFilter("all");
     setIsLoaded(false);
@@ -1146,6 +1148,9 @@ export default function UrlTestRunLibrary({
   const isActiveRunDirty =
     activeSnapshot !== null &&
     !areSnapshotsEqual(currentSnapshot, activeSnapshot);
+  useEffect(() => {
+    if (!isActiveRunDirty) setPendingLoadRunId("");
+  }, [isActiveRunDirty]);
   const activeRunChanges =
     isActiveRunDirty && activeSnapshot
       ? getSnapshotChanges(activeSnapshot, currentSnapshot)
@@ -1289,7 +1294,7 @@ export default function UrlTestRunLibrary({
     toast.info("Unsaved changes discarded; the saved run was restored.");
   };
 
-  const handleLoadRun = (run) => {
+  const applyLoadRun = (run) => {
     onLoadRun({
       scenarios: run.scenarios.map((scenario) => ({ ...scenario })),
       activeScenarioId: run.activeScenarioId,
@@ -1297,6 +1302,26 @@ export default function UrlTestRunLibrary({
     setActiveRunId(run.id);
     setAnnouncement(`${run.name} loaded.`);
     toast.success(`Loaded "${run.name}".`);
+  };
+
+  const handleLoadRun = (run) => {
+    if (isActiveRunDirty && activeRunId !== run.id) {
+      setPendingLoadRunId(run.id);
+      return;
+    }
+
+    applyLoadRun(run);
+  };
+
+  const handleConfirmLoadRun = () => {
+    const run = runs.find((savedRun) => savedRun.id === pendingLoadRunId);
+    setPendingLoadRunId("");
+    if (!run) {
+      toast.error("That saved test run is no longer available.");
+      return;
+    }
+
+    applyLoadRun(run);
   };
 
   const handleDuplicateRun = (sourceRun) => {
@@ -1666,6 +1691,39 @@ export default function UrlTestRunLibrary({
                           className={`${RUN_BUTTON} border-rose-700 bg-rose-700 text-white hover:bg-rose-800`}
                         >
                           Restore saved run
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {pendingLoadRunId && (
+                    <div
+                      role="alert"
+                      className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3"
+                    >
+                      <p className="text-xs font-semibold text-amber-950">
+                        Load “
+                        {runs.find((run) => run.id === pendingLoadRunId)?.name ||
+                          "another saved run"}
+                        ” and replace this checklist?
+                      </p>
+                      <p className="mt-1 text-[10px] leading-4 text-amber-900">
+                        Your unsaved checklist changes will be replaced. The
+                        saved version of {activeRun.name} will remain unchanged.
+                      </p>
+                      <div className="mt-2 flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPendingLoadRunId("")}
+                          className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+                        >
+                          Keep current checklist
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleConfirmLoadRun}
+                          className={`${RUN_BUTTON} border-amber-700 bg-amber-700 text-white hover:bg-amber-800`}
+                        >
+                          Load saved run
                         </button>
                       </div>
                     </div>
