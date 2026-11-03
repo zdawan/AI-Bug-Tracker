@@ -287,6 +287,7 @@ export default function ScreenshotEvidenceEditor({
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [isImageReady, setIsImageReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
   const [activeTool, setActiveTool] = useState("pen");
   const [activeColor, setActiveColor] = useState("#dc2626");
   const [brushSize, setBrushSize] = useState(INITIAL_BRUSH_SIZE);
@@ -303,6 +304,11 @@ export default function ScreenshotEvidenceEditor({
   const canUndo = actionIndex >= 0;
   const canRedo = actionIndex < actions.length - 1;
   const hasEdits = visibleActions.length > 0;
+  const requestCancel = useCallback(() => {
+    if (isSaving) return;
+    if (hasEdits) setIsConfirmingDiscard(true);
+    else onCancel();
+  }, [hasEdits, isSaving, onCancel]);
 
   useEffect(() => {
     let disposed = false;
@@ -392,7 +398,13 @@ export default function ScreenshotEvidenceEditor({
   useEffect(() => {
     const handleEditorKeyDown = (event) => {
       if (event.key === "Escape" && !isSaving) {
-        onCancel();
+        event.preventDefault();
+        if (isConfirmingDiscard) {
+          setIsConfirmingDiscard(false);
+          setStatusMessage("Continue editing the screenshot.");
+        } else {
+          requestCancel();
+        }
         return;
       }
 
@@ -424,7 +436,14 @@ export default function ScreenshotEvidenceEditor({
     window.addEventListener("keydown", handleEditorKeyDown);
 
     return () => window.removeEventListener("keydown", handleEditorKeyDown);
-  }, [actions.length, canRedo, canUndo, isSaving, onCancel]);
+  }, [
+    actions.length,
+    canRedo,
+    canUndo,
+    isConfirmingDiscard,
+    isSaving,
+    requestCancel,
+  ]);
 
   const updatePreview = useCallback((action) => {
     const canvas = drawingCanvasRef.current;
@@ -629,7 +648,7 @@ export default function ScreenshotEvidenceEditor({
       aria-modal="true"
       aria-labelledby="screenshot-editor-heading"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isSaving) onCancel();
+        if (event.target === event.currentTarget && !isSaving) requestCancel();
       }}
     >
       <section className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -648,7 +667,7 @@ export default function ScreenshotEvidenceEditor({
           </div>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={requestCancel}
             disabled={isSaving}
             aria-label="Close screenshot editor"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-100 disabled:opacity-50"
@@ -806,10 +825,47 @@ export default function ScreenshotEvidenceEditor({
           </div>
         </div>
 
+        {isConfirmingDiscard && (
+          <div
+            className="flex flex-col gap-3 border-t border-rose-200 bg-rose-50 px-4 py-3 sm:flex-row sm:items-center"
+            role="alert"
+            aria-live="assertive"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-rose-900">
+                Discard screenshot edits?
+              </p>
+              <p className="mt-1 text-[10px] leading-4 text-rose-800">
+                Your annotations and redactions will be lost. The original
+                screenshot will stay attached.
+              </p>
+            </div>
+            <div className="flex shrink-0 justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsConfirmingDiscard(false);
+                  setStatusMessage("Continue editing the screenshot.");
+                }}
+                className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-[10px] font-semibold text-slate-700 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+              >
+                Keep editing
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                className="rounded-lg bg-rose-700 px-3 py-2 text-[10px] font-semibold text-white transition hover:bg-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+              >
+                Discard edits
+              </button>
+            </div>
+          </div>
+        )}
+
         <footer className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={requestCancel}
             disabled={isSaving}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
           >
