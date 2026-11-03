@@ -11,6 +11,7 @@ import ReportTemplateLibrary from "./ReportTemplateLibrary";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const REPORT_DRAFT_STORAGE_KEY = "tester-bug-report-draft-v1";
+const MAX_SCREENSHOT_BYTES = 20 * 1024 * 1024;
 
 export default function BugForm({ onBugCreated, testUrl }) {
   const [title, setTitle] = useState("");
@@ -117,15 +118,28 @@ export default function BugForm({ onBugCreated, testUrl }) {
     }
   }, []);
 
+  const isValidScreenshot = (file) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Choose an image file for the screenshot.");
+      return false;
+    }
+
+    if (file.size > MAX_SCREENSHOT_BYTES) {
+      toast.error("Screenshots must be 20 MB or smaller.");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleScreenshotChange = (event) => {
     const file = event.target.files?.[0];
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!isValidScreenshot(file)) {
       setScreenshot(null);
       event.target.value = "";
-      toast.error("Choose an image file for the screenshot.");
       return;
     }
 
@@ -313,7 +327,12 @@ export default function BugForm({ onBugCreated, testUrl }) {
       if (res.data.screenshotBase64) {
         const dataUrl = `data:image/png;base64,${res.data.screenshotBase64}`;
         screenshotFile = await dataURLToFile(dataUrl, "ai-screenshot.png");
-        setAiScreenshot(screenshotFile);
+        if (isValidScreenshot(screenshotFile)) {
+          setAiScreenshot(screenshotFile);
+        } else {
+          screenshotFile = null;
+          setAiScreenshot(null);
+        }
       }
 
       // Decide based on toggle
@@ -327,7 +346,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
         if (firstBug) {
           setTitle(firstBug.title);
           setDescription(firstBug.description);
-          if (aiScreenshot) setScreenshot(aiScreenshot);
+          if (screenshotFile) setScreenshot(screenshotFile);
           toast.success("AI auto-filled bug!");
         }
       }
@@ -686,7 +705,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-black bg-white shadow-sm cursor-pointer"
           />
           <p id="screenshot-help" className="mt-2 text-xs text-gray-500">
-            Select an image file. Adding a screenshot is optional.
+            Select an image up to 20 MB. Adding a screenshot is optional.
           </p>
           {screenshot && screenshotPreview && (
             <div className="mt-3 flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
