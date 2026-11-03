@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import UrlTestRunLibrary from "./UrlTestRunLibrary";
+import ChecklistBackupWorkspace from "./ChecklistBackupWorkspace";
 
 const TEST_STATUSES = [
   { id: "not-tested", label: "Not tested", icon: ListChecks },
@@ -1287,6 +1288,12 @@ export default function UrlTestChecklist({
           scenarios={scenarios}
           activeScenarioId={activeScenarioId}
           onLoadRun={handleLoadSavedRun}
+        />
+        <ChecklistBackupWorkspace
+          scenarios={scenarios}
+          activeScenarioId={activeScenarioId}
+          origin={parseHttpUrl(value)?.origin || ""}
+          onApplyBackup={handleLoadSavedRun}
         />
       </div>
       <p className="sr-only" role="status" aria-live="polite">
