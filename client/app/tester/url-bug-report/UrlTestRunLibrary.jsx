@@ -360,6 +360,17 @@ function compareRunScenarios(leftRun, rightRun) {
   return changes;
 }
 
+function matchesComparisonFilter(change, filter) {
+  if (filter === "new-issues") return change.outcome === "new-issue";
+  if (filter === "resolved") return change.outcome === "resolved";
+  if (filter === "added") return change.kind === "added";
+  if (filter === "removed") return change.kind === "removed";
+  if (filter === "other") {
+    return change.kind === "changed" && !change.outcome;
+  }
+  return true;
+}
+
 function makeComparisonReport(leftRun, rightRun, changes, counts) {
   const leftCounts = getRunCounts(leftRun.scenarios);
   const rightCounts = getRunCounts(rightRun.scenarios);
@@ -604,7 +615,19 @@ function RunCounts({ scenarios }) {
 }
 
 function RunComparisonPanel({ leftRun, rightRun, onClear }) {
+  const [changeFilter, setChangeFilter] = useState("all");
   const changes = compareRunScenarios(leftRun, rightRun);
+  const changeFilters = [
+    { id: "all", label: "All changes" },
+    { id: "new-issues", label: "New issues" },
+    { id: "resolved", label: "Issues marked passed" },
+    { id: "added", label: "Added pages" },
+    { id: "removed", label: "Removed pages" },
+    { id: "other", label: "Other changes" },
+  ];
+  const filteredChanges = changes.filter((change) =>
+    matchesComparisonFilter(change, changeFilter),
+  );
   const counts = changes.reduce(
     (result, change) => {
       result[change.kind] += 1;
@@ -741,36 +764,91 @@ function RunComparisonPanel({ leftRun, rightRun, onClear }) {
         </div>
       </div>
 
-      {changes.length ? (
-        <ul className="mt-3 space-y-1.5" aria-label="Saved run differences">
-          {changes.map((change) => (
-            <li
-              key={change.id}
-              className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border border-violet-100 bg-white px-2.5 py-2 text-[10px]"
+      {changes.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-[10px] font-medium text-slate-600">
+            Show
+            <select
+              value={changeFilter}
+              onChange={(event) => setChangeFilter(event.target.value)}
+              className="min-h-8 rounded-lg border border-violet-200 bg-white px-2.5 text-[10px] text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              aria-label="Filter saved run differences"
             >
-              <span className="font-semibold">
-                {change.outcome === "new-issue" && (
-                  <span className="mr-1 text-rose-700">New issue ·</span>
-                )}
-                {change.outcome === "resolved" && (
-                  <span className="mr-1 text-emerald-700">Marked passed ·</span>
-                )}
-                <span
-                  className={
-                    change.kind === "added"
-                      ? "text-emerald-800"
-                      : change.kind === "removed"
-                        ? "text-rose-800"
-                        : "text-violet-800"
-                  }
-                >
-                  {change.details.join(" · ")}
+              {changeFilters.map((filter) => {
+                const count =
+                  filter.id === "all"
+                    ? changes.length
+                    : changes.filter((change) =>
+                        matchesComparisonFilter(change, filter.id),
+                      ).length;
+
+                return (
+                  <option
+                    key={filter.id}
+                    value={filter.id}
+                    disabled={filter.id !== "all" && count === 0}
+                  >
+                    {filter.label} ({count})
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+          <p className="text-[10px] text-slate-500" aria-live="polite">
+            Showing {filteredChanges.length} of {changes.length} differences
+          </p>
+        </div>
+      )}
+
+      {changes.length ? (
+        filteredChanges.length ? (
+          <ul className="mt-3 space-y-1.5" aria-label="Saved run differences">
+            {filteredChanges.map((change) => (
+              <li
+                key={change.id}
+                className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border border-violet-100 bg-white px-2.5 py-2 text-[10px]"
+              >
+                <span className="font-semibold">
+                  {change.outcome === "new-issue" && (
+                    <span className="mr-1 text-rose-700">New issue ·</span>
+                  )}
+                  {change.outcome === "resolved" && (
+                    <span className="mr-1 text-emerald-700">
+                      Marked passed ·
+                    </span>
+                  )}
+                  <span
+                    className={
+                      change.kind === "added"
+                        ? "text-emerald-800"
+                        : change.kind === "removed"
+                          ? "text-rose-800"
+                          : "text-violet-800"
+                    }
+                  >
+                    {change.details.join(" · ")}
+                  </span>
                 </span>
-              </span>
-              <span className="break-words text-slate-700">{change.title}</span>
-            </li>
-          ))}
-        </ul>
+                <span className="break-words text-slate-700">
+                  {change.title}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-3 rounded-lg border border-violet-100 bg-white px-3 py-3 text-center">
+            <p className="text-[10px] text-slate-600">
+              No differences match this category.
+            </p>
+            <button
+              type="button"
+              onClick={() => setChangeFilter("all")}
+              className="mt-1 text-[10px] font-semibold text-violet-800 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            >
+              Show all changes
+            </button>
+          </div>
+        )
       ) : (
         <p className="mt-3 rounded-lg border border-violet-100 bg-white px-2.5 py-2 text-[10px] text-slate-600">
           These saved runs have the same pages, results, destinations, and notes.
