@@ -5,6 +5,7 @@ import Link from "next/link";
 import AnalyticsDrilldown from "./components/AnalyticsDrilldown";
 import DuplicateReviewWorkspace from "./components/DuplicateReviewWorkspace";
 import PersonalTriageWorkspace from "./components/PersonalTriageWorkspace";
+import ReportCalendarBoard from "./components/ReportCalendarBoard";
 import ReportAgingBoard from "./components/ReportAgingBoard";
 import {
   ActivityFollowUpPanel,
@@ -1907,6 +1908,8 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
         </div>
         <CategoryBreakdown bugs={bugs} />
       </div>
+
+      <ReportCalendarBoard reports={bugs} onOpenReport={onOpenBug} />
 
       <PriorityInbox
         bugs={bugs}
