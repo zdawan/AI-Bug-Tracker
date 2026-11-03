@@ -1114,6 +1114,19 @@ export default function UrlTestChecklist({
               </span>
             </label>
             <div className="flex flex-wrap gap-2">
+              {selectedIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedIds(new Set());
+                    setAnnouncement("Checklist page selection cleared.");
+                  }}
+                  className={`${PANEL_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-100`}
+                >
+                  <X size={13} aria-hidden="true" />
+                  Clear selection
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleShareSelected}
@@ -1160,6 +1173,17 @@ export default function UrlTestChecklist({
                 Reset result
               </button>
             </div>
+            {selectedIds.size > selectedVisibleCount && (
+              <p
+                className="text-[10px] leading-4 text-amber-800 sm:basis-full"
+                role="status"
+              >
+                {selectedIds.size - selectedVisibleCount} selected page
+                {selectedIds.size - selectedVisibleCount === 1 ? " is" : "s are"}{" "}
+                hidden by the current search or result filter. Bulk actions
+                still apply to every selected page.
+              </p>
+            )}
           </section>
         )}
 
