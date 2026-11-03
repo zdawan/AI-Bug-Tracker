@@ -98,6 +98,20 @@ function isDraftReady(draft) {
   return draft.title.trim().length >= 12 && draft.description.trim().length >= 40;
 }
 
+function getDraftCompletenessScore(draft) {
+  const title = draft.title.trim();
+  const description = draft.description.trim();
+  let score = 0;
+
+  if (title.length >= 12) score += 1;
+  if (description.length >= 40) score += 1;
+  if (/^steps to reproduce:/im.test(description)) score += 1;
+  if (/^expected behavior:/im.test(description)) score += 1;
+  if (/^actual behavior:/im.test(description)) score += 1;
+
+  return score;
+}
+
 function getDraftPreview(value, limit = 150) {
   const normalized = value.replace(/\s+/g, " ").trim();
 
@@ -420,6 +434,13 @@ export default function ReportDraftWorkspace({
         }
         if (sortBy === "title") {
           return left.name.localeCompare(right.name);
+        }
+        if (sortBy === "complete") {
+          return (
+            getDraftCompletenessScore(right) -
+              getDraftCompletenessScore(left) ||
+            Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
+          );
         }
         return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
       });
@@ -872,6 +893,7 @@ export default function ReportDraftWorkspace({
               <option value="recent">Recently updated</option>
               <option value="oldest">Oldest updated</option>
               <option value="title">Name A–Z</option>
+              <option value="complete">Most complete</option>
             </select>
           </label>
         </div>
