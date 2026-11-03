@@ -844,7 +844,7 @@ function MethodNote({ expanded, onToggle }) {
   );
 }
 
-function ReadinessHeader({ reportCount, expanded, onToggle }) {
+function ReadinessHeader({ reportCount, overview, expanded, onToggle }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="max-w-2xl">
@@ -872,19 +872,35 @@ function ReadinessHeader({ reportCount, expanded, onToggle }) {
           investigated. Scores are advisory and stay in this view.
         </p>
       </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-      >
-        {expanded ? "Collapse" : "Review reports"}
-        <ChevronDown
-          size={14}
-          className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
-      </button>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        {!expanded && reportCount > 0 && (
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2">
+            <span className="text-[10px] font-medium text-slate-500">
+              Avg. readiness
+            </span>
+            <span className="text-xs font-bold tabular-nums text-violet-700">
+              {overview.average}%
+            </span>
+            <span className="h-4 w-px bg-slate-200" aria-hidden="true" />
+            <span className="text-[10px] font-semibold tabular-nums text-amber-700">
+              {formatNumber(overview.needsDetails)} need details
+            </span>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        >
+          {expanded ? "Collapse" : "Review reports"}
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
     </div>
   );
 }
@@ -1055,6 +1071,7 @@ export default function ReportReadinessBoard({
       <div className="border-b border-slate-100 bg-gradient-to-br from-violet-50/70 via-white to-emerald-50/40 p-4 sm:p-5 lg:p-6">
         <ReadinessHeader
           reportCount={assessments.length}
+          overview={overview}
           expanded={expanded}
           onToggle={() => setExpanded((current) => !current)}
         />
