@@ -23,6 +23,7 @@ import {
 import { toast } from "react-toastify";
 import UrlTestRunLibrary from "./UrlTestRunLibrary";
 import ChecklistBackupWorkspace from "./ChecklistBackupWorkspace";
+import UrlChecklistDebrief from "./UrlChecklistDebrief";
 
 const TEST_STATUSES = [
   { id: "not-tested", label: "Not tested", icon: ListChecks },
@@ -959,6 +960,16 @@ export default function UrlTestChecklist({
             </button>
           </div>
         </div>
+
+        <UrlChecklistDebrief
+          scenarios={scenarios}
+          activeUrl={value}
+          onSelect={handleSelectScenario}
+          onReportIssue={(scenario) => {
+            handleSelectScenario(scenario);
+            onReportIssue(scenario.url);
+          }}
+        />
 
         <form
           onSubmit={handleAddPage}
