@@ -16,6 +16,7 @@ import OtpHelpPanel from "./OtpHelpPanel";
 import OtpActivityPanel from "./OtpActivityPanel";
 import OtpRecoveryGuide from "./OtpRecoveryGuide";
 import OtpPrivacyPanel from "./OtpPrivacyPanel";
+import OtpDiagnosticsPanel from "./OtpDiagnosticsPanel";
 
 const CODE_REVEAL_SECONDS = 15;
 const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
@@ -1176,6 +1177,13 @@ export default function OtpForm({
         hasCode={enteredDigits > 0}
         secondsRemaining={idleSecondsRemaining}
         isBusy={isSending || isVerifying}
+      />
+      <OtpDiagnosticsPanel
+        isOnline={isOnline}
+        enteredDigits={enteredDigits}
+        isBusy={isSending || isVerifying}
+        resendCooldown={resendCooldown}
+        autoVerify={autoVerify}
       />
       <OtpRecoveryGuide
         onResend={handleResendCode}
