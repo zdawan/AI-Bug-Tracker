@@ -657,7 +657,9 @@ function SelectedDayPanel({
 
 function MonthControls({
   month,
+  selectedKey,
   onChangeMonth,
+  onSelectDate,
   onGoToToday,
   onGoToLatest,
   hasLatestReport,
@@ -696,6 +698,18 @@ function MonthControls({
       >
         Today
       </button>
+
+      <label className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
+        <CalendarDays size={14} className="shrink-0 text-slate-400" aria-hidden="true" />
+        <span className="sr-only">Jump to date</span>
+        <input
+          type="date"
+          value={selectedKey}
+          onChange={(event) => onSelectDate(event.target.value)}
+          aria-label="Jump to date"
+          className="w-[116px] bg-transparent text-xs font-medium text-slate-700 outline-none"
+        />
+      </label>
 
       {hasLatestReport && (
         <button
@@ -971,6 +985,23 @@ export default function ReportCalendarBoard({
     setShowAllSelectedDay(false);
   };
 
+  const goToDate = (dateKey) => {
+    const [year, monthNumber, day] = dateKey.split("-").map(Number);
+    const date = new Date(year, monthNumber - 1, day);
+
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(dateKey) ||
+      !isValidDate(date) ||
+      getLocalDateKey(date) !== dateKey
+    ) {
+      return;
+    }
+
+    setMonth(startOfMonth(date));
+    setSelectedKey(dateKey);
+    setShowAllSelectedDay(false);
+  };
+
   const goToLatest = () => {
     if (!latestReportDate) return;
 
@@ -1062,7 +1093,9 @@ export default function ReportCalendarBoard({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <MonthControls
               month={month}
+              selectedKey={selectedKey}
               onChangeMonth={changeMonth}
+              onSelectDate={goToDate}
               onGoToToday={goToToday}
               onGoToLatest={goToLatest}
               hasLatestReport={Boolean(latestReportDate)}
