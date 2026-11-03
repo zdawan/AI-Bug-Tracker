@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookmarkPlus,
   Check,
   ChevronDown,
   ChevronUp,
+  Download,
+  FileUp,
   FileText,
   Pencil,
   Plus,
   Search,
+  ShieldCheck,
   Sparkles,
   Star,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -22,6 +26,7 @@ const MAX_CUSTOM_TEMPLATES = 20;
 const MAX_TEMPLATE_NAME_LENGTH = 72;
 const MAX_TEMPLATE_TITLE_LENGTH = 180;
 const MAX_TEMPLATE_DESCRIPTION_LENGTH = 8_000;
+const MAX_TEMPLATE_IMPORT_BYTES = 250_000;
 
 const TEMPLATE_CATEGORIES = [
   { id: "all", label: "All" },
@@ -340,6 +345,11 @@ function parseTemplateImport(serializedValue) {
   const validRecords = records.filter(isTemplateRecord);
   if (!validRecords.length) {
     throw new Error("The selected file contains no usable templates.");
+  }
+  if (validRecords.length > MAX_CUSTOM_TEMPLATES) {
+    throw new Error(
+      `The backup contains more than ${MAX_CUSTOM_TEMPLATES} templates.`,
+    );
   }
 
   return validRecords.map((record) =>
@@ -847,6 +857,9 @@ export default function ReportTemplateLibrary({
   const [pendingApply, setPendingApply] = useState(null);
   const [showCreateEditor, setShowCreateEditor] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [pendingImportedTemplates, setPendingImportedTemplates] = useState([]);
+  const [templateImportError, setTemplateImportError] = useState("");
+  const importInputRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -871,6 +884,113 @@ export default function ReportTemplateLibrary({
     } catch {
       toast.error("Could not save custom templates in this browser session.");
       return false;
+    }
+  };
+
+  const pendingImportPlan = useMemo(() => {
+    const knownNames = new Set(
+      customTemplates.map((template) => template.name.trim().toLowerCase()),
+    );
+    const additions = [];
+    let duplicateCount = 0;
+    let capacitySkippedCount = 0;
+    const availableSlots = Math.max(
+      0,
+      MAX_CUSTOM_TEMPLATES - customTemplates.length,
+    );
+
+    pendingImportedTemplates.forEach((template) => {
+      const normalizedName = template.name.trim().toLowerCase();
+      if (knownNames.has(normalizedName)) {
+        duplicateCount += 1;
+        return;
+      }
+
+      knownNames.add(normalizedName);
+      if (additions.length >= availableSlots) {
+        capacitySkippedCount += 1;
+        return;
+      }
+
+      additions.push(template);
+    });
+
+    return { additions, duplicateCount, capacitySkippedCount };
+  }, [customTemplates, pendingImportedTemplates]);
+
+  const handleExportTemplates = () => {
+    if (!customTemplates.length) {
+      toast.info("Create a custom template before exporting your library.");
+      return;
+    }
+
+    try {
+      const payload = makeTemplateExportPayload(customTemplates);
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `tester-report-templates-${new Date()
+        .toISOString()
+        .slice(0, 10)}.json`;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      toast.success(
+        "Custom templates exported. The file contains no email addresses or screenshots.",
+      );
+    } catch (error) {
+      console.error("Could not export report templates:", error);
+      toast.error("Could not export custom templates.");
+    }
+  };
+
+  const handleTemplateImportSelection = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setTemplateImportError("");
+    setPendingImportedTemplates([]);
+
+    if (!file) return;
+    if (file.size > MAX_TEMPLATE_IMPORT_BYTES) {
+      setTemplateImportError(
+        "Template backup must be 250 KB or smaller.",
+      );
+      return;
+    }
+
+    try {
+      const importedTemplates = parseTemplateImport(await file.text());
+      setPendingImportedTemplates(importedTemplates);
+    } catch (error) {
+      setTemplateImportError(
+        error instanceof Error
+          ? error.message
+          : "Could not read the selected template backup.",
+      );
+    }
+  };
+
+  const handleImportTemplates = () => {
+    const { additions, duplicateCount, capacitySkippedCount } =
+      pendingImportPlan;
+    if (!additions.length) return;
+
+    if (persistTemplates([...additions, ...customTemplates])) {
+      setPendingImportedTemplates([]);
+      setTemplateImportError("");
+      setCategory("custom");
+      toast.success(
+        `${additions.length} template${additions.length === 1 ? "" : "s"} imported.${
+          duplicateCount || capacitySkippedCount
+            ? ` ${duplicateCount + capacitySkippedCount} skipped (${duplicateCount} duplicate name${duplicateCount === 1 ? "" : "s"}, ${capacitySkippedCount} over the session limit).`
+            : ""
+        }`,
+      );
     }
   };
 
@@ -1152,6 +1272,162 @@ export default function ReportTemplateLibrary({
                 Create from current report
               </button>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-[11px] font-semibold text-slate-800">
+                  Back up or move custom templates
+                </h4>
+                <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                  Export a JSON backup or preview one before adding it to this
+                  browser session. Starter templates are not included.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => importInputRef.current?.click()}
+                  disabled={!isLoaded}
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Upload size={12} aria-hidden="true" />
+                  Choose backup
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportTemplates}
+                  disabled={!customCount}
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 transition hover:border-violet-200 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Download size={12} aria-hidden="true" />
+                  Export {customCount ? `(${customCount})` : ""}
+                </button>
+              </div>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleTemplateImportSelection}
+                className="sr-only"
+                aria-label="Choose a report template JSON backup"
+              />
+            </div>
+
+            {templateImportError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] leading-4 text-rose-800"
+              >
+                {templateImportError}
+              </p>
+            )}
+
+            {pendingImportedTemplates.length > 0 && (
+              <div className="mt-3 space-y-3 rounded-lg border border-violet-100 bg-violet-50/50 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h5 className="text-[10px] font-semibold text-slate-800">
+                      Backup preview
+                    </h5>
+                    <p className="mt-1 text-[9px] leading-4 text-slate-600">
+                      {pendingImportedTemplates.length} template
+                      {pendingImportedTemplates.length === 1 ? "" : "s"} found ·{" "}
+                      {pendingImportPlan.additions.length} will be imported ·{" "}
+                      {pendingImportPlan.duplicateCount +
+                        pendingImportPlan.capacitySkippedCount} will be skipped
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPendingImportedTemplates([])}
+                    aria-label="Cancel template import"
+                    className="grid h-7 w-7 place-items-center rounded-md text-slate-500 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                  >
+                    <X size={13} aria-hidden="true" />
+                  </button>
+                </div>
+                <ul
+                  className="max-h-36 space-y-1 overflow-auto rounded-lg border border-violet-100 bg-white p-2"
+                  aria-label="Templates in selected backup"
+                >
+                  {pendingImportedTemplates.map((template, index) => {
+                    const isDuplicate =
+                      customTemplates.some(
+                        (current) =>
+                          current.name.trim().toLowerCase() ===
+                          template.name.trim().toLowerCase(),
+                      ) ||
+                      pendingImportedTemplates
+                        .slice(0, index)
+                        .some(
+                          (previous) =>
+                            previous.name.trim().toLowerCase() ===
+                            template.name.trim().toLowerCase(),
+                        );
+                    return (
+                      <li
+                        key={`${template.id}-${index}`}
+                        className="flex items-start gap-2 rounded-md px-2 py-1.5"
+                      >
+                        <FileUp
+                          size={11}
+                          className="mt-0.5 shrink-0 text-violet-700"
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block break-words text-[9px] font-semibold text-slate-700">
+                            {template.name}
+                          </span>
+                          <span className="mt-0.5 block break-words text-[9px] text-slate-500">
+                            {template.title || "No suggested title"}
+                          </span>
+                        </span>
+                        {isDuplicate && (
+                          <span className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[8px] font-semibold text-amber-800">
+                            Duplicate name
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="inline-flex items-start gap-1.5 text-[9px] leading-4 text-slate-500">
+                    <ShieldCheck
+                      size={11}
+                      className="mt-0.5 shrink-0 text-emerald-700"
+                      aria-hidden="true"
+                    />
+                    Only template text is imported; email and screenshots are
+                    not part of this backup.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleImportTemplates}
+                    disabled={!pendingImportPlan.additions.length}
+                    className="inline-flex min-h-8 items-center gap-1.5 rounded-lg bg-violet-700 px-3 py-1.5 text-[10px] font-semibold text-white transition hover:bg-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <FileUp size={11} aria-hidden="true" />
+                    Import {pendingImportPlan.additions.length} template
+                    {pendingImportPlan.additions.length === 1 ? "" : "s"}
+                  </button>
+                </div>
+                {pendingImportPlan.capacitySkippedCount > 0 && (
+                  <p
+                    role="status"
+                    className="text-[9px] leading-4 text-amber-800"
+                  >
+                    {pendingImportPlan.capacitySkippedCount} non-duplicate
+                    template
+                    {pendingImportPlan.capacitySkippedCount === 1 ? "" : "s"}{" "}
+                    exceed the {MAX_CUSTOM_TEMPLATES}-template session limit.
+                    Delete a custom template to make room.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {(showCreateEditor || editingTemplate) && (
