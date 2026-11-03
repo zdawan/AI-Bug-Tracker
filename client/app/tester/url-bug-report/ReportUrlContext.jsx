@@ -139,9 +139,17 @@ function getBrowserEnvironment() {
   ];
 }
 
-function formatBrowserEnvironment(snapshot) {
+function formatBrowserEnvironment(snapshot, capturedAt) {
+  const capturedTime = capturedAt
+    ? new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(capturedAt))
+    : "Unknown";
+
   return [
     "Browser environment",
+    `Captured: ${capturedTime}`,
     ...snapshot.map(({ label, value }) => `${label}: ${value}`),
     "Privacy: collected locally only when requested. Review before sharing.",
   ].join("\n");
@@ -467,6 +475,8 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
   const [queryRevealSeconds, setQueryRevealSeconds] = useState(0);
   const [querySearch, setQuerySearch] = useState("");
   const [browserSnapshot, setBrowserSnapshot] = useState(null);
+  const [browserSnapshotCapturedAt, setBrowserSnapshotCapturedAt] =
+    useState("");
   const [destinationHistory, setDestinationHistory] = useState(() => ({
     entries: initialValue ? [initialValue] : [],
     index: 0,
@@ -626,19 +636,23 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
 
   const captureBrowserSnapshot = () => {
     setBrowserSnapshot(getBrowserEnvironment());
+    setBrowserSnapshotCapturedAt(new Date().toISOString());
   };
 
   const copyBrowserContext = () => {
     if (!browserSnapshot) return;
     safeCopyText(
-      `${reportContext}\n\n${formatBrowserEnvironment(browserSnapshot)}`,
+      `${reportContext}\n\n${formatBrowserEnvironment(
+        browserSnapshot,
+        browserSnapshotCapturedAt,
+      )}`,
       "Report and browser context copied.",
     );
   };
 
   const downloadReportContext = () => {
     const environmentText = browserSnapshot
-      ? formatBrowserEnvironment(browserSnapshot)
+      ? formatBrowserEnvironment(browserSnapshot, browserSnapshotCapturedAt)
       : "Browser environment: not captured.";
 
     try {
@@ -1071,21 +1085,32 @@ export default function ReportUrlContext({ value, initialValue, onChange }) {
                     them.
                   </p>
                   {browserSnapshot ? (
-                    <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-                      {browserSnapshot.map(({ label, value }) => (
-                        <div
-                          key={label}
-                          className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2"
-                        >
-                          <dt className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-                            {label}
-                          </dt>
-                          <dd className="mt-1 break-all text-[10px] leading-4 text-slate-700">
-                            {value}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
+                    <>
+                      <p className="mt-3 text-[10px] text-slate-500">
+                        Captured{" "}
+                        <time dateTime={browserSnapshotCapturedAt}>
+                          {new Intl.DateTimeFormat(undefined, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(browserSnapshotCapturedAt))}
+                        </time>
+                      </p>
+                      <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {browserSnapshot.map(({ label, value }) => (
+                          <div
+                            key={label}
+                            className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2"
+                          >
+                            <dt className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                              {label}
+                            </dt>
+                            <dd className="mt-1 break-all text-[10px] leading-4 text-slate-700">
+                              {value}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </>
                   ) : (
                     <p className="mt-3 text-xs text-slate-500">
                       Open this section to capture the current browser details.
