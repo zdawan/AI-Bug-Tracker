@@ -464,6 +464,7 @@ export default function UrlTestChecklist({
   const [pageName, setPageName] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("checklist");
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [formError, setFormError] = useState("");
   const [announcement, setAnnouncement] = useState("");
@@ -487,7 +488,7 @@ export default function UrlTestChecklist({
   const filteredScenarios = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return scenarios.filter((scenario) => {
+    const matches = scenarios.filter((scenario) => {
       const matchesStatus =
         statusFilter === "all" || scenario.status === statusFilter;
       const matchesSearch =
@@ -498,7 +499,36 @@ export default function UrlTestChecklist({
 
       return matchesStatus && matchesSearch;
     });
-  }, [scenarios, search, statusFilter]);
+    if (sortOrder === "name") {
+      return [...matches].sort((left, right) =>
+        left.title.localeCompare(right.title, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        }),
+      );
+    }
+    if (sortOrder === "last-checked") {
+      return [...matches].sort((left, right) => {
+        const leftTime = Date.parse(left.checkedAt || "");
+        const rightTime = Date.parse(right.checkedAt || "");
+        if (Number.isNaN(leftTime)) return Number.isNaN(rightTime) ? 0 : 1;
+        if (Number.isNaN(rightTime)) return -1;
+        return rightTime - leftTime;
+      });
+    }
+    if (sortOrder === "result") {
+      const statusOrder = {
+        "not-tested": 0,
+        "issue-found": 1,
+        passed: 2,
+      };
+      return [...matches].sort(
+        (left, right) =>
+          statusOrder[left.status] - statusOrder[right.status],
+      );
+    }
+    return matches;
+  }, [scenarios, search, statusFilter, sortOrder]);
   const currentPageAlreadyAdded = scenarios.some(
     (scenario) => scenario.url === value,
   );
@@ -690,6 +720,65 @@ export default function UrlTestChecklist({
       toast.success("Sanitized checklist downloaded.");
     } catch {
       toast.error("Could not download the checklist.");
+    }
+  };
+
+  const handleShareSelected = async () => {
+    const selectedScenarios = scenarios.filter((scenario) =>
+      selectedIds.has(scenario.id),
+    );
+    if (!selectedScenarios.length) {
+      toast.info("Select at least one page before copying a summary.");
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      await navigator.clipboard.writeText(
+        makeChecklistExport(selectedScenarios, value),
+      );
+      setAnnouncement(
+        `Copied a sanitized summary of ${selectedScenarios.length} selected page${selectedScenarios.length === 1 ? "" : "s"}.`,
+      );
+      toast.success("Selected-page summary copied.");
+    } catch {
+      toast.error(
+        "Could not copy the selected pages. Try downloading the checklist instead.",
+      );
+    }
+  };
+
+  const handleDownloadSelected = () => {
+    const selectedScenarios = scenarios.filter((scenario) =>
+      selectedIds.has(scenario.id),
+    );
+    if (!selectedScenarios.length) {
+      toast.info("Select at least one page before downloading a summary.");
+      return;
+    }
+
+    try {
+      const content = makeChecklistExport(selectedScenarios, value);
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = `selected-page-checklist-${new Date()
+        .toISOString()
+        .slice(0, 10)}.txt`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      setAnnouncement(
+        `Downloaded a sanitized summary of ${selectedScenarios.length} selected page${selectedScenarios.length === 1 ? "" : "s"}.`,
+      );
+      toast.success("Selected-page checklist downloaded.");
+    } catch {
+      toast.error("Could not download the selected pages.");
     }
   };
 
@@ -977,6 +1066,19 @@ export default function UrlTestChecklist({
               ))}
             </select>
           </label>
+          <label className="flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5">
+            <span className="sr-only">Sort checklist pages</span>
+            <select
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value)}
+              className="min-w-32 bg-transparent py-1 text-xs text-slate-700 outline-none"
+            >
+              <option value="checklist">Checklist order</option>
+              <option value="name">Name A–Z</option>
+              <option value="last-checked">Last checked</option>
+              <option value="result">Result priority</option>
+            </select>
+          </label>
         </div>
 
         {scenarios.length > 0 && (
@@ -1012,6 +1114,24 @@ export default function UrlTestChecklist({
               </span>
             </label>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleShareSelected}
+                disabled={!selectedIds.size}
+                className={`${PANEL_BUTTON} border-violet-200 bg-white text-violet-800 hover:bg-violet-50`}
+              >
+                <Clipboard size={13} aria-hidden="true" />
+                Copy selected
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadSelected}
+                disabled={!selectedIds.size}
+                className={`${PANEL_BUTTON} border-slate-200 bg-white text-slate-700 hover:bg-slate-100`}
+              >
+                <Download size={13} aria-hidden="true" />
+                Download selected
+              </button>
               <button
                 type="button"
                 onClick={() => updateSelectedResults("passed")}
