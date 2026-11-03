@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -48,6 +49,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [showPopupMode, setShowPopupMode] = useState(true);
   const [submissionNotice, setSubmissionNotice] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [isTestUrlRevealed, setIsTestUrlRevealed] = useState(false);
   const [draftStorageReady, setDraftStorageReady] = useState(false);
   const [draftSaveStatus, setDraftSaveStatus] = useState("idle");
   const [draftSavedAt, setDraftSavedAt] = useState(0);
@@ -540,14 +542,38 @@ export default function BugForm({ onBugCreated, testUrl }) {
         {testUrl && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
             <div className="min-w-0 flex-1">
-              <p className="break-all text-xs leading-5 text-gray-600">
-                Testing on: <span className="font-medium">{testUrl}</span>
+              <p className="text-xs leading-5 text-gray-600">
+                Testing on:{" "}
+                <span className="break-all font-medium">
+                  {isTestUrlRevealed
+                    ? testUrl
+                    : getShareSafeTestUrl(testUrl) || "Invalid test URL"}
+                </span>
               </p>
               <p className="mt-1 text-[10px] leading-4 text-gray-500">
-                Copy safe URL omits credentials and fragments and redacts query
-                values.
+                {isTestUrlRevealed
+                  ? "Full URL is visible only in this form. Hide it before sharing your screen."
+                  : "Sensitive URL details are hidden. Query values are redacted; credentials and fragments are omitted."}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() =>
+                setIsTestUrlRevealed((current) => !current)
+              }
+              aria-pressed={isTestUrlRevealed}
+              aria-label={
+                isTestUrlRevealed ? "Hide full test URL" : "Reveal full test URL"
+              }
+              className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-gray-600 transition hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            >
+              {isTestUrlRevealed ? (
+                <EyeOff size={12} aria-hidden="true" />
+              ) : (
+                <Eye size={12} aria-hidden="true" />
+              )}
+              {isTestUrlRevealed ? "Hide URL" : "Reveal URL"}
+            </button>
             <button
               type="button"
               onClick={async () => {
