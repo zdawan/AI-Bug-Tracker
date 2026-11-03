@@ -28,6 +28,9 @@ export default function BugForm({ onBugCreated, testUrl }) {
   const [showPopupMode, setShowPopupMode] = useState(true);
   const [submissionNotice, setSubmissionNotice] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [draftStorageReady, setDraftStorageReady] = useState(false);
+  const [draftSaveStatus, setDraftSaveStatus] = useState("idle");
+  const [draftSavedAt, setDraftSavedAt] = useState(0);
 
   // NEW — AI Bug Popup
   const [aiBugs, setAiBugs] = useState([]);
@@ -83,10 +86,13 @@ export default function BugForm({ onBugCreated, testUrl }) {
         REPORT_DRAFT_STORAGE_KEY,
         JSON.stringify({ title, description }),
       );
+      setDraftSaveStatus("saved");
+      setDraftSavedAt(Date.now());
       toast.success(
         "Draft saved for this browser session. Email and screenshot are not saved.",
       );
     } catch {
+      setDraftSaveStatus("error");
       toast.error("Could not save the draft in this browser session.");
     }
   };
@@ -115,8 +121,41 @@ export default function BugForm({ onBugCreated, testUrl }) {
       }
     } catch {
       toast.error("Could not restore the saved report draft.");
+    } finally {
+      setDraftStorageReady(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!draftStorageReady) return undefined;
+
+    if (!title.trim() && !description.trim()) {
+      try {
+        window.sessionStorage.removeItem(REPORT_DRAFT_STORAGE_KEY);
+        setDraftSaveStatus("idle");
+        setDraftSavedAt(0);
+      } catch {
+        setDraftSaveStatus("error");
+      }
+      return undefined;
+    }
+
+    setDraftSaveStatus("saving");
+    const timer = window.setTimeout(() => {
+      try {
+        window.sessionStorage.setItem(
+          REPORT_DRAFT_STORAGE_KEY,
+          JSON.stringify({ title, description }),
+        );
+        setDraftSaveStatus("saved");
+        setDraftSavedAt(Date.now());
+      } catch {
+        setDraftSaveStatus("error");
+      }
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [description, draftStorageReady, title]);
 
   const isValidScreenshot = (file) => {
     if (!file.type.startsWith("image/")) {
@@ -781,8 +820,24 @@ export default function BugForm({ onBugCreated, testUrl }) {
         />
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-xs leading-5 text-slate-600">
-            Drafts stay in this browser tab. Email and screenshots are excluded.
+          <p
+            className={`text-xs leading-5 ${
+              draftSaveStatus === "error"
+                ? "text-rose-700"
+                : draftSaveStatus === "saved"
+                  ? "text-emerald-700"
+                  : "text-slate-600"
+            }`}
+            role={draftSaveStatus === "error" ? "alert" : "status"}
+            aria-live="polite"
+          >
+            {draftSaveStatus === "saving"
+              ? "Saving this draft in the current tab..."
+              : draftSaveStatus === "saved"
+                ? `Auto-saved${draftSavedAt ? ` at ${new Date(draftSavedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}. Email and screenshots are excluded.`
+                : draftSaveStatus === "error"
+                  ? "Draft auto-save is unavailable. Use Save draft to retry; email and screenshots are never included."
+                  : "Drafts stay in this browser tab. Email and screenshots are excluded."}
           </p>
           <button
             type="button"
@@ -790,7 +845,7 @@ export default function BugForm({ onBugCreated, testUrl }) {
             disabled={!title.trim() && !description.trim()}
             className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save draft
+            Save draft now
           </button>
         </div>
 
