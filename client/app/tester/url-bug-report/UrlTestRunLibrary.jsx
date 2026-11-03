@@ -1501,6 +1501,26 @@ export default function UrlTestRunLibrary({
     }
   };
 
+  const handleExportSelectedRuns = () => {
+    const selectedRuns = runs.filter((run) => selectedRunIds.has(run.id));
+    if (!selectedRuns.length) {
+      toast.info("Select at least one saved test run to export.");
+      return;
+    }
+
+    try {
+      downloadRunsFile(selectedRuns, origin);
+      setAnnouncement(
+        `Exported ${selectedRuns.length} selected test run${selectedRuns.length === 1 ? "" : "s"}.`,
+      );
+      toast.success(
+        `Exported ${selectedRuns.length} selected test run${selectedRuns.length === 1 ? "" : "s"}.`,
+      );
+    } catch {
+      toast.error("Could not export the selected test runs.");
+    }
+  };
+
   const handleImportRuns = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -1879,16 +1899,26 @@ export default function UrlTestRunLibrary({
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {selectedRunIds.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedRunIds(new Set());
-                        setConfirmBulkDelete(false);
-                      }}
-                      className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
-                    >
-                      Clear selection
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleExportSelectedRuns}
+                        className={`${RUN_BUTTON} border-sky-200 bg-white text-sky-800 hover:bg-sky-50`}
+                      >
+                        <Download size={12} aria-hidden="true" />
+                        Export selected
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRunIds(new Set());
+                          setConfirmBulkDelete(false);
+                        }}
+                        className={`${RUN_BUTTON} border-slate-200 bg-white text-slate-600 hover:bg-slate-50`}
+                      >
+                        Clear selection
+                      </button>
+                    </>
                   )}
                   <button
                     type="button"
