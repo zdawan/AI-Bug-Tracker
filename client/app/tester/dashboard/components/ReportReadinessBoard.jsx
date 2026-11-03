@@ -941,6 +941,7 @@ export default function ReportReadinessBoard({
   const [completenessFilter, setCompletenessFilter] = useState("needs-details");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [missingCriterion, setMissingCriterion] = useState("any");
   const [sortBy, setSortBy] = useState("lowest");
   const [showMethod, setShowMethod] = useState(false);
   const [visibleCount, setVisibleCount] = useState(8);
@@ -976,6 +977,12 @@ export default function ReportReadinessBoard({
       ) {
         return false;
       }
+      if (
+        missingCriterion !== "any" &&
+        item.checks[missingCriterion] !== false
+      ) {
+        return false;
+      }
       return matchesSearch(item, search);
     });
 
@@ -983,6 +990,7 @@ export default function ReportReadinessBoard({
   }, [
     assessments,
     completenessFilter,
+    missingCriterion,
     search,
     severityFilter,
     sortBy,
@@ -1006,12 +1014,14 @@ export default function ReportReadinessBoard({
     completenessFilter !== "needs-details" ||
     statusFilter !== "all" ||
     severityFilter !== "all" ||
+    missingCriterion !== "any" ||
     Boolean(search.trim());
 
   const resetFilters = () => {
     setCompletenessFilter("needs-details");
     setStatusFilter("all");
     setSeverityFilter("all");
+    setMissingCriterion("any");
     setSearch("");
     setSortBy("lowest");
     setVisibleCount(8);
@@ -1106,6 +1116,21 @@ export default function ReportReadinessBoard({
                         value={sortBy}
                         options={SORT_OPTIONS}
                         onChange={setSortBy}
+                      />
+                      <SelectControl
+                        label="Filter by missing detail"
+                        value={missingCriterion}
+                        options={[
+                          { value: "any", label: "Any missing detail" },
+                          ...CRITERIA.map((criterion) => ({
+                            value: criterion.id,
+                            label: `Missing ${criterion.label.toLowerCase()}`,
+                          })),
+                        ]}
+                        onChange={(value) => {
+                          setMissingCriterion(value);
+                          setVisibleCount(8);
+                        }}
                       />
                     </div>
                     <SearchControl value={search} onChange={applySearch} />
