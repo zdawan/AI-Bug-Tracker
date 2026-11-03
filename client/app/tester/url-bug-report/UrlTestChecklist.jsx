@@ -464,6 +464,7 @@ export default function UrlTestChecklist({
   const [pageName, setPageName] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("checklist");
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [formError, setFormError] = useState("");
   const [announcement, setAnnouncement] = useState("");
@@ -487,7 +488,7 @@ export default function UrlTestChecklist({
   const filteredScenarios = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return scenarios.filter((scenario) => {
+    const matches = scenarios.filter((scenario) => {
       const matchesStatus =
         statusFilter === "all" || scenario.status === statusFilter;
       const matchesSearch =
@@ -498,7 +499,36 @@ export default function UrlTestChecklist({
 
       return matchesStatus && matchesSearch;
     });
-  }, [scenarios, search, statusFilter]);
+    if (sortOrder === "name") {
+      return [...matches].sort((left, right) =>
+        left.title.localeCompare(right.title, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        }),
+      );
+    }
+    if (sortOrder === "last-checked") {
+      return [...matches].sort((left, right) => {
+        const leftTime = Date.parse(left.checkedAt || "");
+        const rightTime = Date.parse(right.checkedAt || "");
+        if (Number.isNaN(leftTime)) return Number.isNaN(rightTime) ? 0 : 1;
+        if (Number.isNaN(rightTime)) return -1;
+        return rightTime - leftTime;
+      });
+    }
+    if (sortOrder === "result") {
+      const statusOrder = {
+        "not-tested": 0,
+        "issue-found": 1,
+        passed: 2,
+      };
+      return [...matches].sort(
+        (left, right) =>
+          statusOrder[left.status] - statusOrder[right.status],
+      );
+    }
+    return matches;
+  }, [scenarios, search, statusFilter, sortOrder]);
   const currentPageAlreadyAdded = scenarios.some(
     (scenario) => scenario.url === value,
   );
@@ -975,6 +1005,19 @@ export default function UrlTestChecklist({
                   {option.label}
                 </option>
               ))}
+            </select>
+          </label>
+          <label className="flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5">
+            <span className="sr-only">Sort checklist pages</span>
+            <select
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value)}
+              className="min-w-32 bg-transparent py-1 text-xs text-slate-700 outline-none"
+            >
+              <option value="checklist">Checklist order</option>
+              <option value="name">Name A–Z</option>
+              <option value="last-checked">Last checked</option>
+              <option value="result">Result priority</option>
             </select>
           </label>
         </div>
