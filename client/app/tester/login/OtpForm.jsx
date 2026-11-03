@@ -51,6 +51,14 @@ function extractOtpDigits(value) {
     : "";
 }
 
+function getOtpPasteFailureMessage(value) {
+  if (!value.trim()) {
+    return "Clipboard text is empty. Copy the verification code and try again.";
+  }
+
+  return "Could not identify exactly one six-digit code. Copy only one code and try again.";
+}
+
 export default function OtpForm({
   email,
   onBack,
@@ -538,6 +546,7 @@ export default function OtpForm({
     const clipboardText = event.clipboardData.getData("text");
     const completedCode = applyPastedCode(clipboardText, index);
     if (!completedCode) {
+      setClipboardMessage(getOtpPasteFailureMessage(clipboardText));
       recordActivity(
         "code_pasted",
         "A single verification code could not be identified. Clipboard contents were not saved.",
@@ -562,9 +571,7 @@ export default function OtpForm({
       const pastedCode = applyPastedCode(clipboardText, 0);
 
       if (!pastedCode) {
-        setClipboardMessage(
-          "Could not identify one six-digit code. Copy just the code and try again.",
-        );
+        setClipboardMessage(getOtpPasteFailureMessage(clipboardText));
         return;
       }
 
