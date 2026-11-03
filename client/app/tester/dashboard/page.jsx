@@ -7,6 +7,7 @@ import DuplicateReviewWorkspace from "./components/DuplicateReviewWorkspace";
 import PersonalTriageWorkspace from "./components/PersonalTriageWorkspace";
 import ReportCalendarBoard from "./components/ReportCalendarBoard";
 import ReportAgingBoard from "./components/ReportAgingBoard";
+import ReportReadinessBoard from "./components/ReportReadinessBoard";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1910,6 +1911,7 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
       </div>
 
       <ReportCalendarBoard reports={bugs} onOpenReport={onOpenBug} />
+      <ReportReadinessBoard reports={bugs} onOpenReport={onOpenBug} />
 
       <PriorityInbox
         bugs={bugs}
