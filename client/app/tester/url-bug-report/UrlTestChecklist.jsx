@@ -53,6 +53,8 @@ const FILTER_OPTIONS = [
   { id: "not-tested", label: "Not tested" },
   { id: "passed", label: "Passed" },
   { id: "issue-found", label: "Issues found" },
+  { id: "has-notes", label: "Has notes" },
+  { id: "no-notes", label: "No notes" },
 ];
 
 const PANEL_BUTTON =
@@ -490,8 +492,12 @@ export default function UrlTestChecklist({
     const normalizedSearch = search.trim().toLowerCase();
 
     const matches = scenarios.filter((scenario) => {
+      const hasNotes = Boolean(scenario.notes.trim());
       const matchesStatus =
-        statusFilter === "all" || scenario.status === statusFilter;
+        statusFilter === "all" ||
+        (statusFilter === "has-notes" && hasNotes) ||
+        (statusFilter === "no-notes" && !hasNotes) ||
+        scenario.status === statusFilter;
       const matchesSearch =
         !normalizedSearch ||
         scenario.title.toLowerCase().includes(normalizedSearch) ||

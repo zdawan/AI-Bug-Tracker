@@ -89,6 +89,33 @@ function formatDate(date) {
   });
 }
 
+function escapeCsvCell(value) {
+  const normalized = String(value ?? "").replace(/\r\n?/g, "\n");
+  const safeValue = /^[\s]*[=+\-@]/.test(normalized)
+    ? `'${normalized}`
+    : normalized;
+  return `"${safeValue.replace(/"/g, '""')}"`;
+}
+
+function getShareSafeBugUrl(value) {
+  if (!value) return "";
+
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+
+    url.username = "";
+    url.password = "";
+    [...url.searchParams.keys()].forEach((key) => {
+      url.searchParams.set(key, "[redacted]");
+    });
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 function normalizeBug(bug, index) {
   return {
     ...bug,
@@ -292,6 +319,48 @@ export default function BugList({
     setPage(1);
   }
 
+  function exportFilteredBugs() {
+    if (!filteredBugs.length) return;
+
+    const columns = [
+      "Bug ID",
+      "Title",
+      "Description",
+      "Severity",
+      "Status",
+      "Assigned developer",
+      "Reported date",
+      "Affected URL (query values redacted)",
+    ];
+    const rows = filteredBugs.map((bug) => [
+      bug._id,
+      bug.title,
+      bug.description,
+      bug.severity,
+      bug.status,
+      bug.assignedDeveloper,
+      bug.reportedAt && !Number.isNaN(Date.parse(bug.reportedAt))
+        ? new Date(bug.reportedAt).toISOString()
+        : "",
+      getShareSafeBugUrl(bug.url),
+    ]);
+    const csv = [columns, ...rows]
+      .map((row) => row.map(escapeCsvCell).join(","))
+      .join("\r\n");
+    const blob = new Blob(["\uFEFF", csv], {
+      type: "text/csv;charset=utf-8",
+    });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `bug-list-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 p-4 text-slate-900 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -402,8 +471,22 @@ export default function BugList({
             </button>
           </div>
 
-          <p className="mt-3 text-xs text-slate-500">
-            Showing {filteredBugs.length} of {normalizedBugs.length} bugs
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-slate-500" aria-live="polite">
+              Showing {filteredBugs.length} of {normalizedBugs.length} bugs
+            </p>
+            <button
+              type="button"
+              onClick={exportFilteredBugs}
+              disabled={!filteredBugs.length}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Export filtered CSV
+            </button>
+          </div>
+          <p className="mt-1 text-[10px] leading-4 text-slate-400">
+            Export includes matching bugs across all pages. Query values,
+            credentials, and URL fragments are omitted.
           </p>
         </section>
 
