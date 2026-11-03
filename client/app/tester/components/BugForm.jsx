@@ -10,6 +10,7 @@ import ScreenshotEvidenceEditor from "./ScreenshotEvidenceEditor";
 import ReportTemplateLibrary from "./ReportTemplateLibrary";
 import UrlIssueReportBuilder from "./UrlIssueReportBuilder";
 import ReportPrivacyReview from "./ReportPrivacyReview";
+import ReportClarityCoach from "./ReportClarityCoach";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -777,6 +778,15 @@ export default function BugForm({ onBugCreated, testUrl }) {
             setTitle(nextTitle);
             setDescription(nextDescription);
             clearFieldError("title");
+            clearFieldError("description");
+          }}
+        />
+
+        <ReportClarityCoach
+          title={title}
+          description={description}
+          onDescriptionChange={(nextDescription) => {
+            setDescription(nextDescription);
             clearFieldError("description");
           }}
         />
