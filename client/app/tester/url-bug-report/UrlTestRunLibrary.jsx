@@ -1213,6 +1213,17 @@ export default function UrlTestRunLibrary({
           Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
       );
     }
+    if (sortOrder === "most-untested") {
+      return [...matchingRuns].sort((left, right) => {
+        const untestedDifference =
+          getRunCounts(right.scenarios)["not-tested"] -
+          getRunCounts(left.scenarios)["not-tested"];
+        return (
+          untestedDifference ||
+          Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
+        );
+      });
+    }
     return matchingRuns;
   }, [runs, search, resultFilter, sortOrder]);
 
@@ -1849,6 +1860,7 @@ export default function UrlTestRunLibrary({
                       <option value="name">Name A–Z</option>
                       <option value="most-issues">Most issues</option>
                       <option value="most-pages">Most pages</option>
+                      <option value="most-untested">Most untested pages</option>
                     </select>
                   </label>
                   <label className="relative min-w-0 sm:w-52">
