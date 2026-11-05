@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import ReportReadinessScoreGuide from "./ReportReadinessScoreGuide";
 
-const CRITERIA = [
+export const CRITERIA = [
   {
     id: "title",
     label: "Clear title",
@@ -164,7 +164,7 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-IN").format(value);
 }
 
-function assessReport(report) {
+export function assessReport(report) {
   const description = getDescription(report);
   const expected = hasExpectedBehavior(description);
   const actual = hasActualBehavior(description);
