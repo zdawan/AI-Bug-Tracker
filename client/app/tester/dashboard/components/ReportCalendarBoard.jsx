@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
+  CalendarRange,
   CheckCircle2,
   ChevronDown,
   CircleDashed,
@@ -19,6 +20,7 @@ import {
   ShieldAlert,
   X,
 } from "lucide-react";
+import ReportCalendarWeekView from "./ReportCalendarWeekView";
 
 const MAX_DAY_REPORTS = 8;
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -845,6 +847,19 @@ function ViewToggle({ view, onChange }) {
         <List size={13} aria-hidden="true" />
         Agenda
       </button>
+      <button
+        type="button"
+        aria-pressed={view === "week"}
+        onClick={() => onChange("week")}
+        className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-semibold transition ${
+          view === "week"
+            ? "bg-violet-600 text-white shadow-sm"
+            : "text-slate-500 hover:bg-slate-100"
+        }`}
+      >
+        <CalendarRange size={13} aria-hidden="true" />
+        Week
+      </button>
     </div>
   );
 }
@@ -1280,7 +1295,7 @@ export default function ReportCalendarBoard({
               }
             />
           </>
-        ) : (
+        ) : view === "agenda" ? (
           <AgendaList
             days={calendarDays}
             reportsByDate={reportsByDate}
@@ -1291,9 +1306,18 @@ export default function ReportCalendarBoard({
             selectedKey={selectedKey}
             onOpenReport={handleOpenReport}
           />
+        ) : (
+          <ReportCalendarWeekView
+            anchorDate={selectedDate}
+            selectedKey={selectedKey}
+            entries={filteredReports}
+            onSelectDate={goToDate}
+            onOpenReport={handleOpenReport}
+            onGoToToday={goToToday}
+          />
         )}
 
-        {monthEntries.length === 0 && hasFilters && (
+        {view !== "week" && monthEntries.length === 0 && hasFilters && (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
             No reports in {formatMonth(month)} match these filters. Clear the
             filters or browse another month.
