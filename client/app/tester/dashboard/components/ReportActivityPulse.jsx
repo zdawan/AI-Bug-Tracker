@@ -11,6 +11,7 @@ import {
   ChevronDown,
   CircleDashed,
   Clock3,
+  Download,
   Flame,
   Gauge,
   Layers3,
@@ -238,6 +239,50 @@ function getRelativePeriodLabel(rangeDays) {
   return `past ${rangeDays} days`;
 }
 
+function escapeCsvCell(value) {
+  const text = String(value ?? "").replace(/\r\n?/g, "\n");
+  const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+
+function downloadPulseCsv(days, metric, rangeDays) {
+  const headers = [
+    "Date",
+    "Weekday",
+    "Total reports",
+    "Open",
+    "Resolved",
+    "High severity",
+    `${getMetricTheme(metric).label} selected`,
+  ];
+  const rows = days.map((day) => [
+    localDateKey(day.date),
+    formatDayName(day.date),
+    day.total,
+    day.open,
+    day.resolved,
+    day.high,
+    getDayMetric(day, metric),
+  ]);
+  const csv = [headers, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(","))
+    .join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], {
+    type: "text/csv;charset=utf-8",
+  });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = `report-activity-pulse-${rangeDays}-days-${localDateKey(
+    new Date(),
+  )}.csv`;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+}
+
 function DayOfWeekSummary({ days, metric }) {
   const totals = Array.from({ length: 7 }, (_, index) => ({
     dayIndex: index,
@@ -305,6 +350,83 @@ function DayOfWeekSummary({ days, metric }) {
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function WeekendWeekdayComparison({ days, metric }) {
+  const groups = [
+    { id: "weekday", label: "Weekdays", color: "bg-violet-500", days: [] },
+    { id: "weekend", label: "Weekend", color: "bg-amber-500", days: [] },
+  ];
+
+  days.forEach((day) => {
+    const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+    groups[isWeekend ? 1 : 0].days.push(day);
+  });
+
+  const totals = groups.map((group) => {
+    const total = group.days.reduce(
+      (sum, day) => sum + getDayMetric(day, metric),
+      0,
+    );
+    const activeDays = group.days.filter(
+      (day) => getDayMetric(day, metric) > 0,
+    ).length;
+
+    return {
+      ...group,
+      total,
+      activeDays,
+      average: group.days.length ? total / group.days.length : 0,
+    };
+  });
+  const maximumAverage = Math.max(1, ...totals.map((group) => group.average));
+  const theme = getMetricTheme(metric);
+
+  return (
+    <section className="rounded-xl border border-slate-200/80 bg-white p-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div>
+          <h4 className="text-[10px] font-semibold text-slate-700">
+            Weekdays vs weekend
+          </h4>
+          <p className="mt-0.5 text-[8px] text-slate-400">
+            Average {theme.label.toLowerCase()} per calendar day
+          </p>
+        </div>
+        <CalendarDays size={13} className="text-violet-600" aria-hidden="true" />
+      </div>
+      <div className="space-y-3">
+        {totals.map((group) => (
+          <div key={group.id}>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-medium text-slate-600">
+                {group.label}
+              </span>
+              <span className="text-[9px] tabular-nums text-slate-500">
+                {formatNumber(group.total)} total · {group.activeDays} active
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full transition-[width] duration-300 ${group.color}`}
+                style={{
+                  width: `${(group.average / maximumAverage) * 100}%`,
+                }}
+                role="progressbar"
+                aria-label={`${group.label}: average ${group.average.toFixed(2)} ${theme.label.toLowerCase()} per day`}
+                aria-valuenow={Number(group.average.toFixed(2))}
+                aria-valuemin={0}
+                aria-valuemax={Number(maximumAverage.toFixed(2))}
+              />
+            </div>
+            <p className="mt-1 text-right text-[8px] text-slate-400">
+              {group.average.toFixed(2)} per day
+            </p>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -1000,6 +1122,7 @@ export default function ReportActivityPulse({
             rangeDays={rangeDays}
           />
           <DayOfWeekSummary days={dailySeries} metric={metric} />
+          <WeekendWeekdayComparison days={dailySeries} metric={metric} />
         </div>
       </div>
 
@@ -1022,19 +1145,30 @@ export default function ReportActivityPulse({
           <Clock3 size={9} aria-hidden="true" />
           Dates use local time
         </span>
-        <button
-          type="button"
-          onClick={() => setShowHelp((current) => !current)}
-          aria-expanded={showHelp}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[8px] font-semibold text-slate-500 hover:bg-white hover:text-violet-700"
-        >
-          How it works
-          <ChevronDown
-            size={10}
-            className={`transition-transform ${showHelp ? "rotate-180" : ""}`}
-            aria-hidden="true"
-          />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => downloadPulseCsv(dailySeries, metric, rangeDays)}
+            disabled={dailySeries.length === 0}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[8px] font-semibold text-slate-500 hover:bg-white hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download size={10} aria-hidden="true" />
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowHelp((current) => !current)}
+            aria-expanded={showHelp}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[8px] font-semibold text-slate-500 hover:bg-white hover:text-violet-700"
+          >
+            How it works
+            <ChevronDown
+              size={10}
+              className={`transition-transform ${showHelp ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
       </div>
       {showHelp && <PulseHelp expanded onToggle={() => setShowHelp(false)} />}
     </section>
