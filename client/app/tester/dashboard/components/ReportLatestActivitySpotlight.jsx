@@ -9,6 +9,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  Copy,
   CircleDashed,
   Clock3,
   FileSearch,
@@ -397,6 +398,8 @@ function SpotlightMetric({ icon: Icon, label, value, tone }) {
 }
 
 function LatestReportSpotlight({ entry, summary, onOpenReport, onSelectDate }) {
+  const [copyStatus, setCopyStatus] = useState("idle");
+
   if (!entry) {
     return (
       <div className="flex min-h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-violet-200 bg-white/70 px-4 py-5 text-center">
@@ -417,6 +420,20 @@ function LatestReportSpotlight({ entry, summary, onOpenReport, onSelectDate }) {
   const status = getStatusTheme(entry.status);
   const SeverityIcon = severity.icon;
   const StatusIcon = status.icon;
+  const reportId = getId(entry.report);
+
+  const copyReportId = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable in this browser.");
+      }
+
+      await navigator.clipboard.writeText(reportId);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("error");
+    }
+  };
 
   return (
     <article className="relative overflow-hidden rounded-2xl border border-violet-100 bg-white p-3 shadow-sm shadow-violet-900/[0.03] sm:p-4">
@@ -458,7 +475,26 @@ function LatestReportSpotlight({ entry, summary, onOpenReport, onSelectDate }) {
               <Clock3 size={10} aria-hidden="true" />
               {formatDateTime(entry.date)}
             </span>
+            <button
+              type="button"
+              onClick={copyReportId}
+              aria-label={`Copy report ID ${reportId}`}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[9px] font-medium text-slate-500 transition hover:bg-slate-100 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            >
+              {copyStatus === "copied" ? (
+                <Check size={10} aria-hidden="true" />
+              ) : (
+                <Copy size={10} aria-hidden="true" />
+              )}
+              {copyStatus === "copied" ? "ID copied" : "Copy ID"}
+            </button>
           </div>
+          {copyStatus === "error" && (
+            <p role="status" className="mt-1 text-[9px] text-rose-600">
+              Could not copy the report ID. Check clipboard permissions and try
+              again.
+            </p>
+          )}
         </div>
         <div className="relative flex shrink-0 flex-wrap gap-2 sm:flex-col">
           <button
