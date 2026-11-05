@@ -86,6 +86,7 @@ const OUTCOMES = [
 
 const OUTCOME_FILTERS = [
   { value: "all", label: "All retest states" },
+  { value: "attention", label: "Needs attention" },
   { value: "pending", label: "Not retested" },
   { value: "verified", label: "No longer reproduces" },
   { value: "reproduces", label: "Still reproduces" },
@@ -719,7 +720,17 @@ export default function ReportVerificationWorkspace({
     return closedReports
       .filter((report) => {
         const review = getReview(reviews, getReportId(report));
-        if (outcomeFilter !== "all" && review.outcome !== outcomeFilter) {
+        if (
+          outcomeFilter === "attention" &&
+          review.outcome === "verified"
+        ) {
+          return false;
+        }
+        if (
+          outcomeFilter !== "all" &&
+          outcomeFilter !== "attention" &&
+          review.outcome !== outcomeFilter
+        ) {
           return false;
         }
         if (
@@ -1045,6 +1056,11 @@ export default function ReportVerificationWorkspace({
           <div className="mb-3 flex flex-wrap gap-2" aria-label="Retest quick filters">
             {[
               { value: "all", label: "All", count: counts.total },
+              {
+                value: "attention",
+                label: "Needs attention",
+                count: counts.pending + counts.reproduces + counts.blocked,
+              },
               { value: "pending", label: "Not retested", count: counts.pending },
               {
                 value: "reproduces",
