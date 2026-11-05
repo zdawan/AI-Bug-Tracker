@@ -9,6 +9,7 @@ import ReportCalendarBoard from "./components/ReportCalendarBoard";
 import ReportAgingBoard from "./components/ReportAgingBoard";
 import ReportReadinessBoard from "./components/ReportReadinessBoard";
 import ReportQualityTrends from "./components/ReportQualityTrends";
+import ReportRiskMatrix from "./components/ReportRiskMatrix";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1925,6 +1926,7 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
         onViewAllOpen={onViewAllOpen}
       />
+      <ReportRiskMatrix reports={bugs} onOpenReport={onOpenBug} />
       <ActivityFollowUpPanel
         reports={bugs}
         email={loadedEmail}
