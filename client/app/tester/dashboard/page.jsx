@@ -8,6 +8,7 @@ import PersonalTriageWorkspace from "./components/PersonalTriageWorkspace";
 import ReportCalendarBoard from "./components/ReportCalendarBoard";
 import ReportAgingBoard from "./components/ReportAgingBoard";
 import ReportReadinessBoard from "./components/ReportReadinessBoard";
+import ReportQualityTrends from "./components/ReportQualityTrends";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1912,6 +1913,7 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
 
       <ReportCalendarBoard reports={bugs} onOpenReport={onOpenBug} />
       <ReportReadinessBoard reports={bugs} onOpenReport={onOpenBug} />
+      <ReportQualityTrends reports={bugs} />
 
       <PriorityInbox
         bugs={bugs}
