@@ -650,6 +650,70 @@ function MetricCard({ icon: Icon, label, value, detail, tone }) {
   );
 }
 
+function getPriorityCell(cells) {
+  return [...cells.values()]
+    .filter((cell) => cell.openCount > 0)
+    .sort(
+      (left, right) =>
+        right.highSeverityOpen - left.highSeverityOpen ||
+        right.openCount - left.openCount ||
+        right.repeatReports - left.repeatReports ||
+        (right.oldestOpenAge ?? -1) - (left.oldestOpenAge ?? -1) ||
+        left.category.localeCompare(right.category),
+    )[0] || null;
+}
+
+function PriorityCluster({ cell, onSelect }) {
+  if (!cell) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2.5">
+        <span className="inline-flex items-center gap-2 text-[10px] font-medium text-emerald-800">
+          <CheckCircle2 size={14} aria-hidden="true" />
+          No open issue clusters match these filters.
+        </span>
+      </div>
+    );
+  }
+
+  const concentration =
+    cell.highSeverityOpen > 0
+      ? `${formatNumber(cell.highSeverityOpen)} high / critical open`
+      : `${formatNumber(cell.openCount)} open`;
+  const age =
+    cell.oldestOpenAge === null
+      ? "No dated open issues"
+      : `Oldest ${formatAge(cell.oldestOpenAge)}`;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-100 bg-gradient-to-r from-rose-50/80 to-white px-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-rose-700 shadow-sm">
+          <Flame size={15} aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[8px] font-bold uppercase tracking-wide text-rose-700">
+            Priority cluster
+          </p>
+          <p className="mt-0.5 truncate text-[10px] font-semibold text-slate-800">
+            {cell.category} · {cell.severity}
+          </p>
+          <p className="mt-0.5 text-[8px] text-slate-500">
+            {concentration} · {formatNumber(cell.repeatReports)} repeat · {age}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => onSelect(cell.category, cell.severity)}
+        className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-rose-100 bg-white px-2.5 text-[9px] font-semibold text-rose-700 transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+      >
+        Inspect cluster
+        <ArrowUpRight size={11} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 function MatrixCell({
   cell,
   metric,
@@ -1087,6 +1151,10 @@ export default function ReportRiskMatrix({
     () => getSummary(filteredReports, today),
     [filteredReports, today],
   );
+  const priorityCell = useMemo(
+    () => getPriorityCell(aggregate.cells),
+    [aggregate.cells],
+  );
   const comparisonDeltas = useMemo(
     () =>
       getComparisonDeltas(
@@ -1417,6 +1485,17 @@ export default function ReportRiskMatrix({
             tone="sky"
           />
         </div>
+
+        {filteredReports.length > 0 && (
+          <PriorityCluster
+            cell={priorityCell}
+            onSelect={(category, severity) => {
+              setSelectedCategory(category);
+              setSelectedSeverity(severity);
+              setVisibleCount(INITIAL_VISIBLE);
+            }}
+          />
+        )}
 
         {isEmptyFilterResult || !allReports.length ? (
           <EmptyRiskMatrix
