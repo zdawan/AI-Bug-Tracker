@@ -226,6 +226,12 @@ function getRetestAge(reviewedAt) {
   return Math.max(0, Math.floor((Date.now() - timestamp) / 86_400_000));
 }
 
+function getDaysSinceReport(report) {
+  const date = getReportDate(report);
+  if (!date) return null;
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86_400_000));
+}
+
 function severityRank(report) {
   const severity = getReportSeverity(report).toLowerCase();
   if (severity === "critical") return 4;
@@ -677,6 +683,7 @@ export default function ReportVerificationWorkspace({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [noteFilter, setNoteFilter] = useState("all");
   const [recencyFilter, setRecencyFilter] = useState("all");
+  const [ageFilter, setAgeFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("priority");
@@ -724,6 +731,7 @@ export default function ReportVerificationWorkspace({
     setCategoryFilter("all");
     setNoteFilter("all");
     setRecencyFilter("all");
+    setAgeFilter("all");
     setSelectedIds(new Set());
     setQuery("");
     setSortBy("priority");
@@ -819,6 +827,12 @@ export default function ReportVerificationWorkspace({
           if (recencyFilter === "7" && age > 7) return false;
           if (recencyFilter === "30" && age > 30) return false;
         }
+        if (ageFilter !== "all") {
+          const age = getDaysSinceReport(report);
+          if (age === null) return false;
+          if (ageFilter === "30" && age < 30) return false;
+          if (ageFilter === "90" && age < 90) return false;
+        }
         return matchesSearch(report, query);
       })
       .sort((left, right) => {
@@ -846,6 +860,7 @@ export default function ReportVerificationWorkspace({
       });
   }, [
     categoryFilter,
+    ageFilter,
     closedReports,
     noteFilter,
     outcomeFilter,
@@ -869,6 +884,7 @@ export default function ReportVerificationWorkspace({
     categoryFilter !== "all" ||
     noteFilter !== "all" ||
     recencyFilter !== "all" ||
+    ageFilter !== "all" ||
     Boolean(query.trim());
   const reviewedCount = counts.verified + counts.reproduces + counts.blocked;
   const coveragePercent = counts.total
@@ -939,6 +955,7 @@ export default function ReportVerificationWorkspace({
     setCategoryFilter("all");
     setNoteFilter("all");
     setRecencyFilter("all");
+    setAgeFilter("all");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
     setSelectedIds(new Set());
@@ -1230,6 +1247,16 @@ export default function ReportVerificationWorkspace({
                 { value: "all", label: "Any retest date" },
                 { value: "7", label: "Retested in last 7 days" },
                 { value: "30", label: "Retested in last 30 days" },
+              ]}
+            />
+            <FilterSelect
+              label="Report age"
+              value={ageFilter}
+              onChange={(value) => setFilter(setAgeFilter, value)}
+              options={[
+                { value: "all", label: "Any report age" },
+                { value: "30", label: "Open for 30+ days before close" },
+                { value: "90", label: "Open for 90+ days before close" },
               ]}
             />
             <label className="grid gap-1.5">
