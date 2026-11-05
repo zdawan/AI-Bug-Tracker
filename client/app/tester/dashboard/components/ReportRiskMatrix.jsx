@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   X,
 } from "lucide-react";
+import ReportRiskComparison from "./ReportRiskComparison";
 
 const DAY_MS = 86_400_000;
 const INITIAL_VISIBLE = 8;
@@ -1160,6 +1161,15 @@ export default function ReportRiskMatrix({
               selectedCategory={selectedCategory}
               selectedSeverity={selectedSeverity}
               onSelectCell={selectCell}
+              onSelectCategory={selectCategory}
+            />
+
+            <ReportRiskComparison
+              reports={allReports}
+              range={range}
+              status={status}
+              search={search}
+              today={today}
               onSelectCategory={selectCategory}
             />
 
