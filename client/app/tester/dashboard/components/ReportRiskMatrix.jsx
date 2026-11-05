@@ -522,7 +522,20 @@ function escapeCsv(value) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function exportMatrixCsv(categories, severities, cells) {
+function exportMatrixCsv(
+  categories,
+  severities,
+  cells,
+  {
+    rangeLabel,
+    statusLabel,
+    severityLabel,
+    search,
+    viewLabel,
+    metricLabel,
+    sortLabel,
+  },
+) {
   const headers = [
     "Category",
     ...severities.flatMap((severity) => [
@@ -555,7 +568,20 @@ function exportMatrixCsv(categories, severities, cells) {
     );
     return row;
   });
-  const contents = [headers, ...rows]
+  const metadata = [
+    ["Risk matrix export"],
+    ["Generated", new Date().toLocaleString("en-IN")],
+    ["Date range", rangeLabel],
+    ["Status filter", statusLabel],
+    ["Severity filter", severityLabel],
+    ["Search", search || "None"],
+    ["Matrix focus", viewLabel],
+    ["Heat metric", metricLabel],
+    ["Category sort", sortLabel],
+    ["Categories exported", categories.length],
+    ["Severity levels exported", severities.length],
+  ];
+  const contents = [...metadata, [], headers, ...rows]
     .map((row) => row.map(escapeCsv).join(","))
     .join("\r\n");
   const blob = new Blob([`\uFEFF${contents}`], {
@@ -564,7 +590,10 @@ function exportMatrixCsv(categories, severities, cells) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `report-risk-matrix-${metric}.csv`;
+  anchor.download = `report-risk-matrix-${viewLabel
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "all"}.csv`;
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
@@ -1225,6 +1254,23 @@ export default function ReportRiskMatrix({
       visibleMatrix.categories,
       visibleMatrix.severities,
       visibleMatrix.cells,
+      {
+        rangeLabel: periodLabel,
+        statusLabel:
+          STATUS_OPTIONS.find((option) => option.value === status)?.label ||
+          status,
+        severityLabel:
+          severityOptions.find((option) => option.value === severityFilter)
+            ?.label || severityFilter,
+        search: search.trim(),
+        viewLabel: activeViewDefinition.label,
+        metricLabel:
+          heatMetricOptions.find((option) => option.value === metric)?.label ||
+          metric,
+        sortLabel:
+          SORT_OPTIONS.find((option) => option.value === sortBy)?.label ||
+          sortBy,
+      },
     );
 
   const heatMetricOptions = [
