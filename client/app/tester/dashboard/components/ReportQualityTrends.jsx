@@ -683,11 +683,24 @@ function CriterionBreakdown({ current, previous, selectedCriterion, onSelect }) 
   const rows = CRITERIA.map((criterion) => {
     const count = current.criterionPasses[criterion.id];
     const rate = (count / current.count) * 100;
+    const missingCount = current.count - count;
     const previousRate = previous.count
       ? (previous.criterionPasses[criterion.id] / previous.count) * 100
       : null;
-    return { ...criterion, count, rate, previousRate };
-  }).sort((left, right) => left.rate - right.rate);
+    const potentialLift = (missingCount / current.count) * criterion.weight;
+    return {
+      ...criterion,
+      count,
+      rate,
+      missingCount,
+      potentialLift,
+      previousRate,
+    };
+  }).sort(
+    (left, right) =>
+      right.potentialLift - left.potentialLift ||
+      left.rate - right.rate,
+  );
 
   return (
     <div className="space-y-3">
@@ -713,12 +726,16 @@ function CriterionBreakdown({ current, previous, selectedCriterion, onSelect }) 
                   {row.label}
                 </span>
                 <span className="mt-0.5 block text-[9px] text-slate-400">
-                  {formatNumber(row.count)} of {formatNumber(current.count)} reports
+                  {formatNumber(row.count)} complete ·{" "}
+                  {formatNumber(row.missingCount)} missing
                 </span>
               </span>
               <span className="shrink-0 text-right">
                 <span className="block text-xs font-bold tabular-nums text-slate-800">
-                  {formatNumber(row.rate, 0)}%
+                  +{formatNumber(row.potentialLift, 1)} pts
+                </span>
+                <span className="block text-[9px] text-slate-400">
+                  {formatNumber(row.rate, 0)}% complete
                 </span>
                 {difference !== null ? (
                   <span
@@ -1273,10 +1290,10 @@ export default function ReportQualityTrends({ reports = [] }) {
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <h3 className="text-xs font-semibold text-slate-800">
-                    Detail completion
+                      Highest-impact details
                   </h3>
                   <p className="mt-1 text-[10px] text-slate-500">
-                      Select a row to drill into reports missing that detail.
+                      Estimated average score lift if reports add each detail.
                   </p>
                 </div>
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-50 text-slate-500">
