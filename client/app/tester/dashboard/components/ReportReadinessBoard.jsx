@@ -25,6 +25,7 @@ import {
   Target,
   X,
 } from "lucide-react";
+import ReportReadinessScoreGuide from "./ReportReadinessScoreGuide";
 
 const CRITERIA = [
   {
@@ -1113,6 +1114,7 @@ export default function ReportReadinessBoard({
         <div className="space-y-4 p-3 sm:p-5 lg:p-6">
           {assessments.length > 0 ? (
             <>
+              <ReportReadinessScoreGuide criteria={CRITERIA} />
               <div className="flex flex-wrap gap-2">
                 {COMPLETENESS_FILTERS.map((filter) => (
                   <FilterPill
