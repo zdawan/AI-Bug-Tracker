@@ -21,6 +21,11 @@ import {
 
 const DAYS_IN_WEEK = 7;
 const MAX_VISIBLE_REPORTS = 6;
+const WEEK_STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "Open", label: "Open" },
+  { value: "Closed", label: "Resolved" },
+];
 
 function isValidDate(value) {
   return value instanceof Date && Number.isFinite(value.getTime());
@@ -878,6 +883,12 @@ function WeekInsights({ statistics, weekEntries, previousWeekEntries }) {
     .map((date) => formatMonthDay(date))
     .join(", ");
   const reportDifference = weekEntries.length - previousWeekEntries.length;
+  const previousStatistics = getWeekStatistics(previousWeekEntries);
+  const openDifference = statistics.open - previousStatistics.open;
+  const resolvedDifference =
+    statistics.resolved - previousStatistics.resolved;
+  const formatDifference = (difference) =>
+    difference > 0 ? `+${formatNumber(difference)}` : formatNumber(difference);
   const comparisonLabel =
     reportDifference === 0
       ? "Same as last week"
@@ -946,6 +957,10 @@ function WeekInsights({ statistics, weekEntries, previousWeekEntries }) {
           <p className="mt-1 truncate text-[10px] leading-5">
             {comparisonLabel} · {formatNumber(previousWeekEntries.length)}{" "}
             {previousWeekEntries.length === 1 ? "report" : "reports"} last week.
+          </p>
+          <p className="mt-1 text-[9px] leading-4 opacity-80">
+            Open {formatDifference(openDifference)} · Resolved{" "}
+            {formatDifference(resolvedDifference)}
           </p>
         </div>
       </article>
@@ -1066,6 +1081,7 @@ export default function ReportCalendarWeekView({
   hasLatestReport,
 }) {
   const [showHelp, setShowHelp] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
   const safeAnchorDate = isValidDate(anchorDate) ? anchorDate : new Date();
   const weekDays = useMemo(
     () => getWeekDays(safeAnchorDate),
@@ -1075,17 +1091,31 @@ export default function ReportCalendarWeekView({
       safeAnchorDate.getDate(),
     ],
   );
-  const weekEntries = useMemo(
+  const allWeekEntries = useMemo(
     () => getWeekEntries(entries, weekDays),
     [entries, weekDays],
+  );
+  const weekEntries = useMemo(
+    () =>
+      allWeekEntries.filter(
+        ({ report }) =>
+          statusFilter === "all" ||
+          getReportStatus(report) === statusFilter,
+      ),
+    [allWeekEntries, statusFilter],
   );
   const previousWeekDays = useMemo(
     () => getWeekDays(addDays(weekDays[0].date, -DAYS_IN_WEEK)),
     [weekDays],
   );
   const previousWeekEntries = useMemo(
-    () => getWeekEntries(entries, previousWeekDays),
-    [entries, previousWeekDays],
+    () =>
+      getWeekEntries(entries, previousWeekDays).filter(
+        ({ report }) =>
+          statusFilter === "all" ||
+          getReportStatus(report) === statusFilter,
+      ),
+    [entries, previousWeekDays, statusFilter],
   );
   const entriesByDay = useMemo(
     () => groupEntriesByDay(weekEntries),
@@ -1188,6 +1218,51 @@ export default function ReportCalendarWeekView({
         range={formatWeekRange(weekDays)}
         reportCount={weekEntries.length}
       />
+
+      <div
+        role="group"
+        aria-label="Filter weekly reports by status"
+        className="flex flex-wrap items-center gap-2"
+      >
+        <span className="mr-1 text-[10px] font-semibold text-slate-500">
+          Show
+        </span>
+        {WEEK_STATUS_FILTERS.map((filter) => (
+          <button
+            key={filter.value}
+            type="button"
+            aria-pressed={statusFilter === filter.value}
+            onClick={() => setStatusFilter(filter.value)}
+            className={`inline-flex h-8 items-center gap-2 rounded-xl border px-3 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+              statusFilter === filter.value
+                ? "border-violet-200 bg-violet-50 text-violet-700"
+                : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-700"
+            }`}
+          >
+            {filter.label}
+            <span className="rounded-md bg-white/80 px-1.5 py-0.5 tabular-nums">
+              {formatNumber(
+                filter.value === "all"
+                  ? allWeekEntries.length
+                  : allWeekEntries.filter(
+                      ({ report }) =>
+                        getReportStatus(report) === filter.value,
+                    ).length,
+              )}
+            </span>
+          </button>
+        ))}
+        {statusFilter !== "all" && (
+          <button
+            type="button"
+            onClick={() => setStatusFilter("all")}
+            className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-[10px] font-medium text-slate-500 hover:bg-slate-100"
+          >
+            <X size={12} aria-hidden="true" />
+            Clear
+          </button>
+        )}
+      </div>
 
       {weekEntries.length > 0 ? (
         <>
