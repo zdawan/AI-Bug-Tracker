@@ -5,6 +5,7 @@ import {
   ArrowDownRight,
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -319,6 +320,8 @@ function WeekNavigation({
   onGoToToday,
   onGoToLatest,
   hasLatestReport,
+  busiestDay,
+  onGoToBusiest,
   onJumpToDate,
 }) {
   return (
@@ -363,6 +366,16 @@ function WeekNavigation({
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
           >
             Latest activity
+          </button>
+        )}
+        {busiestDay && busiestDay.count > 0 && (
+          <button
+            type="button"
+            onClick={onGoToBusiest}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-rose-100 bg-white px-3 text-xs font-semibold text-rose-700 transition hover:border-rose-200 hover:bg-rose-50"
+          >
+            <Flame size={13} aria-hidden="true" />
+            Busiest · {formatDayName(busiestDay.date)}
           </button>
         )}
         <label className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 transition hover:border-violet-200 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
@@ -826,7 +839,7 @@ function SelectedDayPanel({
   );
 }
 
-function WeekInsights({ statistics, weekEntries }) {
+function WeekInsights({ statistics, weekEntries, previousWeekEntries }) {
   const busiestEntries = useMemo(() => {
     if (!weekEntries.length || !statistics.busiestCount) return [];
 
@@ -864,6 +877,23 @@ function WeekInsights({ statistics, weekEntries }) {
   const busiestLabel = busiestEntries
     .map((date) => formatMonthDay(date))
     .join(", ");
+  const reportDifference = weekEntries.length - previousWeekEntries.length;
+  const comparisonLabel =
+    reportDifference === 0
+      ? "Same as last week"
+      : previousWeekEntries.length === 0
+        ? `${formatNumber(weekEntries.length)} new ${
+            weekEntries.length === 1 ? "report" : "reports"
+          }`
+        : `${reportDifference > 0 ? "+" : ""}${formatNumber(
+            reportDifference,
+          )} vs last week`;
+  const comparisonTone =
+    reportDifference > 0
+      ? "border-emerald-100 bg-emerald-50/60 text-emerald-700"
+      : reportDifference < 0
+        ? "border-amber-100 bg-amber-50/60 text-amber-700"
+        : "border-slate-200/80 bg-white text-slate-600";
 
   return (
     <div className="grid gap-2 sm:grid-cols-2">
@@ -895,6 +925,27 @@ function WeekInsights({ statistics, weekEntries }) {
             {newest
               ? `${formatFullDate(newest)} at ${formatReportTime(newest)}`
               : "No activity recorded"}
+          </p>
+        </div>
+      </article>
+
+      <article
+        className={`flex items-start gap-2.5 rounded-xl border p-3 ${comparisonTone}`}
+      >
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white/80">
+          {reportDifference >= 0 ? (
+            <ArrowUpRight size={14} aria-hidden="true" />
+          ) : (
+            <ArrowDownRight size={14} aria-hidden="true" />
+          )}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold">
+            Compared with last week
+          </p>
+          <p className="mt-1 truncate text-[10px] leading-5">
+            {comparisonLabel} · {formatNumber(previousWeekEntries.length)}{" "}
+            {previousWeekEntries.length === 1 ? "report" : "reports"} last week.
           </p>
         </div>
       </article>
@@ -1028,6 +1079,14 @@ export default function ReportCalendarWeekView({
     () => getWeekEntries(entries, weekDays),
     [entries, weekDays],
   );
+  const previousWeekDays = useMemo(
+    () => getWeekDays(addDays(weekDays[0].date, -DAYS_IN_WEEK)),
+    [weekDays],
+  );
+  const previousWeekEntries = useMemo(
+    () => getWeekEntries(entries, previousWeekDays),
+    [entries, previousWeekDays],
+  );
   const entriesByDay = useMemo(
     () => groupEntriesByDay(weekEntries),
     [weekEntries],
@@ -1096,6 +1155,13 @@ export default function ReportCalendarWeekView({
     1,
     ...dayCards.map((day) => day.entries.length),
   );
+  const busiestDay = dayCards.reduce(
+    (current, day) =>
+      day.entries.length > (current?.count || 0)
+        ? { date: day.date, key: day.key, count: day.entries.length }
+        : current,
+    null,
+  );
 
   return (
     <section
@@ -1110,6 +1176,10 @@ export default function ReportCalendarWeekView({
           onGoToToday={onGoToToday}
           onGoToLatest={onGoToLatest}
           hasLatestReport={hasLatestReport}
+          busiestDay={busiestDay}
+          onGoToBusiest={() => {
+            if (busiestDay) selectDate(busiestDay.date);
+          }}
           onJumpToDate={jumpToDate}
         />
       </div>
@@ -1158,6 +1228,7 @@ export default function ReportCalendarWeekView({
               <WeekInsights
                 statistics={statistics}
                 weekEntries={weekEntries}
+                previousWeekEntries={previousWeekEntries}
               />
             </div>
           </div>
