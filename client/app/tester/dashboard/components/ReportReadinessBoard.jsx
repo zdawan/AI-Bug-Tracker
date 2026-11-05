@@ -1089,6 +1089,40 @@ export default function ReportReadinessBoard({
     [assessments],
   );
 
+  const missingCriterionOptions = useMemo(() => {
+    const refinements = {
+      statusFilter,
+      severityFilter,
+      missingCriterion: "any",
+      search,
+    };
+    const remaining = assessments.filter(
+      (item) =>
+        matchesCompleteness(item, completenessFilter) &&
+        matchesReadinessRefinements(item, refinements),
+    );
+
+    return [
+      {
+        value: "any",
+        label: `Any missing detail (${formatNumber(remaining.length)})`,
+      },
+      ...CRITERIA.map((criterion) => ({
+        value: criterion.id,
+        label: `Missing ${criterion.label.toLowerCase()} (${formatNumber(
+          remaining.filter((item) => item.checks[criterion.id] === false)
+            .length,
+        )})`,
+      })),
+    ];
+  }, [
+    assessments,
+    completenessFilter,
+    search,
+    severityFilter,
+    statusFilter,
+  ]);
+
   const visibleAssessments = filteredAssessments.slice(0, visibleCount);
   const hasFilters =
     completenessFilter !== "needs-details" ||
@@ -1243,13 +1277,7 @@ export default function ReportReadinessBoard({
                       <SelectControl
                         label="Filter by missing detail"
                         value={missingCriterion}
-                        options={[
-                          { value: "any", label: "Any missing detail" },
-                          ...CRITERIA.map((criterion) => ({
-                            value: criterion.id,
-                            label: `Missing ${criterion.label.toLowerCase()}`,
-                          })),
-                        ]}
+                        options={missingCriterionOptions}
                         onChange={(value) => {
                           setMissingCriterion(value);
                           setVisibleCount(8);
