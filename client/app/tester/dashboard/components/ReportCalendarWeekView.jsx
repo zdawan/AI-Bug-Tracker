@@ -16,7 +16,6 @@ import {
   MoveRight,
   ShieldAlert,
   Sparkles,
-  X,
 } from "lucide-react";
 
 const DAYS_IN_WEEK = 7;
@@ -315,12 +314,11 @@ function DaySummaryTile({ label, value, detail, icon: Icon, tone }) {
 
 function WeekNavigation({
   weekDays,
+  selectedKey,
   onMoveWeek,
   onGoToToday,
   onJumpToDate,
 }) {
-  const selectedDateKey = weekDays[0]?.key || "";
-
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="inline-flex items-center gap-1 self-start rounded-xl border border-slate-200 bg-white p-1 shadow-sm shadow-slate-200/20">
@@ -365,7 +363,7 @@ function WeekNavigation({
           <span className="sr-only">Jump to a date in another week</span>
           <input
             type="date"
-            value={selectedDateKey}
+            value={selectedKey}
             onChange={(event) => onJumpToDate(event.target.value)}
             aria-label="Jump to a date in another week"
             className="w-[116px] bg-transparent text-xs font-medium text-slate-700 outline-none"
@@ -427,6 +425,8 @@ function WeekDayCard({
   selected,
   onSelect,
   busiestCount,
+  onKeyDown,
+  isLatestReportDay,
 }) {
   const count = entries.length;
   const openCount = entries.filter(
@@ -448,11 +448,13 @@ function WeekDayCard({
   return (
     <button
       type="button"
+      data-week-day={day.key}
       onClick={() => onSelect(day)}
+      onKeyDown={(event) => onKeyDown(event, day)}
       aria-pressed={selected}
       aria-label={`${formatFullDate(day.date)}, ${count} ${
         count === 1 ? "report" : "reports"
-      }`}
+      }${isLatestReportDay ? ", latest report date" : ""}`}
       className={`group flex min-h-40 flex-col rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:min-h-44 sm:p-4 ${
         selected
           ? "border-violet-400 bg-violet-50 shadow-sm shadow-violet-900/[0.05]"
@@ -476,9 +478,18 @@ function WeekDayCard({
             {day.date.getDate()}
           </span>
         </span>
-        {day.isToday && (
-          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-700">
-            Today
+        {(day.isToday || isLatestReportDay) && (
+          <span className="flex flex-wrap justify-end gap-1">
+            {day.isToday && (
+              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-700">
+                Today
+              </span>
+            )}
+            {isLatestReportDay && (
+              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700">
+                Latest
+              </span>
+            )}
           </span>
         )}
       </span>
@@ -531,6 +542,8 @@ function WeekDayStrip({
   selectedKey,
   onSelectDay,
   busiestCount,
+  onDayKeyDown,
+  latestReportKey,
 }) {
   return (
     <div
@@ -546,6 +559,8 @@ function WeekDayStrip({
           selected={day.key === selectedKey}
           onSelect={onSelectDay}
           busiestCount={busiestCount}
+          onKeyDown={onDayKeyDown}
+          isLatestReportDay={day.key === latestReportKey}
         />
       ))}
     </div>
@@ -981,6 +996,7 @@ export default function ReportCalendarWeekView({
   anchorDate,
   selectedKey,
   entries = [],
+  latestReportKey,
   onSelectDate,
   onOpenReport,
   onGoToToday,
@@ -1076,6 +1092,7 @@ export default function ReportCalendarWeekView({
       <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-violet-50/70 via-white to-indigo-50/50 p-3 sm:p-4">
         <WeekNavigation
           weekDays={weekDays}
+          selectedKey={activeKey}
           onMoveWeek={moveWeek}
           onGoToToday={onGoToToday}
           onJumpToDate={jumpToDate}
@@ -1108,6 +1125,8 @@ export default function ReportCalendarWeekView({
               selectedKey={activeKey}
               onSelectDay={(day) => selectDate(day.date)}
               busiestCount={busiestCount}
+              onDayKeyDown={handleDayKeyDown}
+              latestReportKey={latestReportKey}
             />
           </div>
 
