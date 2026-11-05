@@ -44,6 +44,34 @@ const SORT_OPTIONS = [
   { value: "name", label: "Category A–Z" },
 ];
 
+const MATRIX_VIEWS = [
+  {
+    id: "all",
+    label: "All",
+    description: "Every matching category and severity",
+  },
+  {
+    id: "urgent",
+    label: "Urgent",
+    description: "High and critical open issues",
+  },
+  {
+    id: "repeat",
+    label: "Repeats",
+    description: "Cells with repeat submissions",
+  },
+  {
+    id: "aging",
+    label: "Aging",
+    description: "Open issues older than 7 days",
+  },
+  {
+    id: "rising",
+    label: "Rising risk",
+    description: "Largest increases versus prior period",
+  },
+];
+
 const SEVERITY_RANK = {
   critical: 0,
   high: 1,
@@ -358,6 +386,103 @@ function sortCategories(categories, sortBy) {
   });
 }
 
+function getVisibleMatrixData(
+  categories,
+  severities,
+  cells,
+  view,
+  comparisonDeltas,
+) {
+  if (view === "all") {
+    return { categories, severities, cells };
+  }
+
+  const isCellVisible = (cell) => {
+    if (view === "urgent") {
+      return (
+        cell.openCount > 0 &&
+        ["high", "critical"].includes(cell.severity.toLowerCase())
+      );
+    }
+    if (view === "repeat") return cell.repeatReports > 0;
+    if (view === "aging") return cell.oldestOpenAge > 7;
+    return (comparisonDeltas.get(cell.category)?.get(cell.severity) || 0) > 0;
+  };
+
+  const visibleCells = new Map(
+    [...cells.entries()].filter(([, cell]) => isCellVisible(cell)),
+  );
+  const visibleSeverities = severities.filter((severity) =>
+    [...visibleCells.values()].some((cell) => cell.severity === severity),
+  );
+  const visibleCategories = categories.filter((category) =>
+    [...visibleCells.values()].some(
+      (cell) => cell.category === category.category,
+    ),
+  );
+
+  return {
+    categories: visibleCategories,
+    severities: visibleSeverities,
+    cells: visibleCells,
+  };
+}
+
+function getComparisonDeltas(reports, range, status, severity, search, today) {
+  const days = Number(range);
+  if (!Number.isFinite(days) || days <= 0) return new Map();
+
+  const currentEnd = new Date(today);
+  const currentStart = new Date(today);
+  currentStart.setDate(currentStart.getDate() - days + 1);
+  const previousEnd = new Date(currentStart);
+  previousEnd.setDate(previousEnd.getDate() - 1);
+  const previousStart = new Date(previousEnd);
+  previousStart.setDate(previousStart.getDate() - days + 1);
+
+  const matches = (report, start, end) => {
+    if (status === "open" && getStatus(report) !== "open") return false;
+    if (status === "closed" && getStatus(report) !== "closed") return false;
+    if (severity !== SEVERITY_FILTER_ALL && getSeverity(report) !== severity) {
+      return false;
+    }
+    if (search && !getSearchText(report).includes(search.trim().toLowerCase())) {
+      return false;
+    }
+    const date = getReportDate(report);
+    if (!date) return false;
+    const reportDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    return reportDay >= start && reportDay <= end;
+  };
+
+  const countsByPeriod = [new Map(), new Map()];
+  reports.forEach((report) => {
+    const periods = [
+      [previousStart, previousEnd],
+      [currentStart, currentEnd],
+    ];
+    periods.forEach(([start, end], index) => {
+      if (!matches(report, start, end)) return;
+      const key = `${getCategory(report)}\u0000${getSeverity(report)}`;
+      const counts = countsByPeriod[index];
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+  });
+
+  const result = new Map();
+  countsByPeriod[1].forEach((currentCount, key) => {
+    const [category, severityValue] = key.split("\u0000");
+    const previousCount = countsByPeriod[0].get(key) || 0;
+    if (!result.has(category)) result.set(category, new Map());
+    result.get(category).set(severityValue, currentCount - previousCount);
+  });
+  return result;
+}
+
 function getSummary(reports, today) {
   return reports.reduce(
     (summary, report) => {
@@ -561,6 +686,7 @@ function MatrixTable({
   selectedSeverity,
   onSelectCell,
   onSelectCategory,
+  activeView,
 }) {
   const maximum = Math.max(
     1,
@@ -602,7 +728,13 @@ function MatrixTable({
               <th
                 key={severity}
                 scope="col"
-                className="min-w-[118px] border-b border-slate-200 px-2 py-3 text-center text-[9px] font-bold uppercase tracking-wide text-slate-600"
+                className={`min-w-[118px] border-b border-slate-200 px-2 py-3 text-center text-[9px] font-bold uppercase tracking-wide ${
+                  activeView === "all" ||
+                  (activeView === "urgent" &&
+                    ["high", "critical"].includes(severity.toLowerCase()))
+                    ? "text-slate-600"
+                    : "text-violet-700"
+                }`}
               >
                 {severity}
               </th>
@@ -883,6 +1015,7 @@ export default function ReportRiskMatrix({
   const [status, setStatus] = useState("all");
   const [severityFilter, setSeverityFilter] = useState(SEVERITY_FILTER_ALL);
   const [metric, setMetric] = useState("count");
+  const [activeView, setActiveView] = useState("all");
   const [sortBy, setSortBy] = useState("open");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -925,6 +1058,35 @@ export default function ReportRiskMatrix({
     () => getSummary(filteredReports, today),
     [filteredReports, today],
   );
+  const comparisonDeltas = useMemo(
+    () =>
+      getComparisonDeltas(
+        allReports,
+        range,
+        status,
+        severityFilter,
+        search,
+        today,
+      ),
+    [allReports, range, search, severityFilter, status, today],
+  );
+  const visibleMatrix = useMemo(
+    () =>
+      getVisibleMatrixData(
+        categories,
+        aggregate.severities,
+        aggregate.cells,
+        activeView,
+        comparisonDeltas,
+      ),
+    [
+      activeView,
+      aggregate.cells,
+      aggregate.severities,
+      categories,
+      comparisonDeltas,
+    ],
+  );
 
   const selectedReports = useMemo(
     () =>
@@ -957,7 +1119,31 @@ export default function ReportRiskMatrix({
     range !== "all" ||
     status !== "all" ||
     severityFilter !== SEVERITY_FILTER_ALL ||
+    activeView !== "all" ||
     Boolean(search.trim());
+  const activeViewDefinition =
+    MATRIX_VIEWS.find((view) => view.id === activeView) || MATRIX_VIEWS[0];
+  const viewCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        MATRIX_VIEWS.map((view) => [
+          view.id,
+          getVisibleMatrixData(
+            categories,
+            aggregate.severities,
+            aggregate.cells,
+            view.id,
+            comparisonDeltas,
+          ).categories.length,
+        ]),
+      ),
+    [
+      aggregate.cells,
+      aggregate.severities,
+      categories,
+      comparisonDeltas,
+    ],
+  );
   const isEmptyFilterResult =
     allReports.length > 0 && filteredReports.length === 0;
   const periodLabel =
@@ -967,6 +1153,7 @@ export default function ReportRiskMatrix({
     setRange("all");
     setStatus("all");
     setSeverityFilter(SEVERITY_FILTER_ALL);
+    setActiveView("all");
     setSearch("");
     setSelectedCategory("");
     setSelectedSeverity("");
@@ -1001,6 +1188,13 @@ export default function ReportRiskMatrix({
     setVisibleCount(INITIAL_VISIBLE);
   };
 
+  const updateView = (value) => {
+    setActiveView(value);
+    setSelectedCategory("");
+    setSelectedSeverity("");
+    setVisibleCount(INITIAL_VISIBLE);
+  };
+
   const selectCell = (category, severity) => {
     if (
       selectedCategory === category &&
@@ -1027,7 +1221,11 @@ export default function ReportRiskMatrix({
   };
 
   const exportCsv = () =>
-    exportMatrixCsv(categories, aggregate.severities, aggregate.cells);
+    exportMatrixCsv(
+      visibleMatrix.categories,
+      visibleMatrix.severities,
+      visibleMatrix.cells,
+    );
 
   const heatMetricOptions = [
     { value: "count", label: "Report count" },
@@ -1195,15 +1393,48 @@ export default function ReportRiskMatrix({
               <HeatLegend metric={metric} />
             </div>
 
+            <div
+              role="group"
+              aria-label="Filter matrix by risk pattern"
+              className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 p-2"
+            >
+              <span className="mr-1 text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                Focus
+              </span>
+              {MATRIX_VIEWS.map((view) => (
+                <button
+                  key={view.id}
+                  type="button"
+                  aria-pressed={activeView === view.id}
+                  aria-label={`${view.label}: ${view.description}`}
+                  onClick={() => updateView(view.id)}
+                  className={`inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[9px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                    activeView === view.id
+                      ? "border-violet-200 bg-violet-50 text-violet-800"
+                      : "border-transparent bg-white text-slate-500 hover:border-slate-200 hover:text-slate-700"
+                  }`}
+                >
+                  {view.label}
+                  <span className="rounded-md bg-white/80 px-1 py-0.5 tabular-nums">
+                    {formatNumber(viewCounts[view.id] || 0)}
+                  </span>
+                </button>
+              ))}
+              <span className="ml-auto hidden text-[8px] text-slate-400 sm:inline">
+                {activeViewDefinition.description}
+              </span>
+            </div>
+
             <MatrixTable
-              categories={categories}
-              severities={aggregate.severities}
-              cells={aggregate.cells}
+              categories={visibleMatrix.categories}
+              severities={visibleMatrix.severities}
+              cells={visibleMatrix.cells}
               metric={metric}
               selectedCategory={selectedCategory}
               selectedSeverity={selectedSeverity}
               onSelectCell={selectCell}
               onSelectCategory={selectCategory}
+              activeView={activeView}
             />
 
             <ReportRiskComparison
