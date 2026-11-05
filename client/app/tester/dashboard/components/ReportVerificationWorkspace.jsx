@@ -313,6 +313,47 @@ function MetricCard({ label, value, caption, icon: Icon, tone }) {
     violet: "border-violet-200 bg-violet-50 text-violet-700",
   };
 
+  const toggleSelection = (reportId) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(reportId)) next.delete(reportId);
+      else next.add(reportId);
+      return next;
+    });
+  };
+
+  const toggleVisibleSelection = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) visibleIds.forEach((id) => next.delete(id));
+      else visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const applyBulkOutcome = (outcome) => {
+    if (!OUTCOMES.some((candidate) => candidate.id === outcome)) return;
+    const timestamp = new Date().toISOString();
+    const visibleSelection = new Set(visibleIds);
+    setReviews((current) => {
+      const next = { ...current };
+      selectedIds.forEach((reportId) => {
+        if (!visibleSelection.has(reportId)) return;
+        const existing = getReview(current, reportId);
+        next[reportId] = {
+          ...existing,
+          outcome,
+          reviewedAt: outcome === "pending" ? "" : timestamp,
+          updatedAt: timestamp,
+        };
+      });
+      return next;
+    });
+    setSelectedIds(new Set());
+    setExportError("");
+    setExportNotice("");
+  };
+
   return (
     <article className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/30">
       <div className="flex items-start justify-between gap-3">
@@ -398,6 +439,8 @@ function OutcomeButton({ outcome, active, onClick }) {
 function VerificationReportCard({
   report,
   review,
+  selected,
+  onToggleSelection,
   onSetOutcome,
   onSetNote,
   onReset,
@@ -417,7 +460,15 @@ function VerificationReportCard({
     <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/20 transition hover:border-violet-200">
       <div className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => onToggleSelection(id)}
+              aria-label={`Select ${getReportTitle(report)} for bulk retest update`}
+              className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-violet-600 accent-violet-600 focus:ring-4 focus:ring-violet-100"
+            />
+            <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-[10px] font-semibold text-slate-400">
                 {id ? `#${id.slice(-8)}` : "Report"}
@@ -443,6 +494,7 @@ function VerificationReportCard({
                 <ClipboardCheck size={12} aria-hidden="true" />
                 Retest {formatDateTime(review.reviewedAt)}
               </span>
+            </div>
             </div>
           </div>
           <OutcomeBadge outcome={outcome} />
@@ -625,6 +677,7 @@ export default function ReportVerificationWorkspace({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [noteFilter, setNoteFilter] = useState("all");
   const [recencyFilter, setRecencyFilter] = useState("all");
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("priority");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_REPORTS);
@@ -671,6 +724,7 @@ export default function ReportVerificationWorkspace({
     setCategoryFilter("all");
     setNoteFilter("all");
     setRecencyFilter("all");
+    setSelectedIds(new Set());
     setQuery("");
     setSortBy("priority");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
@@ -803,6 +857,12 @@ export default function ReportVerificationWorkspace({
   ]);
 
   const visibleReports = filteredReports.slice(0, visibleCount);
+  const visibleIds = visibleReports.map(getReportId);
+  const selectedVisibleCount = visibleIds.filter((id) =>
+    selectedIds.has(id),
+  ).length;
+  const allVisibleSelected =
+    visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
   const hasActiveFilters =
     outcomeFilter !== "all" ||
     severityFilter !== "all" ||
@@ -881,11 +941,13 @@ export default function ReportVerificationWorkspace({
     setRecencyFilter("all");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
+    setSelectedIds(new Set());
   };
 
   const setFilter = (setter, value) => {
     setter(value);
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
+    setSelectedIds(new Set());
     setExportError("");
     setExportNotice("");
   };
@@ -898,6 +960,7 @@ export default function ReportVerificationWorkspace({
 
   const showLess = () => {
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
+    setSelectedIds(new Set());
   };
 
   const hasMore = visibleCount < filteredReports.length;
@@ -1221,6 +1284,50 @@ export default function ReportVerificationWorkspace({
 
         {filteredReports.length ? (
           <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-100 bg-violet-50/60 px-3.5 py-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  onChange={toggleVisibleSelection}
+                  aria-label="Select all visible reports"
+                  className="h-4 w-4 rounded border-slate-300 text-violet-600 accent-violet-600 focus:ring-4 focus:ring-violet-100"
+                />
+                Select visible ({formatNumber(visibleReports.length)})
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] text-slate-500" aria-live="polite">
+                  {formatNumber(selectedVisibleCount)} selected
+                </span>
+                <label className="flex items-center gap-2 text-[10px] font-medium text-slate-600">
+                  <span className="sr-only">Set selected reports to</span>
+                  <select
+                    value=""
+                    disabled={!selectedVisibleCount}
+                    onChange={(event) => {
+                      if (event.target.value) applyBulkOutcome(event.target.value);
+                    }}
+                    className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-700 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">Set selected outcome…</option>
+                    {OUTCOMES.map((outcome) => (
+                      <option key={outcome.id} value={outcome.id}>
+                        {outcome.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {selectedVisibleCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIds(new Set())}
+                    className="rounded-lg px-2.5 py-2 text-[10px] font-semibold text-slate-500 hover:bg-white hover:text-slate-700"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
+            </div>
             {visibleReports.map((report) => {
               const id = getReportId(report);
               return (
@@ -1228,6 +1335,8 @@ export default function ReportVerificationWorkspace({
                   key={id}
                   report={report}
                   review={getReview(reviews, id)}
+                  selected={selectedIds.has(id)}
+                  onToggleSelection={toggleSelection}
                   onSetOutcome={handleSetOutcome}
                   onSetNote={handleSetNote}
                   onReset={handleResetReview}
