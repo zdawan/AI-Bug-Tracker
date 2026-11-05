@@ -504,7 +504,7 @@ function getTopCategoryRows(current, previous, metric) {
     ...current.categories.keys(),
     ...previous.categories.keys(),
   ]);
-  return [...names]
+  const rows = [...names]
     .map((name) => {
       const currentBucket = current.categories.get(name) || createBucket(name);
       const previousBucket = previous.categories.get(name) || createBucket(name);
@@ -518,27 +518,45 @@ function getTopCategoryRows(current, previous, metric) {
         reports: currentBucket.reports,
         open: currentBucket.open,
         high: currentBucket.high,
+        repeats: currentBucket.repeats,
+        previousOpen: previousBucket.open,
+        previousHigh: previousBucket.high,
       };
     })
-    .sort(
-      (left, right) =>
-        Math.abs(right.delta) - Math.abs(left.delta) ||
-        right.current - left.current ||
-        left.name.localeCompare(right.name),
-    );
+    .sort((left, right) => left.name.localeCompare(right.name));
+
+  return rows.sort(
+    (left, right) =>
+      Math.abs(right.delta) - Math.abs(left.delta) ||
+      right.current - left.current ||
+      left.name.localeCompare(right.name),
+  );
 }
 
-function CategoryChangeRow({ row, maximum, metric, onSelectCategory }) {
+function CategoryChangeRow({
+  row,
+  maximum,
+  metric,
+  onSelectCategory,
+  selected,
+}) {
   const Icon = getDeltaIcon(row.delta, metric !== "reports");
   const previousWidth = maximum ? (row.previous / maximum) * 100 : 0;
   const currentWidth = maximum ? (row.current / maximum) * 100 : 0;
 
   return (
-    <li className="rounded-lg border border-slate-100 bg-white px-3 py-2.5">
+    <li
+      className={`rounded-lg border px-3 py-2.5 ${
+        selected
+          ? "border-violet-200 bg-violet-50/50"
+          : "border-slate-100 bg-white"
+      }`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => onSelectCategory(row.name)}
+          aria-pressed={selected}
           className="max-w-[65%] truncate text-left text-[10px] font-semibold text-slate-700 underline-offset-2 hover:text-violet-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
           title={`Focus matrix on ${row.name}`}
         >
@@ -584,22 +602,66 @@ function CategoryChangeRow({ row, maximum, metric, onSelectCategory }) {
       </div>
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-1 text-[8px] text-slate-400">
         <span>Previous {formatNumber(row.previous)}</span>
-        <span>
-          {formatNumber(row.open)} open · {formatNumber(row.high)} high / critical
+        <span className="inline-flex flex-wrap justify-end gap-x-2">
+          <span>
+            Open {formatNumber(row.previousOpen)} → {formatNumber(row.open)}
+          </span>
+          <span>
+            High+ {formatNumber(row.previousHigh)} → {formatNumber(row.high)}
+          </span>
+          <span>Repeats {formatNumber(row.repeats)}</span>
         </span>
       </div>
     </li>
   );
 }
 
-function CategoryComparison({ current, previous, metric, onSelectCategory }) {
+function CategoryComparison({
+  current,
+  previous,
+  metric,
+  selectedCategory,
+  onSelectCategory,
+}) {
   const rows = useMemo(
-    () => getTopCategoryRows(current, previous, metric).slice(0, 8),
+    () => getTopCategoryRows(current, previous, metric),
     [current, metric, previous],
   );
+  const [sortMode, setSortMode] = useState("change");
+  const visibleRows = useMemo(() => {
+    const sorted = [...rows];
+    if (sortMode === "current") {
+      sorted.sort(
+        (left, right) =>
+          right.current - left.current ||
+          left.name.localeCompare(right.name),
+      );
+    } else if (sortMode === "open") {
+      sorted.sort(
+        (left, right) =>
+          right.open - left.open ||
+          right.high - left.high ||
+          left.name.localeCompare(right.name),
+      );
+    } else if (sortMode === "increasing") {
+      sorted.sort(
+        (left, right) =>
+          right.delta - left.delta ||
+          left.name.localeCompare(right.name),
+      );
+    } else if (sortMode === "decreasing") {
+      sorted.sort(
+        (left, right) =>
+          left.delta - right.delta ||
+          left.name.localeCompare(right.name),
+      );
+    }
+
+    return sorted;
+  }, [rows, sortMode]);
   const maximum = Math.max(
     1,
-    ...rows.flatMap((row) => [row.current, row.previous]),
+    ...visibleRows.flatMap((row) => [row.current, row.previous]),
   );
 
   if (!rows.length) {
@@ -614,25 +676,47 @@ function CategoryComparison({ current, previous, metric, onSelectCategory }) {
 
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center gap-3 text-[8px] text-slate-400">
-        <span className="inline-flex items-center gap-1">
-          <span className="h-1.5 w-3 rounded-full bg-slate-300" />
-          Previous
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="h-1.5 w-3 rounded-full bg-violet-500" />
-          Current
-        </span>
-        <span className="ml-auto">Top 8 by absolute change</span>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-3 text-[8px] text-slate-400">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-1.5 w-3 rounded-full bg-slate-300" />
+            Previous
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-1.5 w-3 rounded-full bg-violet-500" />
+            Current
+          </span>
+          <span>{formatNumber(visibleRows.length)} categories</span>
+        </div>
+        <label className="relative inline-flex items-center">
+          <span className="sr-only">Sort category comparison</span>
+          <select
+            value={sortMode}
+            onChange={(event) => setSortMode(event.target.value)}
+            className="h-7 appearance-none rounded-md border border-slate-200 bg-white py-1 pl-2 pr-6 text-[8px] font-medium text-slate-600 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+          >
+            <option value="change">Largest change</option>
+            <option value="current">Most current</option>
+            <option value="open">Most open</option>
+            <option value="increasing">Biggest increase</option>
+            <option value="decreasing">Biggest decrease</option>
+          </select>
+          <ChevronDown
+            size={10}
+            aria-hidden="true"
+            className="pointer-events-none absolute right-1.5 text-slate-400"
+          />
+        </label>
       </div>
       <ol className="space-y-2">
-        {rows.map((row) => (
+        {visibleRows.map((row) => (
           <CategoryChangeRow
             key={row.name}
             row={row}
             maximum={maximum}
             metric={metric}
             onSelectCategory={onSelectCategory}
+            selected={selectedCategory === row.name}
           />
         ))}
       </ol>
@@ -655,6 +739,17 @@ function SeverityMix({ current, previous }) {
 
   const currentTotal = current.reports || 1;
   const previousTotal = previous.reports || 1;
+  const hasSelection = Boolean(current.reports || previous.reports);
+  const currentHigh =
+    (current.severities.get("High")?.reports || 0) +
+    (current.severities.get("Critical")?.reports || 0);
+  const previousHigh =
+    (previous.severities.get("High")?.reports || 0) +
+    (previous.severities.get("Critical")?.reports || 0);
+  const currentLow =
+    current.severities.get("Low")?.reports || 0;
+  const previousLow =
+    previous.severities.get("Low")?.reports || 0;
 
   return (
     <div className="space-y-2.5">
@@ -707,6 +802,24 @@ function SeverityMix({ current, previous }) {
         Previous period contained {formatNumber(previous.reports)} reports.
         Its severity counts are shown for context.
       </p>
+      {hasSelection && (
+        <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2">
+          <div className="rounded-lg bg-rose-50/70 px-2 py-1.5">
+            <p className="text-[8px] font-medium text-rose-700">
+              High / critical
+            </p>
+            <p className="mt-0.5 text-[9px] font-semibold tabular-nums text-rose-800">
+              {formatNumber(previousHigh)} → {formatNumber(currentHigh)}
+            </p>
+          </div>
+          <div className="rounded-lg bg-sky-50/70 px-2 py-1.5">
+            <p className="text-[8px] font-medium text-sky-700">Low severity</p>
+            <p className="mt-0.5 text-[9px] font-semibold tabular-nums text-sky-800">
+              {formatNumber(previousLow)} → {formatNumber(currentLow)}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -802,6 +915,7 @@ export default function ReportRiskComparison({
   status = "all",
   search = "",
   today = new Date(),
+  selectedCategory = "",
   onSelectCategory,
 }) {
   const [metric, setMetric] = useState("open");
@@ -987,6 +1101,7 @@ export default function ReportRiskComparison({
                     current={current}
                     previous={previous}
                     metric={metric}
+                    selectedCategory={selectedCategory}
                     onSelectCategory={onSelectCategory}
                   />
                 ) : (
