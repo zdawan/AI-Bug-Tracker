@@ -12,6 +12,7 @@ import ReportReadinessBoard from "./components/ReportReadinessBoard";
 import ReportQualityTrends from "./components/ReportQualityTrends";
 import ReportRiskMatrix from "./components/ReportRiskMatrix";
 import ReportBriefBuilder from "./components/ReportBriefBuilder";
+import ReportEnvironmentCoverage from "./components/ReportEnvironmentCoverage";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1931,6 +1932,7 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
       <ReportResponseTargets reports={bugs} onOpenReport={onOpenBug} />
       <ReportRiskMatrix reports={bugs} onOpenReport={onOpenBug} />
       <ReportBriefBuilder reports={bugs} onOpenReport={onOpenBug} />
+      <ReportEnvironmentCoverage reports={bugs} onOpenReport={onOpenBug} />
       <ActivityFollowUpPanel
         reports={bugs}
         email={loadedEmail}
