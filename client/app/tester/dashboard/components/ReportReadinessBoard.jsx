@@ -277,6 +277,25 @@ function matchesCompleteness(item, filter) {
   return filter === "all" || getScoreGroup(item.score) === filter;
 }
 
+function matchesReadinessRefinements(
+  item,
+  { statusFilter, severityFilter, missingCriterion, search },
+) {
+  if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter) {
+    return false;
+  }
+  if (
+    severityFilter !== "all" &&
+    item.severity.toLowerCase() !== severityFilter
+  ) {
+    return false;
+  }
+  if (missingCriterion !== "any" && item.checks[missingCriterion] !== false) {
+    return false;
+  }
+  return matchesSearch(item, search);
+}
+
 function sortAssessments(items, sortBy) {
   const sorted = [...items];
 
@@ -1010,25 +1029,16 @@ export default function ReportReadinessBoard({
   );
 
   const filteredAssessments = useMemo(() => {
-    const filtered = assessments.filter((item) => {
-      if (!matchesCompleteness(item, completenessFilter)) return false;
-      if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter) {
-        return false;
-      }
-      if (
-        severityFilter !== "all" &&
-        item.severity.toLowerCase() !== severityFilter
-      ) {
-        return false;
-      }
-      if (
-        missingCriterion !== "any" &&
-        item.checks[missingCriterion] !== false
-      ) {
-        return false;
-      }
-      return matchesSearch(item, search);
-    });
+    const filtered = assessments.filter(
+      (item) =>
+        matchesCompleteness(item, completenessFilter) &&
+        matchesReadinessRefinements(item, {
+          statusFilter,
+          severityFilter,
+          missingCriterion,
+          search,
+        }),
+    );
 
     return sortAssessments(filtered, sortBy);
   }, [
@@ -1042,14 +1052,40 @@ export default function ReportReadinessBoard({
   ]);
 
   const countByFilter = useMemo(
-    () => ({
-      all: assessments.length,
-      "needs-details": assessments.filter((item) => item.score < 50).length,
-      "mostly-ready": assessments.filter(
-        (item) => item.score >= 50 && item.score < 80,
-      ).length,
-      ready: assessments.filter((item) => item.score >= 80).length,
-    }),
+    () => {
+      const refined = assessments.filter((item) =>
+        matchesReadinessRefinements(item, {
+          statusFilter,
+          severityFilter,
+          missingCriterion,
+          search,
+        }),
+      );
+
+      return {
+        all: refined.length,
+        "needs-details": refined.filter((item) => item.score < 50).length,
+        "mostly-ready": refined.filter(
+          (item) => item.score >= 50 && item.score < 80,
+        ).length,
+        ready: refined.filter((item) => item.score >= 80).length,
+      };
+    },
+    [assessments, missingCriterion, search, severityFilter, statusFilter],
+  );
+
+  const severityOptions = useMemo(
+    () => [
+      { value: "all", label: "All severity" },
+      ...Array.from(
+        new Set(assessments.map((item) => item.severity.toLowerCase())),
+      )
+        .sort()
+        .map((value) => ({
+          value,
+          label: value.replace(/\b\w/g, (letter) => letter.toUpperCase()),
+        })),
+    ],
     [assessments],
   );
 
@@ -1127,6 +1163,52 @@ export default function ReportReadinessBoard({
                   </FilterPill>
                 ))}
               </div>
+              <div
+                role="group"
+                aria-label="Filter reports by readiness score band"
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-2"
+              >
+                <span className="mr-1 text-[10px] font-semibold text-slate-500">
+                  Score band
+                </span>
+                {[
+                  {
+                    id: "needs-details",
+                    label: "0–49%",
+                    count: countByFilter["needs-details"],
+                    tone: "border-rose-200 bg-rose-50 text-rose-700",
+                  },
+                  {
+                    id: "mostly-ready",
+                    label: "50–79%",
+                    count: countByFilter["mostly-ready"],
+                    tone: "border-amber-200 bg-amber-50 text-amber-700",
+                  },
+                  {
+                    id: "ready",
+                    label: "80–100%",
+                    count: countByFilter.ready,
+                    tone: "border-emerald-200 bg-emerald-50 text-emerald-700",
+                  },
+                ].map((band) => (
+                  <button
+                    key={band.id}
+                    type="button"
+                    aria-pressed={completenessFilter === band.id}
+                    onClick={() => selectCompletenessFilter(band.id)}
+                    className={`inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                      completenessFilter === band.id
+                        ? band.tone
+                        : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-700"
+                    }`}
+                  >
+                    {band.label}
+                    <span className="rounded-md bg-white/80 px-1.5 py-0.5 tabular-nums">
+                      {formatNumber(band.count)}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.8fr)]">
                 <div className="min-w-0 space-y-3">
@@ -1149,12 +1231,7 @@ export default function ReportReadinessBoard({
                       <SelectControl
                         label="Filter by severity"
                         value={severityFilter}
-                        options={[
-                          { value: "all", label: "All severity" },
-                          { value: "high", label: "High" },
-                          { value: "medium", label: "Medium" },
-                          { value: "low", label: "Low" },
-                        ]}
+                        options={severityOptions}
                         onChange={applySeverityFilter}
                       />
                       <SelectControl
