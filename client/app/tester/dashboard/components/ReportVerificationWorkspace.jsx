@@ -219,6 +219,13 @@ function formatDateTime(value) {
   });
 }
 
+function getRetestAge(reviewedAt) {
+  const timestamp = Date.parse(reviewedAt || "");
+  if (!Number.isFinite(timestamp)) return null;
+
+  return Math.max(0, Math.floor((Date.now() - timestamp) / 86_400_000));
+}
+
 function severityRank(report) {
   const severity = getReportSeverity(report).toLowerCase();
   if (severity === "critical") return 4;
@@ -616,6 +623,8 @@ export default function ReportVerificationWorkspace({
   const [outcomeFilter, setOutcomeFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [noteFilter, setNoteFilter] = useState("all");
+  const [recencyFilter, setRecencyFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("priority");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_REPORTS);
@@ -660,6 +669,8 @@ export default function ReportVerificationWorkspace({
     setOutcomeFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setNoteFilter("all");
+    setRecencyFilter("all");
     setQuery("");
     setSortBy("priority");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
@@ -745,6 +756,15 @@ export default function ReportVerificationWorkspace({
         ) {
           return false;
         }
+        const hasNote = Boolean(review.note.trim());
+        if (noteFilter === "with-notes" && !hasNote) return false;
+        if (noteFilter === "without-notes" && hasNote) return false;
+        if (recencyFilter !== "all") {
+          const age = getRetestAge(review.reviewedAt);
+          if (age === null) return false;
+          if (recencyFilter === "7" && age > 7) return false;
+          if (recencyFilter === "30" && age > 30) return false;
+        }
         return matchesSearch(report, query);
       })
       .sort((left, right) => {
@@ -773,8 +793,10 @@ export default function ReportVerificationWorkspace({
   }, [
     categoryFilter,
     closedReports,
+    noteFilter,
     outcomeFilter,
     query,
+    recencyFilter,
     reviews,
     severityFilter,
     sortBy,
@@ -785,6 +807,8 @@ export default function ReportVerificationWorkspace({
     outcomeFilter !== "all" ||
     severityFilter !== "all" ||
     categoryFilter !== "all" ||
+    noteFilter !== "all" ||
+    recencyFilter !== "all" ||
     Boolean(query.trim());
   const reviewedCount = counts.verified + counts.reproduces + counts.blocked;
   const coveragePercent = counts.total
@@ -853,6 +877,8 @@ export default function ReportVerificationWorkspace({
     setOutcomeFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setNoteFilter("all");
+    setRecencyFilter("all");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
   };
@@ -1108,10 +1134,40 @@ export default function ReportVerificationWorkspace({
               options={categoryOptions}
             />
             <FilterSelect
+              label="Private note"
+              value={noteFilter}
+              onChange={(value) => setFilter(setNoteFilter, value)}
+              options={[
+                { value: "all", label: "All reports" },
+                {
+                  value: "with-notes",
+                  label: `With notes (${formatNumber(
+                    closedReports.filter((report) =>
+                      getReview(reviews, getReportId(report)).note.trim(),
+                    ).length,
+                  )})`,
+                },
+                {
+                  value: "without-notes",
+                  label: "Without notes",
+                },
+              ]}
+            />
+            <FilterSelect
               label="Sort by"
               value={sortBy}
               onChange={(value) => setFilter(setSortBy, value)}
               options={SORT_OPTIONS}
+            />
+            <FilterSelect
+              label="Retest date"
+              value={recencyFilter}
+              onChange={(value) => setFilter(setRecencyFilter, value)}
+              options={[
+                { value: "all", label: "Any retest date" },
+                { value: "7", label: "Retested in last 7 days" },
+                { value: "30", label: "Retested in last 30 days" },
+              ]}
             />
             <label className="grid gap-1.5">
               <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
