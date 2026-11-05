@@ -34,6 +34,8 @@ const STATUS_OPTIONS = [
   { value: "closed", label: "Resolved only" },
 ];
 
+const SEVERITY_FILTER_ALL = "all";
+
 const SORT_OPTIONS = [
   { value: "open", label: "Most open issues" },
   { value: "count", label: "Most reports" },
@@ -302,13 +304,20 @@ function normalizeReports(reports) {
   );
 }
 
-function filterReports(reports, { range, status, search }, today) {
+function filterReports(
+  reports,
+  { range, status, severity, search },
+  today,
+) {
   const normalizedSearch = search.trim().toLowerCase();
   const rangeStart = range === "all" ? null : new Date(today);
   if (rangeStart) rangeStart.setDate(rangeStart.getDate() - Number(range) + 1);
 
   return reports.filter((report) => {
     if (status !== "all" && getStatus(report) !== status) return false;
+    if (severity !== SEVERITY_FILTER_ALL && getSeverity(report) !== severity) {
+      return false;
+    }
     if (rangeStart) {
       const reportDate = getReportDate(report);
       if (!reportDate) return false;
@@ -872,6 +881,7 @@ export default function ReportRiskMatrix({
 }) {
   const [range, setRange] = useState("all");
   const [status, setStatus] = useState("all");
+  const [severityFilter, setSeverityFilter] = useState(SEVERITY_FILTER_ALL);
   const [metric, setMetric] = useState("count");
   const [sortBy, setSortBy] = useState("open");
   const [search, setSearch] = useState("");
@@ -884,9 +894,24 @@ export default function ReportRiskMatrix({
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }, []);
 
+  const severityOptions = useMemo(() => {
+    const values = [
+      ...new Set(allReports.map((report) => getSeverity(report))),
+    ].sort(compareSeverity);
+    return [
+      { value: SEVERITY_FILTER_ALL, label: "All severities" },
+      ...values.map((value) => ({ value, label: value })),
+    ];
+  }, [allReports]);
+
   const filteredReports = useMemo(
-    () => filterReports(allReports, { range, status, search }, today),
-    [allReports, range, status, search, today],
+    () =>
+      filterReports(
+        allReports,
+        { range, status, severity: severityFilter, search },
+        today,
+      ),
+    [allReports, range, search, severityFilter, status, today],
   );
   const aggregate = useMemo(
     () => aggregateReports(filteredReports, today),
@@ -929,7 +954,10 @@ export default function ReportRiskMatrix({
 
   const hasSelection = Boolean(selectedCategory || selectedSeverity);
   const hasFilters =
-    range !== "all" || status !== "all" || Boolean(search.trim());
+    range !== "all" ||
+    status !== "all" ||
+    severityFilter !== SEVERITY_FILTER_ALL ||
+    Boolean(search.trim());
   const isEmptyFilterResult =
     allReports.length > 0 && filteredReports.length === 0;
   const periodLabel =
@@ -938,6 +966,7 @@ export default function ReportRiskMatrix({
   const resetFilters = () => {
     setRange("all");
     setStatus("all");
+    setSeverityFilter(SEVERITY_FILTER_ALL);
     setSearch("");
     setSelectedCategory("");
     setSelectedSeverity("");
@@ -953,6 +982,13 @@ export default function ReportRiskMatrix({
 
   const updateStatus = (value) => {
     setStatus(value);
+    setSelectedCategory("");
+    setSelectedSeverity("");
+    setVisibleCount(INITIAL_VISIBLE);
+  };
+
+  const updateSeverity = (value) => {
+    setSeverityFilter(value);
     setSelectedCategory("");
     setSelectedSeverity("");
     setVisibleCount(INITIAL_VISIBLE);
@@ -993,7 +1029,7 @@ export default function ReportRiskMatrix({
   const exportCsv = () =>
     exportMatrixCsv(categories, aggregate.severities, aggregate.cells);
 
-  const severityOptions = [
+  const heatMetricOptions = [
     { value: "count", label: "Report count" },
     { value: "open", label: "Open issue count" },
     { value: "age", label: "Oldest open age" },
@@ -1054,9 +1090,15 @@ export default function ReportRiskMatrix({
             onChange={updateStatus}
           />
           <SelectControl
+            label="Filter risk matrix by severity"
+            value={severityFilter}
+            options={severityOptions}
+            onChange={updateSeverity}
+          />
+          <SelectControl
             label="Choose risk matrix heat value"
             value={metric}
-            options={severityOptions}
+            options={heatMetricOptions}
             onChange={setMetric}
           />
           <SelectControl
@@ -1168,6 +1210,7 @@ export default function ReportRiskMatrix({
               reports={allReports}
               range={range}
               status={status}
+              severity={severityFilter}
               search={search}
               today={today}
               selectedCategory={selectedCategory}
