@@ -11,6 +11,7 @@ import {
   ChevronDown,
   CircleDashed,
   Clock3,
+  Download,
   Flame,
   Gauge,
   Layers3,
@@ -236,6 +237,50 @@ function getRelativePeriodLabel(rangeDays) {
   if (rangeDays === 14) return "past two weeks";
   if (rangeDays === 30) return "past month";
   return `past ${rangeDays} days`;
+}
+
+function escapeCsvCell(value) {
+  const text = String(value ?? "").replace(/\r\n?/g, "\n");
+  const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+
+function downloadPulseCsv(days, metric, rangeDays) {
+  const headers = [
+    "Date",
+    "Weekday",
+    "Total reports",
+    "Open",
+    "Resolved",
+    "High severity",
+    `${getMetricTheme(metric).label} selected`,
+  ];
+  const rows = days.map((day) => [
+    localDateKey(day.date),
+    formatDayName(day.date),
+    day.total,
+    day.open,
+    day.resolved,
+    day.high,
+    getDayMetric(day, metric),
+  ]);
+  const csv = [headers, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(","))
+    .join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], {
+    type: "text/csv;charset=utf-8",
+  });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = `report-activity-pulse-${rangeDays}-days-${localDateKey(
+    new Date(),
+  )}.csv`;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
 }
 
 function DayOfWeekSummary({ days, metric }) {
@@ -1100,19 +1145,30 @@ export default function ReportActivityPulse({
           <Clock3 size={9} aria-hidden="true" />
           Dates use local time
         </span>
-        <button
-          type="button"
-          onClick={() => setShowHelp((current) => !current)}
-          aria-expanded={showHelp}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[8px] font-semibold text-slate-500 hover:bg-white hover:text-violet-700"
-        >
-          How it works
-          <ChevronDown
-            size={10}
-            className={`transition-transform ${showHelp ? "rotate-180" : ""}`}
-            aria-hidden="true"
-          />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => downloadPulseCsv(dailySeries, metric, rangeDays)}
+            disabled={dailySeries.length === 0}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[8px] font-semibold text-slate-500 hover:bg-white hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download size={10} aria-hidden="true" />
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowHelp((current) => !current)}
+            aria-expanded={showHelp}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[8px] font-semibold text-slate-500 hover:bg-white hover:text-violet-700"
+          >
+            How it works
+            <ChevronDown
+              size={10}
+              className={`transition-transform ${showHelp ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
       </div>
       {showHelp && <PulseHelp expanded onToggle={() => setShowHelp(false)} />}
     </section>
