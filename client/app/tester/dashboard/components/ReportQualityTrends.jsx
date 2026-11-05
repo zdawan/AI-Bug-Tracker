@@ -961,7 +961,7 @@ export default function ReportQualityTrends({ reports = [] }) {
     [assessments],
   );
 
-  const matchingAssessments = useMemo(
+  const dimensionMatchedAssessments = useMemo(
     () =>
       assessments.filter((item) => {
         if (
@@ -981,6 +981,28 @@ export default function ReportQualityTrends({ reports = [] }) {
     [assessments, categoryFilter, severityFilter, statusFilter],
   );
 
+  const matchingAssessments = useMemo(
+    () =>
+      dimensionMatchedAssessments.filter(
+        (item) =>
+          !selectedCriterion || item.checks[selectedCriterion] === false,
+      ),
+    [dimensionMatchedAssessments, selectedCriterion],
+  );
+  const criterionCurrentItems = useMemo(
+    () =>
+      dimensionMatchedAssessments.filter((item) =>
+        isInRange(item.date, bounds.currentStart, bounds.currentEnd),
+      ),
+    [bounds, dimensionMatchedAssessments],
+  );
+  const criterionPreviousItems = useMemo(
+    () =>
+      dimensionMatchedAssessments.filter((item) =>
+        isInRange(item.date, bounds.previousStart, bounds.previousEnd),
+      ),
+    [bounds, dimensionMatchedAssessments],
+  );
   const currentItems = useMemo(
     () =>
       matchingAssessments.filter((item) =>
@@ -999,6 +1021,14 @@ export default function ReportQualityTrends({ reports = [] }) {
   const previousSummary = useMemo(
     () => summarizeItems(previousItems),
     [previousItems],
+  );
+  const criterionCurrentSummary = useMemo(
+    () => summarizeItems(criterionCurrentItems),
+    [criterionCurrentItems],
+  );
+  const criterionPreviousSummary = useMemo(
+    () => summarizeItems(criterionPreviousItems),
+    [criterionPreviousItems],
   );
   const dailySeries = useMemo(
     () =>
@@ -1052,6 +1082,10 @@ export default function ReportQualityTrends({ reports = [] }) {
     { label: `Status: ${statusFilter}`, value: statusFilter },
     { label: `Severity: ${severityFilter}`, value: severityFilter },
     { label: `Category: ${categoryFilter}`, value: categoryFilter },
+    {
+      label: `Missing: ${CRITERIA.find((criterion) => criterion.id === selectedCriterion)?.label || ""}`,
+      value: selectedCriterion,
+    },
   ];
 
   const handleExport = () => exportDailyCsv(dailySeries, metric);
@@ -1074,7 +1108,8 @@ export default function ReportQualityTrends({ reports = [] }) {
   const hasActiveFilters =
     statusFilter !== "all" ||
     severityFilter !== "all" ||
-    categoryFilter !== "all";
+    categoryFilter !== "all" ||
+    Boolean(selectedCriterion);
 
   return (
     <section
@@ -1241,7 +1276,7 @@ export default function ReportQualityTrends({ reports = [] }) {
                     Detail completion
                   </h3>
                   <p className="mt-1 text-[10px] text-slate-500">
-                    Select a row to focus coaching on that detail.
+                      Select a row to drill into reports missing that detail.
                   </p>
                 </div>
                 <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-50 text-slate-500">
@@ -1249,8 +1284,8 @@ export default function ReportQualityTrends({ reports = [] }) {
                 </span>
               </div>
               <CriterionBreakdown
-                current={currentSummary}
-                previous={previousSummary}
+                current={criterionCurrentSummary}
+                previous={criterionPreviousSummary}
                 selectedCriterion={selectedCriterion}
                 onSelect={(criterion) =>
                   setSelectedCriterion((current) =>
@@ -1262,7 +1297,7 @@ export default function ReportQualityTrends({ reports = [] }) {
                 <p className="mt-2 rounded-lg bg-violet-50 px-2.5 py-2 text-[9px] leading-4 text-violet-700">
                   Focus: reports missing{" "}
                   {CRITERIA.find((criterion) => criterion.id === selectedCriterion)?.label.toLowerCase()}.
-                  Use the readiness board to review individual submissions.
+                  The metrics, trend, comparison, and CSV now use only those reports.
                 </p>
               )}
             </section>
