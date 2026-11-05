@@ -1127,6 +1127,55 @@ export default function ReportReadinessBoard({
                   </FilterPill>
                 ))}
               </div>
+              <div
+                role="group"
+                aria-label="Filter reports by readiness score band"
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-2"
+              >
+                <span className="mr-1 text-[10px] font-semibold text-slate-500">
+                  Score band
+                </span>
+                {[
+                  {
+                    id: "needs-details",
+                    label: "0–49%",
+                    count: assessments.filter((item) => item.score < 50).length,
+                    tone: "border-rose-200 bg-rose-50 text-rose-700",
+                  },
+                  {
+                    id: "mostly-ready",
+                    label: "50–79%",
+                    count: assessments.filter(
+                      (item) => item.score >= 50 && item.score < 80,
+                    ).length,
+                    tone: "border-amber-200 bg-amber-50 text-amber-700",
+                  },
+                  {
+                    id: "ready",
+                    label: "80–100%",
+                    count: assessments.filter((item) => item.score >= 80)
+                      .length,
+                    tone: "border-emerald-200 bg-emerald-50 text-emerald-700",
+                  },
+                ].map((band) => (
+                  <button
+                    key={band.id}
+                    type="button"
+                    aria-pressed={completenessFilter === band.id}
+                    onClick={() => selectCompletenessFilter(band.id)}
+                    className={`inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                      completenessFilter === band.id
+                        ? band.tone
+                        : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-700"
+                    }`}
+                  >
+                    {band.label}
+                    <span className="rounded-md bg-white/80 px-1.5 py-0.5 tabular-nums">
+                      {formatNumber(band.count)}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.8fr)]">
                 <div className="min-w-0 space-y-3">
