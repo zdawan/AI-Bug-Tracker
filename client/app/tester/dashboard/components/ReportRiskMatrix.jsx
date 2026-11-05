@@ -1170,6 +1170,7 @@ export default function ReportRiskMatrix({
               status={status}
               search={search}
               today={today}
+              selectedCategory={selectedCategory}
               onSelectCategory={selectCategory}
             />
 
