@@ -1298,6 +1298,8 @@ export default function ReportCalendarBoard({
             onSelectDate={goToDate}
             onOpenReport={handleOpenReport}
             onGoToToday={goToToday}
+            onGoToLatest={goToLatest}
+            hasLatestReport={Boolean(latestReportDate)}
           />
         )}
         <div className={view === "week" ? "hidden" : "contents"}>

@@ -317,6 +317,8 @@ function WeekNavigation({
   selectedKey,
   onMoveWeek,
   onGoToToday,
+  onGoToLatest,
+  hasLatestReport,
   onJumpToDate,
 }) {
   return (
@@ -354,6 +356,15 @@ function WeekNavigation({
         >
           This week
         </button>
+        {hasLatestReport && (
+          <button
+            type="button"
+            onClick={onGoToLatest}
+            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+          >
+            Latest activity
+          </button>
+        )}
         <label className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 transition hover:border-violet-200 focus-within:border-violet-400 focus-within:ring-4 focus-within:ring-violet-100">
           <CalendarDays
             size={13}
@@ -1000,6 +1011,8 @@ export default function ReportCalendarWeekView({
   onSelectDate,
   onOpenReport,
   onGoToToday,
+  onGoToLatest,
+  hasLatestReport,
 }) {
   const [showHelp, setShowHelp] = useState(false);
   const safeAnchorDate = isValidDate(anchorDate) ? anchorDate : new Date();
@@ -1095,6 +1108,8 @@ export default function ReportCalendarWeekView({
           selectedKey={activeKey}
           onMoveWeek={moveWeek}
           onGoToToday={onGoToToday}
+          onGoToLatest={onGoToLatest}
+          hasLatestReport={hasLatestReport}
           onJumpToDate={jumpToDate}
         />
       </div>
