@@ -616,6 +616,7 @@ export default function ReportVerificationWorkspace({
   const [outcomeFilter, setOutcomeFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [noteFilter, setNoteFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("priority");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_REPORTS);
@@ -660,6 +661,7 @@ export default function ReportVerificationWorkspace({
     setOutcomeFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setNoteFilter("all");
     setQuery("");
     setSortBy("priority");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
@@ -745,6 +747,9 @@ export default function ReportVerificationWorkspace({
         ) {
           return false;
         }
+        const hasNote = Boolean(review.note.trim());
+        if (noteFilter === "with-notes" && !hasNote) return false;
+        if (noteFilter === "without-notes" && hasNote) return false;
         return matchesSearch(report, query);
       })
       .sort((left, right) => {
@@ -773,6 +778,7 @@ export default function ReportVerificationWorkspace({
   }, [
     categoryFilter,
     closedReports,
+    noteFilter,
     outcomeFilter,
     query,
     reviews,
@@ -785,6 +791,7 @@ export default function ReportVerificationWorkspace({
     outcomeFilter !== "all" ||
     severityFilter !== "all" ||
     categoryFilter !== "all" ||
+    noteFilter !== "all" ||
     Boolean(query.trim());
   const reviewedCount = counts.verified + counts.reproduces + counts.blocked;
   const coveragePercent = counts.total
@@ -853,6 +860,7 @@ export default function ReportVerificationWorkspace({
     setOutcomeFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setNoteFilter("all");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
   };
@@ -1106,6 +1114,26 @@ export default function ReportVerificationWorkspace({
               value={categoryFilter}
               onChange={(value) => setFilter(setCategoryFilter, value)}
               options={categoryOptions}
+            />
+            <FilterSelect
+              label="Private note"
+              value={noteFilter}
+              onChange={(value) => setFilter(setNoteFilter, value)}
+              options={[
+                { value: "all", label: "All reports" },
+                {
+                  value: "with-notes",
+                  label: `With notes (${formatNumber(
+                    closedReports.filter((report) =>
+                      getReview(reviews, getReportId(report)).note.trim(),
+                    ).length,
+                  )})`,
+                },
+                {
+                  value: "without-notes",
+                  label: "Without notes",
+                },
+              ]}
             />
             <FilterSelect
               label="Sort by"
