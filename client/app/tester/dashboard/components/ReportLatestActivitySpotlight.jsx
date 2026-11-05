@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  ArrowDown,
-  ArrowLeft,
   ArrowRight,
   ArrowUpRight,
   BellRing,
@@ -13,7 +11,6 @@ import {
   ChevronDown,
   CircleDashed,
   Clock3,
-  ExternalLink,
   FileSearch,
   Filter,
   Flame,
@@ -880,7 +877,13 @@ function RecentActivityPanel({
   );
 }
 
-function LatestActivityHeader({ expanded, latestEntry, onToggle }) {
+function LatestActivityHeader({
+  expanded,
+  latestEntry,
+  onToggle,
+  onOpenLatest,
+  onSelectLatestDate,
+}) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
@@ -898,24 +901,46 @@ function LatestActivityHeader({ expanded, latestEntry, onToggle }) {
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-violet-100 bg-white px-2.5 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-      >
-        {expanded ? "Hide details" : "Browse activity"}
-        <ChevronDown
-          size={12}
-          className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
-      </button>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        {latestEntry && (
+          <>
+            <button
+              type="button"
+              onClick={() => onOpenLatest?.(latestEntry.report)}
+              className="inline-flex h-8 items-center gap-1 rounded-lg bg-violet-600 px-2.5 text-[10px] font-semibold text-white transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            >
+              Open latest
+              <ArrowUpRight size={11} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectLatestDate?.(latestEntry.dateKey)}
+              aria-label="View latest report date in calendar"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-violet-100 bg-white text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+            >
+              <CalendarDays size={13} aria-hidden="true" />
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-100 bg-white px-2.5 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        >
+          {expanded ? "Hide details" : "Browse activity"}
+          <ChevronDown
+            size={12}
+            className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
     </div>
   );
 }
 
-function ActivitySummary({ entries, summary, latestEntry, onSelectDate }) {
+function ActivitySummary({ summary, latestEntry, onSelectDate }) {
   const activeDates = summary.byDate.size;
   const resolvedPercentage = summary.total
     ? Math.round((summary.resolved / summary.total) * 100)
@@ -1096,6 +1121,8 @@ export default function ReportLatestActivitySpotlight({
         <LatestActivityHeader
           expanded={expanded}
           latestEntry={latestEntry}
+          onOpenLatest={onOpenReport}
+          onSelectLatestDate={onSelectDate}
           onToggle={() => setExpanded((current) => !current)}
         />
         <h2 id="latest-activity-spotlight-heading" className="sr-only">
@@ -1110,7 +1137,6 @@ export default function ReportLatestActivitySpotlight({
               onSelectDate={onSelectDate}
             />
             <ActivitySummary
-              entries={normalizedEntries}
               summary={summary}
               latestEntry={latestEntry}
               onSelectDate={onSelectDate}
