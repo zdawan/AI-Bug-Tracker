@@ -1042,6 +1042,36 @@ export default function ReportVerificationWorkspace({
               </button>
             )}
           </div>
+          <div className="mb-3 flex flex-wrap gap-2" aria-label="Retest quick filters">
+            {[
+              { value: "all", label: "All", count: counts.total },
+              { value: "pending", label: "Not retested", count: counts.pending },
+              {
+                value: "reproduces",
+                label: "Still reproduces",
+                count: counts.reproduces,
+              },
+              { value: "blocked", label: "Blocked", count: counts.blocked },
+              { value: "verified", label: "Verified", count: counts.verified },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={outcomeFilter === option.value}
+                onClick={() => setFilter(setOutcomeFilter, option.value)}
+                className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 ${
+                  outcomeFilter === option.value
+                    ? "border-violet-300 bg-violet-100 text-violet-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+                }`}
+              >
+                {option.label}
+                <span className="rounded-full bg-white/80 px-1.5 py-0.5 tabular-nums">
+                  {formatNumber(option.count)}
+                </span>
+              </button>
+            ))}
+          </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <FilterSelect
               label="Retest outcome"
