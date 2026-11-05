@@ -684,6 +684,7 @@ export default function ReportVerificationWorkspace({
   const [noteFilter, setNoteFilter] = useState("all");
   const [recencyFilter, setRecencyFilter] = useState("all");
   const [ageFilter, setAgeFilter] = useState("all");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("priority");
@@ -732,6 +733,7 @@ export default function ReportVerificationWorkspace({
     setNoteFilter("all");
     setRecencyFilter("all");
     setAgeFilter("all");
+    setSortDirection("desc");
     setSelectedIds(new Set());
     setQuery("");
     setSortBy("priority");
@@ -852,11 +854,15 @@ export default function ReportVerificationWorkspace({
         const outcomeRankDifference =
           (outcomeRanks[getReview(reviews, getReportId(left)).outcome] ?? 4) -
           (outcomeRanks[getReview(reviews, getReportId(right)).outcome] ?? 4);
-        if (outcomeRankDifference) return outcomeRankDifference;
-
         const severityDifference = severityRank(right) - severityRank(left);
-        if (severityDifference) return severityDifference;
-        return leftDate - rightDate;
+        const defaultOrder =
+          outcomeRankDifference ||
+          severityDifference ||
+          (sortDirection === "desc"
+            ? rightDate - leftDate
+            : leftDate - rightDate);
+
+        return defaultOrder;
       });
   }, [
     categoryFilter,
@@ -868,6 +874,7 @@ export default function ReportVerificationWorkspace({
     recencyFilter,
     reviews,
     severityFilter,
+    sortDirection,
     sortBy,
   ]);
 
@@ -963,6 +970,14 @@ export default function ReportVerificationWorkspace({
 
   const setFilter = (setter, value) => {
     setter(value);
+    setVisibleCount(INITIAL_VISIBLE_REPORTS);
+    setSelectedIds(new Set());
+    setExportError("");
+    setExportNotice("");
+  };
+
+  const cycleSortDirection = () => {
+    setSortDirection((current) => (current === "desc" ? "asc" : "desc"));
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
     setSelectedIds(new Set());
     setExportError("");
@@ -1288,6 +1303,19 @@ export default function ReportVerificationWorkspace({
               <ArrowDownWideNarrow size={12} aria-hidden="true" />
               {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
             </span>
+            <button
+              type="button"
+              onClick={cycleSortDirection}
+              aria-label={`Sort by ${sortDirection === "desc" ? "oldest" : "newest"} first`}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            >
+              <ArrowDownWideNarrow
+                size={12}
+                className={sortDirection === "asc" ? "rotate-180" : ""}
+                aria-hidden="true"
+              />
+              {sortDirection === "desc" ? "Newest first" : "Oldest first"}
+            </button>
           </div>
         </div>
 
