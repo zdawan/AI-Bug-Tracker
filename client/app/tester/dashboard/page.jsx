@@ -13,6 +13,7 @@ import ReportQualityTrends from "./components/ReportQualityTrends";
 import ReportRiskMatrix from "./components/ReportRiskMatrix";
 import ReportBriefBuilder from "./components/ReportBriefBuilder";
 import ReportEnvironmentCoverage from "./components/ReportEnvironmentCoverage";
+import ReportVerificationWorkspace from "./components/ReportVerificationWorkspace";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1796,7 +1797,7 @@ function PriorityInbox({ bugs, onOpenBug, onViewAll }) {
   );
 }
 
-function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
+function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
   const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
   const [daysToShow, setDaysToShow] = useState(7);
   const averageReports = bugs.length
@@ -1933,6 +1934,11 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
       <ReportRiskMatrix reports={bugs} onOpenReport={onOpenBug} />
       <ReportBriefBuilder reports={bugs} onOpenReport={onOpenBug} />
       <ReportEnvironmentCoverage reports={bugs} onOpenReport={onOpenBug} />
+      <ReportVerificationWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
       <ActivityFollowUpPanel
         reports={bugs}
         email={loadedEmail}
@@ -3844,6 +3850,7 @@ export default function TesterDashboardPage() {
                   {hasSearched && bugs.length > 0 ? (
                     <ReportSummaryPanel
                       bugs={bugs}
+                      email={loadedEmail}
                       onOpenBug={handleOpenBug}
                       onViewAllOpen={viewOpenReports}
                     />
