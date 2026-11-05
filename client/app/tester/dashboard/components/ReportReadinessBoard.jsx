@@ -1074,6 +1074,21 @@ export default function ReportReadinessBoard({
     [assessments, missingCriterion, search, severityFilter, statusFilter],
   );
 
+  const severityOptions = useMemo(
+    () => [
+      { value: "all", label: "All severity" },
+      ...Array.from(
+        new Set(assessments.map((item) => item.severity.toLowerCase())),
+      )
+        .sort()
+        .map((value) => ({
+          value,
+          label: value.replace(/\b\w/g, (letter) => letter.toUpperCase()),
+        })),
+    ],
+    [assessments],
+  );
+
   const visibleAssessments = filteredAssessments.slice(0, visibleCount);
   const hasFilters =
     completenessFilter !== "needs-details" ||
@@ -1216,12 +1231,7 @@ export default function ReportReadinessBoard({
                       <SelectControl
                         label="Filter by severity"
                         value={severityFilter}
-                        options={[
-                          { value: "all", label: "All severity" },
-                          { value: "high", label: "High" },
-                          { value: "medium", label: "Medium" },
-                          { value: "low", label: "Low" },
-                        ]}
+                        options={severityOptions}
                         onChange={applySeverityFilter}
                       />
                       <SelectControl
