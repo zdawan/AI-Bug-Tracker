@@ -21,6 +21,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import ReportActivityPulse from "./ReportActivityPulse";
 
 const INITIAL_VISIBLE_COUNT = 5;
 const LOAD_MORE_COUNT = 5;
@@ -1175,6 +1176,11 @@ export default function ReportLatestActivitySpotlight({
             <ActivitySummary
               summary={summary}
               latestEntry={latestEntry}
+              onSelectDate={onSelectDate}
+            />
+            <ReportActivityPulse
+              entries={normalizedEntries}
+              selectedDateKey={latestEntry?.dateKey || ""}
               onSelectDate={onSelectDate}
             />
             {normalizedEntries.length > 0 ? (
