@@ -7,6 +7,7 @@ import DuplicateReviewWorkspace from "./components/DuplicateReviewWorkspace";
 import PersonalTriageWorkspace from "./components/PersonalTriageWorkspace";
 import ReportCalendarBoard from "./components/ReportCalendarBoard";
 import ReportAgingBoard from "./components/ReportAgingBoard";
+import ReportResponseTargets from "./components/ReportResponseTargets";
 import ReportReadinessBoard from "./components/ReportReadinessBoard";
 import ReportQualityTrends from "./components/ReportQualityTrends";
 import ReportRiskMatrix from "./components/ReportRiskMatrix";
@@ -1927,6 +1928,7 @@ function ReportSummaryPanel({ bugs, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
         onViewAllOpen={onViewAllOpen}
       />
+      <ReportResponseTargets reports={bugs} onOpenReport={onOpenBug} />
       <ReportRiskMatrix reports={bugs} onOpenReport={onOpenBug} />
       <ReportBriefBuilder reports={bugs} onOpenReport={onOpenBug} />
       <ActivityFollowUpPanel
