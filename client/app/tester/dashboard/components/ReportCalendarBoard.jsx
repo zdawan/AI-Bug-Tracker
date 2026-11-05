@@ -18,6 +18,7 @@ import {
   List,
   Search,
   ShieldAlert,
+  Sparkles,
   X,
 } from "lucide-react";
 import ReportCalendarWeekView from "./ReportCalendarWeekView";
@@ -445,6 +446,7 @@ function CalendarDayButton({
   selected,
   onSelect,
   maximumCount,
+  latestReportKey,
 }) {
   const dayReports = reports.get(day.key) || [];
   const count = dayReports.length;
@@ -454,6 +456,7 @@ function CalendarDayButton({
   const closedCount = dayReports.filter(
     (report) => getStatus(report) === "Closed",
   ).length;
+  const isLatestReportDay = day.key === latestReportKey;
   const hasActivity = count > 0;
   const intensity = getDayIntensity(count, maximumCount);
 
@@ -463,7 +466,7 @@ function CalendarDayButton({
       data-calendar-day
       onClick={() => onSelect(day)}
       aria-pressed={selected}
-      aria-label={`${formatFullDate(day.date)}${count ? `, ${count} reports` : ", no reports"}`}
+      aria-label={`${formatFullDate(day.date)}${count ? `, ${count} reports` : ", no reports"}${isLatestReportDay ? ", latest report date" : ""}`}
       className={`relative flex min-h-[72px] flex-col items-center justify-start rounded-xl border px-1.5 py-2 text-center transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:min-h-[86px] sm:items-start sm:px-2.5 ${
         day.inMonth ? intensity : "border-slate-100 bg-slate-50/40 text-slate-300"
       } ${
@@ -472,6 +475,15 @@ function CalendarDayButton({
           : "hover:border-violet-200 hover:bg-violet-50/60"
       }`}
     >
+      {isLatestReportDay && (
+        <span
+          title="Latest report date"
+          className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white shadow-sm sm:right-2 sm:top-2"
+        >
+          <Sparkles size={11} aria-hidden="true" />
+          <span className="sr-only">Latest report date</span>
+        </span>
+      )}
       <span
         className={`grid h-6 min-w-6 place-items-center rounded-full px-1 text-xs font-semibold tabular-nums ${
           selected
@@ -519,6 +531,7 @@ function CalendarGrid({
   selectedKey,
   onSelectDay,
   maximumCount,
+  latestReportKey,
 }) {
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5 sm:p-4">
@@ -541,6 +554,7 @@ function CalendarGrid({
             selected={selectedKey === day.key}
             onSelect={onSelectDay}
             maximumCount={maximumCount}
+            latestReportKey={latestReportKey}
           />
         ))}
       </div>
@@ -1048,6 +1062,7 @@ export default function ReportCalendarBoard({
       }, null),
     [normalizedReports],
   );
+  const latestReportKey = latestReportDate?.dateKey || "";
   const hasFilters =
     statusFilter !== "All statuses" ||
     severityFilter !== "All severity" ||
@@ -1274,6 +1289,18 @@ export default function ReportCalendarBoard({
           <CalendarLegend />
         </div>
 
+        {view === "week" && (
+          <ReportCalendarWeekView
+            anchorDate={selectedDate}
+            selectedKey={selectedKey}
+            entries={filteredReports}
+            latestReportKey={latestReportKey}
+            onSelectDate={goToDate}
+            onOpenReport={handleOpenReport}
+            onGoToToday={goToToday}
+          />
+        )}
+        <div className={view === "week" ? "hidden" : "contents"}>
         {view === "calendar" ? (
           <>
             <CalendarGrid
@@ -1282,6 +1309,7 @@ export default function ReportCalendarBoard({
               selectedKey={selectedKey}
               onSelectDay={selectDay}
               maximumCount={maximumCount}
+              latestReportKey={latestReportKey}
             />
             <SelectedDayPanel
               date={selectedDate}
@@ -1295,7 +1323,7 @@ export default function ReportCalendarBoard({
               }
             />
           </>
-        ) : view === "agenda" ? (
+        ) : (
           <AgendaList
             days={calendarDays}
             reportsByDate={reportsByDate}
@@ -1306,23 +1334,17 @@ export default function ReportCalendarBoard({
             selectedKey={selectedKey}
             onOpenReport={handleOpenReport}
           />
-        ) : (
-          <ReportCalendarWeekView
-            anchorDate={selectedDate}
-            selectedKey={selectedKey}
-            entries={filteredReports}
-            onSelectDate={goToDate}
-            onOpenReport={handleOpenReport}
-            onGoToToday={goToToday}
-          />
         )}
+        </div>
 
-        {view !== "week" && monthEntries.length === 0 && hasFilters && (
+        <div className={view === "week" ? "hidden" : "contents"}>
+        {monthEntries.length === 0 && hasFilters && (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
             No reports in {formatMonth(month)} match these filters. Clear the
             filters or browse another month.
           </p>
         )}
+        </div>
       </div>
     </section>
   );
