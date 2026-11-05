@@ -310,6 +310,83 @@ function DayOfWeekSummary({ days, metric }) {
   );
 }
 
+function WeekendWeekdayComparison({ days, metric }) {
+  const groups = [
+    { id: "weekday", label: "Weekdays", color: "bg-violet-500", days: [] },
+    { id: "weekend", label: "Weekend", color: "bg-amber-500", days: [] },
+  ];
+
+  days.forEach((day) => {
+    const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
+    groups[isWeekend ? 1 : 0].days.push(day);
+  });
+
+  const totals = groups.map((group) => {
+    const total = group.days.reduce(
+      (sum, day) => sum + getDayMetric(day, metric),
+      0,
+    );
+    const activeDays = group.days.filter(
+      (day) => getDayMetric(day, metric) > 0,
+    ).length;
+
+    return {
+      ...group,
+      total,
+      activeDays,
+      average: group.days.length ? total / group.days.length : 0,
+    };
+  });
+  const maximumAverage = Math.max(1, ...totals.map((group) => group.average));
+  const theme = getMetricTheme(metric);
+
+  return (
+    <section className="rounded-xl border border-slate-200/80 bg-white p-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div>
+          <h4 className="text-[10px] font-semibold text-slate-700">
+            Weekdays vs weekend
+          </h4>
+          <p className="mt-0.5 text-[8px] text-slate-400">
+            Average {theme.label.toLowerCase()} per calendar day
+          </p>
+        </div>
+        <CalendarDays size={13} className="text-violet-600" aria-hidden="true" />
+      </div>
+      <div className="space-y-3">
+        {totals.map((group) => (
+          <div key={group.id}>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-medium text-slate-600">
+                {group.label}
+              </span>
+              <span className="text-[9px] tabular-nums text-slate-500">
+                {formatNumber(group.total)} total · {group.activeDays} active
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full transition-[width] duration-300 ${group.color}`}
+                style={{
+                  width: `${(group.average / maximumAverage) * 100}%`,
+                }}
+                role="progressbar"
+                aria-label={`${group.label}: average ${group.average.toFixed(2)} ${theme.label.toLowerCase()} per day`}
+                aria-valuenow={Number(group.average.toFixed(2))}
+                aria-valuemin={0}
+                aria-valuemax={Number(maximumAverage.toFixed(2))}
+              />
+            </div>
+            <p className="mt-1 text-right text-[8px] text-slate-400">
+              {group.average.toFixed(2)} per day
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ComparisonBadge({ current, previous }) {
   const difference = current - previous;
   const percentChange = getPercentChange(current, previous);
@@ -1000,6 +1077,7 @@ export default function ReportActivityPulse({
             rangeDays={rangeDays}
           />
           <DayOfWeekSummary days={dailySeries} metric={metric} />
+          <WeekendWeekdayComparison days={dailySeries} metric={metric} />
         </div>
       </div>
 
