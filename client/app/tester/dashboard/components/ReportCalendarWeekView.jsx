@@ -878,6 +878,12 @@ function WeekInsights({ statistics, weekEntries, previousWeekEntries }) {
     .map((date) => formatMonthDay(date))
     .join(", ");
   const reportDifference = weekEntries.length - previousWeekEntries.length;
+  const previousStatistics = getWeekStatistics(previousWeekEntries);
+  const openDifference = statistics.open - previousStatistics.open;
+  const resolvedDifference =
+    statistics.resolved - previousStatistics.resolved;
+  const formatDifference = (difference) =>
+    difference > 0 ? `+${formatNumber(difference)}` : formatNumber(difference);
   const comparisonLabel =
     reportDifference === 0
       ? "Same as last week"
@@ -946,6 +952,10 @@ function WeekInsights({ statistics, weekEntries, previousWeekEntries }) {
           <p className="mt-1 truncate text-[10px] leading-5">
             {comparisonLabel} · {formatNumber(previousWeekEntries.length)}{" "}
             {previousWeekEntries.length === 1 ? "report" : "reports"} last week.
+          </p>
+          <p className="mt-1 text-[9px] leading-4 opacity-80">
+            Open {formatDifference(openDifference)} · Resolved{" "}
+            {formatDifference(resolvedDifference)}
           </p>
         </div>
       </article>
