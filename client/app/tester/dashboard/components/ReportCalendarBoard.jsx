@@ -21,6 +21,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import ReportLatestActivitySpotlight from "./ReportLatestActivitySpotlight";
 import ReportCalendarWeekView from "./ReportCalendarWeekView";
 
 const MAX_DAY_REPORTS = 8;
@@ -1272,6 +1273,12 @@ export default function ReportCalendarBoard({
           onQueryChange={setQuery}
           onClearFilters={clearFilters}
           hasFilters={hasFilters}
+        />
+
+        <ReportLatestActivitySpotlight
+          entries={normalizedReports}
+          onOpenReport={handleOpenReport}
+          onSelectDate={goToDate}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
