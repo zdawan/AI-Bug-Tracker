@@ -277,6 +277,25 @@ function matchesCompleteness(item, filter) {
   return filter === "all" || getScoreGroup(item.score) === filter;
 }
 
+function matchesReadinessRefinements(
+  item,
+  { statusFilter, severityFilter, missingCriterion, search },
+) {
+  if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter) {
+    return false;
+  }
+  if (
+    severityFilter !== "all" &&
+    item.severity.toLowerCase() !== severityFilter
+  ) {
+    return false;
+  }
+  if (missingCriterion !== "any" && item.checks[missingCriterion] !== false) {
+    return false;
+  }
+  return matchesSearch(item, search);
+}
+
 function sortAssessments(items, sortBy) {
   const sorted = [...items];
 
@@ -1010,25 +1029,16 @@ export default function ReportReadinessBoard({
   );
 
   const filteredAssessments = useMemo(() => {
-    const filtered = assessments.filter((item) => {
-      if (!matchesCompleteness(item, completenessFilter)) return false;
-      if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter) {
-        return false;
-      }
-      if (
-        severityFilter !== "all" &&
-        item.severity.toLowerCase() !== severityFilter
-      ) {
-        return false;
-      }
-      if (
-        missingCriterion !== "any" &&
-        item.checks[missingCriterion] !== false
-      ) {
-        return false;
-      }
-      return matchesSearch(item, search);
-    });
+    const filtered = assessments.filter(
+      (item) =>
+        matchesCompleteness(item, completenessFilter) &&
+        matchesReadinessRefinements(item, {
+          statusFilter,
+          severityFilter,
+          missingCriterion,
+          search,
+        }),
+    );
 
     return sortAssessments(filtered, sortBy);
   }, [
@@ -1042,15 +1052,26 @@ export default function ReportReadinessBoard({
   ]);
 
   const countByFilter = useMemo(
-    () => ({
-      all: assessments.length,
-      "needs-details": assessments.filter((item) => item.score < 50).length,
-      "mostly-ready": assessments.filter(
-        (item) => item.score >= 50 && item.score < 80,
-      ).length,
-      ready: assessments.filter((item) => item.score >= 80).length,
-    }),
-    [assessments],
+    () => {
+      const refined = assessments.filter((item) =>
+        matchesReadinessRefinements(item, {
+          statusFilter,
+          severityFilter,
+          missingCriterion,
+          search,
+        }),
+      );
+
+      return {
+        all: refined.length,
+        "needs-details": refined.filter((item) => item.score < 50).length,
+        "mostly-ready": refined.filter(
+          (item) => item.score >= 50 && item.score < 80,
+        ).length,
+        ready: refined.filter((item) => item.score >= 80).length,
+      };
+    },
+    [assessments, missingCriterion, search, severityFilter, statusFilter],
   );
 
   const visibleAssessments = filteredAssessments.slice(0, visibleCount);
@@ -1139,22 +1160,19 @@ export default function ReportReadinessBoard({
                   {
                     id: "needs-details",
                     label: "0–49%",
-                    count: assessments.filter((item) => item.score < 50).length,
+                    count: countByFilter["needs-details"],
                     tone: "border-rose-200 bg-rose-50 text-rose-700",
                   },
                   {
                     id: "mostly-ready",
                     label: "50–79%",
-                    count: assessments.filter(
-                      (item) => item.score >= 50 && item.score < 80,
-                    ).length,
+                    count: countByFilter["mostly-ready"],
                     tone: "border-amber-200 bg-amber-50 text-amber-700",
                   },
                   {
                     id: "ready",
                     label: "80–100%",
-                    count: assessments.filter((item) => item.score >= 80)
-                      .length,
+                    count: countByFilter.ready,
                     tone: "border-emerald-200 bg-emerald-50 text-emerald-700",
                   },
                 ].map((band) => (
