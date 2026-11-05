@@ -124,16 +124,17 @@ function isBetween(date, start, end) {
   return day >= start.getTime() && day <= end.getTime();
 }
 
-function matchesBaseFilters(report, status, search) {
+function matchesBaseFilters(report, status, severity, search) {
   if (status === "open" && !isOpen(report)) return false;
   if (status === "closed" && isOpen(report)) return false;
+  if (severity !== "all" && getSeverity(report) !== severity) return false;
   const query = search.trim().toLowerCase();
   return !query || getSearchText(report).includes(query);
 }
 
-function getPeriodReports(reports, status, search, start, end) {
+function getPeriodReports(reports, status, severity, search, start, end) {
   return reports.filter((report) => {
-    if (!matchesBaseFilters(report, status, search)) return false;
+    if (!matchesBaseFilters(report, status, severity, search)) return false;
     return isBetween(getDate(report), start, end);
   });
 }
@@ -913,6 +914,7 @@ export default function ReportRiskComparison({
   reports = [],
   range,
   status = "all",
+  severity = "all",
   search = "",
   today = new Date(),
   selectedCategory = "",
@@ -939,12 +941,13 @@ export default function ReportRiskComparison({
         ? getPeriodReports(
             validReports,
             status,
+            severity,
             search,
             windows.currentStart,
             windows.currentEnd,
           )
         : [],
-    [search, status, validReports, windows],
+    [search, severity, status, validReports, windows],
   );
   const previousReports = useMemo(
     () =>
@@ -952,12 +955,13 @@ export default function ReportRiskComparison({
         ? getPeriodReports(
             validReports,
             status,
+            severity,
             search,
             windows.previousStart,
             windows.previousEnd,
           )
         : [],
-    [search, status, validReports, windows],
+    [search, severity, status, validReports, windows],
   );
   const current = useMemo(
     () => summarizePeriod(currentReports),
