@@ -117,6 +117,14 @@ const CHECK_FILTERS = [
   { id: "na", label: "Not applicable" },
 ];
 
+const PRIORITY_FILTERS = [
+  { id: "all", label: "All priorities" },
+  { id: "Critical", label: "Critical priority" },
+  { id: "High", label: "High priority" },
+  { id: "Medium", label: "Medium priority" },
+  { id: "Low", label: "Low priority" },
+];
+
 function getText(value, limit = 320) {
   return typeof value === "string" ? value.trim().slice(0, limit) : "";
 }
@@ -506,6 +514,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
   const [auditQuery, setAuditQuery] = useState("");
   const [checkQuery, setCheckQuery] = useState("");
   const [checkFilter, setCheckFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [nextCheckId, setNextCheckId] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -547,6 +556,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
         groupFilter === "custom" ? item.custom : item.groupId === groupFilter
       ))
       .filter(({ item }) => checkFilter === "all" || item.status === checkFilter)
+      .filter(({ item }) => priorityFilter === "all" || item.priority === priorityFilter)
       .filter(({ item }) => !query || [
         item.title,
         item.guidance,
@@ -554,7 +564,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
         item.groupLabel,
         item.priority,
       ].some((value) => value.toLowerCase().includes(query)));
-  }, [selectedAudit, checkQuery, checkFilter, groupFilter]);
+  }, [selectedAudit, checkQuery, checkFilter, priorityFilter, groupFilter]);
 
   useEffect(() => {
     if (!nextCheckId || !visibleChecks.some(({ item }) => item.id === nextCheckId)) return;
@@ -804,6 +814,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
 
   const resetFilters = () => {
     setCheckFilter("all");
+    setPriorityFilter("all");
     setGroupFilter("all");
     setCheckQuery("");
   };
@@ -1163,7 +1174,14 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       <select value={checkFilter} onChange={(event) => setCheckFilter(event.target.value)} aria-label="Filter accessibility check results" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
                         {CHECK_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label} ({filter.id === "all" ? metrics.total : metrics[filter.id]})</option>)}
                       </select>
-                      {groupFilter !== "all" || checkFilter !== "all" || checkQuery ? (
+                      <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} aria-label="Filter accessibility checks by priority" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        {PRIORITY_FILTERS.map((filter) => (
+                          <option key={filter.id} value={filter.id}>
+                            {filter.label} ({filter.id === "all" ? metrics.total : selectedAudit.checks.filter((item) => item.priority === filter.id).length})
+                          </option>
+                        ))}
+                      </select>
+                      {groupFilter !== "all" || checkFilter !== "all" || priorityFilter !== "all" || checkQuery ? (
                         <button type="button" onClick={resetFilters} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset</button>
                       ) : null}
                       {canEdit ? <button type="button" onClick={() => setShowCustomForm((value) => !value)} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Custom check</button> : null}
