@@ -197,7 +197,7 @@ function getTriagePriority(report, now = Date.now()) {
   return severityWeight + repeatWeight + ageWeight;
 }
 
-function filterOpenIssues(reports, ageFilter, severityFilter, query, sortBy, now) {
+function filterOpenIssues(reports, ageFilter, severityFilter, categoryFilter, query, sortBy, now) {
   const normalizedQuery = query.trim().toLowerCase();
 
   return reports
@@ -211,6 +211,10 @@ function filterOpenIssues(reports, ageFilter, severityFilter, query, sortBy, now
         severityFilter !== "All" &&
         report?.severity !== severityFilter
       ) {
+        return false;
+      }
+
+      if (categoryFilter !== "All" && getCategoryLabel(report) !== categoryFilter) {
         return false;
       }
 
@@ -435,22 +439,33 @@ export default function ReportAgingBoard({
 }) {
   const [ageFilter, setAgeFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortBy, setSortBy] = useState("priority");
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_REPORTS);
   const now = Date.now();
   const insight = useMemo(() => getAgeInsight(reports, now), [reports, now]);
+  const categoryOptions = useMemo(
+    () => [...new Set(reports
+      .filter((report) => report?.status !== "Closed")
+      .map(getCategoryLabel))].sort((left, right) => left.localeCompare(right)),
+    [reports],
+  );
+  const activeCategoryFilter = categoryOptions.includes(categoryFilter)
+    ? categoryFilter
+    : "All";
   const openReports = useMemo(
-    () => filterOpenIssues(reports, ageFilter, severityFilter, search, sortBy, now),
-    [reports, ageFilter, severityFilter, search, sortBy, now],
+    () => filterOpenIssues(reports, ageFilter, severityFilter, activeCategoryFilter, search, sortBy, now),
+    [reports, ageFilter, severityFilter, activeCategoryFilter, search, sortBy, now],
   );
   const visibleReports = openReports.slice(0, visibleCount);
   const filtersActive =
-    ageFilter !== "all" || severityFilter !== "All" || sortBy !== "priority" || Boolean(search.trim());
+    ageFilter !== "all" || severityFilter !== "All" || activeCategoryFilter !== "All" || sortBy !== "priority" || Boolean(search.trim());
 
   const resetFilters = () => {
     setAgeFilter("all");
     setSeverityFilter("All");
+    setCategoryFilter("All");
     setSortBy("priority");
     setSearch("");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
@@ -463,6 +478,11 @@ export default function ReportAgingBoard({
 
   const handleSeverityFilterChange = (event) => {
     setSeverityFilter(event.target.value);
+    setVisibleCount(INITIAL_VISIBLE_REPORTS);
+  };
+
+  const handleCategoryFilterChange = (event) => {
+    setCategoryFilter(event.target.value);
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
   };
 
@@ -627,6 +647,20 @@ export default function ReportAgingBoard({
                 <option value="High">High severity</option>
                 <option value="Medium">Medium severity</option>
                 <option value="Low">Low severity</option>
+              </select>
+              <label className="sr-only" htmlFor="aging-category-filter">
+                Filter open issues by category
+              </label>
+              <select
+                id="aging-category-filter"
+                value={activeCategoryFilter}
+                onChange={handleCategoryFilterChange}
+                className="h-9 max-w-40 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-medium text-slate-600 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+              >
+                <option value="All">All categories</option>
+                {categoryOptions.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
               </select>
               <label className="sr-only" htmlFor="aging-sort-order">
                 Sort open issues
