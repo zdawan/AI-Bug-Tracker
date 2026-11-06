@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowDown,
   ArrowDownToLine,
+  ArrowUpRight,
   Check,
   CheckCircle2,
   CircleDashed,
@@ -807,13 +808,13 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     setCheckQuery("");
   };
 
-  const reviewNextPending = () => {
-    const nextPending = selectedAudit?.checks.find((item) => item.status === "pending");
-    if (!nextPending) return;
+  const jumpToCheck = (status) => {
+    const targetCheck = selectedAudit?.checks.find((item) => item.status === status);
+    if (!targetCheck) return;
     setGroupFilter("all");
     setCheckFilter("all");
     setCheckQuery("");
-    setNextCheckId(nextPending.id);
+    setNextCheckId(targetCheck.id);
   };
 
   const markPendingNotApplicable = (groupId = "all") => {
@@ -1114,12 +1115,21 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                     <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={reviewNextPending}
+                        onClick={() => jumpToCheck("pending")}
                         disabled={!canEdit || metrics.pending === 0}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-800 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
                         Review next pending
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => jumpToCheck("issue")}
+                        disabled={metrics.issueCount === 0}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                        Review next issue
                       </button>
                       <button
                         type="button"
