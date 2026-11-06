@@ -527,6 +527,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
   const [environmentNotes, setEnvironmentNotes] = useState("");
   const [editingEnvironmentId, setEditingEnvironmentId] = useState("");
   const [showCheckForm, setShowCheckForm] = useState(false);
+  const [editingCheckId, setEditingCheckId] = useState("");
   const [checkTitle, setCheckTitle] = useState("");
   const [checkArea, setCheckArea] = useState("");
   const [checkPriority, setCheckPriority] = useState("Medium");
@@ -879,6 +880,34 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
       setNotice("Enter a title for the matrix check.");
       return;
     }
+    if (editingCheckId) {
+      const current = selectedMatrix.checks.find((check) => check.id === editingCheckId && check.custom);
+      if (!current) {
+        setNotice("This custom check is no longer available to edit.");
+        return;
+      }
+      const updatedCheck = normalizeCheck({
+        ...current,
+        title,
+        area: checkArea,
+        priority: checkPriority,
+        expected: checkExpected,
+      });
+      const saved = updateMatrix(selectedMatrix.id, (matrix) => ({
+        ...matrix,
+        checks: matrix.checks.map((check) => check.id === editingCheckId ? updatedCheck : check),
+        activity: appendActivity(matrix, `Updated matrix check: ${updatedCheck.title}`),
+      }), "Custom check updated.");
+      if (saved) {
+        setEditingCheckId("");
+        setCheckTitle("");
+        setCheckArea("");
+        setCheckPriority("Medium");
+        setCheckExpected("");
+        setShowCheckForm(false);
+      }
+      return;
+    }
     if (selectedMatrix.checks.length >= MAX_CHECKS) {
       setNotice(`A matrix can contain at most ${MAX_CHECKS} checks.`);
       return;
@@ -897,12 +926,32 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
       activity: appendActivity(matrix, `Added matrix check: ${check.title}`),
     }), "Check added to matrix.");
     if (saved) {
+      setEditingCheckId("");
       setCheckTitle("");
       setCheckArea("");
       setCheckPriority("Medium");
       setCheckExpected("");
       setShowCheckForm(false);
     }
+  };
+
+  const editCheck = (check) => {
+    if (!check.custom || !canEdit) return;
+    setEditingCheckId(check.id);
+    setCheckTitle(check.title);
+    setCheckArea(check.area);
+    setCheckPriority(check.priority);
+    setCheckExpected(check.expected);
+    setShowCheckForm(true);
+  };
+
+  const cancelCheckEdit = () => {
+    setEditingCheckId("");
+    setCheckTitle("");
+    setCheckArea("");
+    setCheckPriority("Medium");
+    setCheckExpected("");
+    setShowCheckForm(false);
   };
 
   const removeCheck = (checkId) => {
@@ -1498,11 +1547,12 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                       </select>
                       {checkQuery || resultFilter !== "all" || priorityFilter !== "all" ? <button type="button" onClick={clearResultFilter} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset filters</button> : null}
                       <button type="button" onClick={exportVisibleCsv} disabled={!visibleChecks.length || !selectedMatrix.environments.length} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"><Download className="h-3.5 w-3.5" aria-hidden="true" /> Export shown</button>
-                      {canEdit ? <button type="button" onClick={() => setShowCheckForm((value) => !value)} disabled={selectedMatrix.checks.length >= MAX_CHECKS} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add check</button> : null}
+                      {canEdit ? <button type="button" onClick={() => { if (showCheckForm) cancelCheckEdit(); else { setEditingCheckId(""); setCheckTitle(""); setCheckArea(""); setCheckPriority("Medium"); setCheckExpected(""); setShowCheckForm(true); } }} disabled={!editingCheckId && selectedMatrix.checks.length >= MAX_CHECKS} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add check</button> : null}
                     </div>
                   </div>
                   {showCheckForm && canEdit ? (
                     <div className="border-b border-slate-200 bg-emerald-50/30 p-4">
+                      <h4 className="text-sm font-semibold text-slate-800">{editingCheckId ? "Edit custom check" : "Add a custom check"}</h4>
                       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <label className="text-xs font-medium text-slate-600 sm:col-span-2">Check *
                           <input value={checkTitle} onChange={(event) => setCheckTitle(event.target.value)} maxLength={180} placeholder="Describe the behavior to verify" className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal" />
@@ -1517,7 +1567,10 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                           <textarea value={checkExpected} onChange={(event) => setCheckExpected(event.target.value)} maxLength={600} rows={2} placeholder="What should happen in each environment?" className="mt-1.5 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal" />
                         </label>
                       </div>
-                      <div className="mt-3 flex justify-end"><button type="button" onClick={addCheck} className="rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800">Add check</button></div>
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button type="button" onClick={cancelCheckEdit} className="rounded-lg px-3 py-2 text-xs text-slate-600 hover:bg-white">Cancel</button>
+                        <button type="button" onClick={addCheck} className="rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800">{editingCheckId ? "Save changes" : "Add check"}</button>
+                      </div>
                     </div>
                   ) : null}
 
@@ -1559,6 +1612,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                                       Pending → N/A ({selectedMatrix.environments.filter((environment) => getResult(selectedMatrix, environment.id, check.id).status === "pending").length})
                                     </button>
                                   ) : null}
+                                  {check.custom && canEdit ? <button type="button" onClick={() => editCheck(check)} className="mt-1 block text-[10px] text-sky-700 hover:underline">Edit custom check</button> : null}
                                   {check.custom && canEdit ? <button type="button" onClick={() => removeCheck(check.id)} className="mt-1 text-[10px] text-rose-600 hover:underline">Remove custom check</button> : null}
                                 </div>
                               </div>
