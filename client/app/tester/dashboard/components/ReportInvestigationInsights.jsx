@@ -947,6 +947,31 @@ export default function ReportInvestigationInsights({
   const blockedCount = filteredEntries.filter(
     (entry) => entry.state === "blocked",
   ).length;
+  const blockerPatterns = useMemo(() => {
+    const totals = new Map();
+    filteredEntries.forEach((entry) => {
+      if (entry.steps.blocked === 0) return;
+      const key = entry.category;
+      const current = totals.get(key) || {
+        category: key,
+        sessions: 0,
+        blockedSteps: 0,
+        highSeveritySessions: 0,
+        titles: [],
+      };
+      current.sessions += 1;
+      current.blockedSteps += entry.steps.blocked;
+      if (entry.severityRank >= 3) current.highSeveritySessions += 1;
+      if (current.titles.length < 3) current.titles.push(entry.title);
+      totals.set(key, current);
+    });
+    return [...totals.values()].sort(
+      (left, right) =>
+        right.highSeveritySessions - left.highSeveritySessions ||
+        right.blockedSteps - left.blockedSteps ||
+        right.sessions - left.sessions,
+    );
+  }, [filteredEntries]);
   const recentComparison = useMemo(() => {
     const now = Date.now();
     const currentStart = now - 7 * 86_400_000;
@@ -1305,6 +1330,64 @@ export default function ReportInvestigationInsights({
         <div className="grid gap-4 xl:grid-cols-2">
           <CategoryBreakdown entries={filteredEntries} />
           <SeverityBreakdown entries={filteredEntries} />
+        </div>
+
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="inline-flex items-center gap-2 text-xs font-semibold text-amber-950">
+                <AlertTriangle size={14} aria-hidden="true" />
+                Blocked-step follow-up
+              </h3>
+              <p className="mt-1 text-[9px] leading-4 text-amber-900/70">
+                Categories with recorded blockers in the filtered sessions.
+                Use as a personal investigation aid, not a workflow escalation.
+              </p>
+            </div>
+            <span className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-[9px] font-semibold text-amber-800">
+              {formatNumber(blockedCount)} blocked sessions
+            </span>
+          </div>
+          {blockerPatterns.length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {blockerPatterns.slice(0, 6).map((pattern) => (
+                <article
+                  key={pattern.category}
+                  className="rounded-xl border border-amber-100 bg-white/90 p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="min-w-0 truncate text-[10px] font-semibold text-slate-800">
+                      {pattern.category}
+                    </h4>
+                    <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[8px] font-semibold text-amber-800">
+                      {pattern.blockedSteps} blocked steps
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[9px] text-slate-500">
+                    {pattern.sessions} sessions ·{" "}
+                    {pattern.highSeveritySessions} high/critical
+                  </p>
+                  {pattern.titles.length > 0 && (
+                    <ul className="mt-2 space-y-1 border-t border-slate-100 pt-2">
+                      {pattern.titles.map((title) => (
+                        <li
+                          key={title}
+                          className="truncate text-[8px] text-slate-500"
+                          title={title}
+                        >
+                          {title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-xl border border-amber-100 bg-white/80 px-3 py-5 text-center text-[9px] text-slate-500">
+              No blocked investigation steps match these filters.
+            </p>
+          )}
         </div>
 
         <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/80 via-white to-violet-50/60 p-4 sm:p-5">
