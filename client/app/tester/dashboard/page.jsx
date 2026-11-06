@@ -19,6 +19,7 @@ import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate"
 import ReportInvestigationWorkspace from "./components/ReportInvestigationWorkspace";
 import ReportInvestigationInsights from "./components/ReportInvestigationInsights";
 import ReportDataIntegrityAudit from "./components/ReportDataIntegrityAudit";
+import ReportAuditHistory from "./components/ReportAuditHistory";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1924,7 +1925,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
       <ReportCalendarBoard reports={bugs} onOpenReport={onOpenBug} />
       <ReportReadinessBoard reports={bugs} onOpenReport={onOpenBug} />
       <ReportReleaseReadinessGate reports={bugs} onOpenReport={onOpenBug} />
-      <ReportDataIntegrityAudit reports={bugs} onOpenReport={onOpenBug} />
+      <ReportDataIntegrityAudit
+        reports={bugs}
+        onOpenReport={onOpenBug}
+      />
+      <ReportAuditHistory reports={bugs} email={email} />
       <ReportQualityTrends reports={bugs} />
 
       <PriorityInbox
