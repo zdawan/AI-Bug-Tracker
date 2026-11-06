@@ -325,7 +325,7 @@ function getInsight(current, previous, metric, weakestCriterion, strongestCatego
   };
 }
 
-function exportDailyCsv(daily, metric) {
+function exportDailyCsv(daily, metric, context) {
   const columns = [
     "Date",
     "Reports",
@@ -350,7 +350,20 @@ function exportDailyCsv(daily, metric) {
         : "",
     ),
   ]);
-  const csv = [columns, ...rows]
+  const metadata = [
+    ["Report quality trends export"],
+    ["Generated", new Date().toLocaleString("en-IN")],
+    ["Selected period", `${context.startDate} – ${context.endDate}`],
+    ["Period length", `${context.range} days`],
+    ["Metric", getMetricLabel(metric)],
+    ["Status filter", context.status],
+    ["Severity filter", context.severity],
+    ["Category filter", context.category],
+    ["Missing criterion filter", context.criterion || "None"],
+    ["Matching reports in period", context.reportCount],
+    [],
+  ];
+  const csv = [...metadata, columns, ...rows]
     .map((row) => row.map(safeCsvCell).join(","))
     .join("\r\n");
   const blob = new Blob([`\uFEFF${csv}`], {
@@ -1105,7 +1118,16 @@ export default function ReportQualityTrends({ reports = [] }) {
     },
   ];
 
-  const handleExport = () => exportDailyCsv(dailySeries, metric);
+  const handleExport = () => exportDailyCsv(dailySeries, metric, {
+    startDate: dateKey(bounds.currentStart),
+    endDate: dateKey(bounds.currentEnd),
+    range,
+    status: statusFilter,
+    severity: severityFilter,
+    category: categoryFilter,
+    criterion: CRITERIA.find((criterion) => criterion.id === selectedCriterion)?.label || "",
+    reportCount: currentSummary.count,
+  });
   const handleResetFilters = () => {
     setStatusFilter("all");
     setSeverityFilter("all");
