@@ -246,6 +246,11 @@ function normalizeSavedComparisons(value) {
         id: entry.id,
         name: entry.name.slice(0, 80),
         reportIds,
+        baselineReportId:
+          typeof entry.baselineReportId === "string" &&
+          reportIds.includes(entry.baselineReportId)
+            ? entry.baselineReportId
+            : reportIds[0],
         updatedAt:
           typeof entry.updatedAt === "string" ? entry.updatedAt : "",
       },
@@ -456,6 +461,7 @@ function ComparisonColumn({ report, position, total, onOpen, onRemove }) {
 function ComparisonRow({
   field,
   reports,
+  baselineReportId,
   onlyDifferences,
   onOpenReport,
   lastRow,
@@ -463,6 +469,11 @@ function ComparisonRow({
   const values = reports.map((report) => field.getValue(report));
   const uniqueValues = new Set(values.map(normalizeForComparison));
   const isDifferent = uniqueValues.size > 1;
+  const baselineIndex = Math.max(
+    0,
+    reports.findIndex((report) => getReportId(report) === baselineReportId),
+  );
+  const baselineValue = normalizeForComparison(values[baselineIndex] || "");
   if (onlyDifferences && !isDifferent) return null;
 
   return (
@@ -497,6 +508,11 @@ function ComparisonRow({
           key={`${field.id}-${getReportId(report) || index}`}
           className={`min-w-0 px-3 py-3 sm:px-4 ${
             index ? "border-l border-slate-100" : ""
+          } ${
+            index !== baselineIndex &&
+            normalizeForComparison(values[index]) !== baselineValue
+              ? "bg-amber-100/60"
+              : ""
           }`}
         >
           <FieldValue value={values[index]} compact={field.id === "description"} />
@@ -565,6 +581,7 @@ export default function ReportComparisonWorkspace({
   onOpenReport,
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
+  const [baselineReportId, setBaselineReportId] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
@@ -594,6 +611,11 @@ export default function ReportComparisonWorkspace({
     () => selectedIds.map((id) => reportById.get(id)).filter(Boolean),
     [reportById, selectedIds],
   );
+  const baselineReport =
+    selectedReports.find(
+      (report) => getReportId(report) === baselineReportId,
+    ) || selectedReports[0];
+  const effectiveBaselineId = baselineReport ? getReportId(baselineReport) : "";
   const availableIds = useMemo(
     () => new Set(availableReports.map(getReportId)),
     [availableReports],
@@ -605,6 +627,12 @@ export default function ReportComparisonWorkspace({
   useEffect(() => {
     setSelectedIds((current) => current.filter((id) => reportById.has(id)));
   }, [reportById]);
+
+  useEffect(() => {
+    if (!selectedIds.includes(baselineReportId)) {
+      setBaselineReportId(selectedIds[0] || "");
+    }
+  }, [baselineReportId, selectedIds]);
 
   useEffect(() => {
     const storageKey = getComparisonStorageKey(email);
@@ -726,12 +754,16 @@ export default function ReportComparisonWorkspace({
       selectedReports.length < 2
         ? []
         : comparisonFields.filter((field) => {
-            const values = selectedReports.map((report) =>
-              normalizeForComparison(field.getValue(report)),
+            const baselineValue = normalizeForComparison(
+              field.getValue(baselineReport),
             );
-            return new Set(values).size > 1;
+            return selectedReports.some(
+              (report) =>
+                getReportId(report) !== effectiveBaselineId &&
+                normalizeForComparison(field.getValue(report)) !== baselineValue,
+            );
           }),
-    [comparisonFields, selectedReports],
+    [baselineReport, comparisonFields, effectiveBaselineId, selectedReports],
   );
 
   const persistSavedComparisons = (nextComparisons) => {
@@ -878,6 +910,7 @@ export default function ReportComparisonWorkspace({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name,
       reportIds: selectedIds,
+      baselineReportId: effectiveBaselineId,
       updatedAt: new Date().toISOString(),
     };
     const nextComparisons = [
@@ -900,6 +933,11 @@ export default function ReportComparisonWorkspace({
       return;
     }
     setSelectedIds(comparison.reportIds);
+    setBaselineReportId(
+      comparison.reportIds.includes(comparison.baselineReportId)
+        ? comparison.baselineReportId
+        : comparison.reportIds[0],
+    );
     setFeedback(`Loaded “${comparison.name}”.`);
   };
 
@@ -1487,6 +1525,26 @@ export default function ReportComparisonWorkspace({
               )}
 
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3">
+                <label className="flex min-h-8 items-center gap-2 text-[10px] font-medium text-slate-600">
+                  <span className="shrink-0">Compare against</span>
+                  <select
+                    aria-label="Choose comparison baseline report"
+                    value={effectiveBaselineId}
+                    onChange={(event) =>
+                      setBaselineReportId(event.target.value)
+                    }
+                    className="h-8 min-w-0 max-w-[220px] rounded-lg border border-slate-200 bg-white px-2 text-[10px] text-slate-700 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
+                  >
+                    {selectedReports.map((report, index) => (
+                      <option
+                        key={getReportId(report)}
+                        value={getReportId(report)}
+                      >
+                        Report {index + 1}: {getTitle(report)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <fieldset className="flex flex-wrap items-center gap-1.5">
                   <legend className="sr-only">Comparison detail groups</legend>
                   {GROUPS.map((group) => {
@@ -1547,6 +1605,11 @@ export default function ReportComparisonWorkspace({
                         >
                           <p className="truncate text-[10px] font-semibold text-slate-700">
                             Report {index + 1}
+                            {getReportId(report) === effectiveBaselineId && (
+                              <span className="ml-1.5 rounded bg-indigo-50 px-1 py-0.5 text-[8px] font-semibold text-indigo-700">
+                                BASELINE
+                              </span>
+                            )}
                           </p>
                           <p className="mt-0.5 truncate text-[9px] text-slate-400">
                             {getTitle(report)}
@@ -1559,6 +1622,7 @@ export default function ReportComparisonWorkspace({
                         key={field.id}
                         field={field}
                         reports={selectedReports}
+                        baselineReportId={effectiveBaselineId}
                         onlyDifferences={onlyDifferences}
                         onOpenReport={onOpenReport}
                         lastRow={index === comparisonFields.length - 1}
