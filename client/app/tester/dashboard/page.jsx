@@ -1803,6 +1803,82 @@ function PriorityInbox({ bugs, onOpenBug, onViewAll }) {
   );
 }
 
+const ANALYTICS_SECTIONS = [
+  { id: "insight-activity", label: "Activity", icon: Activity },
+  { id: "insight-quality", label: "Quality", icon: ClipboardCheck },
+  { id: "insight-triage", label: "Triage", icon: ListChecks },
+  { id: "insight-tools", label: "Tester tools", icon: Settings2 },
+  { id: "insight-summary", label: "Summary", icon: BarChart3 },
+];
+
+function AnalyticsSectionNavigator() {
+  const [activeSection, setActiveSection] = useState(
+    ANALYTICS_SECTIONS[0].id,
+  );
+
+  useEffect(() => {
+    const targets = ANALYTICS_SECTIONS.map(({ id }) =>
+      document.getElementById(id),
+    ).filter(Boolean);
+    if (!targets.length || !("IntersectionObserver" in window)) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (left, right) =>
+              left.boundingClientRect.top - right.boundingClientRect.top,
+          );
+        if (visible[0]) setActiveSection(visible[0].target.id);
+      },
+      { rootMargin: "-18% 0px -68% 0px", threshold: 0 },
+    );
+
+    targets.forEach((target) => observer.observe(target));
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <nav
+      aria-label="Report analytics sections"
+      className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm shadow-slate-200/20 sm:p-4"
+    >
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0">
+          <p className="text-[10px] font-semibold text-slate-700">
+            Jump to a section
+          </p>
+          <p className="mt-0.5 text-[9px] text-slate-400">
+            Active area updates as you scroll
+          </p>
+        </div>
+        <div className="flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+          {ANALYTICS_SECTIONS.map(({ id, label, icon: Icon }) => {
+            const active = activeSection === id;
+            return (
+              <a
+                key={id}
+                href={`#${id}`}
+                aria-current={active ? "location" : undefined}
+                onClick={() => setActiveSection(id)}
+                className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
+                  active
+                    ? "border-violet-200 bg-violet-50 text-violet-700"
+                    : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:bg-violet-50/50 hover:text-violet-700"
+                }`}
+              >
+                <Icon size={13} aria-hidden="true" />
+                {label}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
   const statistics = useMemo(() => calculateStatistics(bugs), [bugs]);
   const [daysToShow, setDaysToShow] = useState(7);
@@ -1829,6 +1905,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
           Live report data
         </span>
       </div>
+      <AnalyticsSectionNavigator />
+      <div
+        id="insight-activity"
+        className="scroll-mt-24 space-y-4 rounded-2xl bg-slate-50/60 p-3 sm:p-4"
+      >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="relative min-h-[146px] overflow-hidden rounded-[20px] bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-500 p-4 text-white shadow-sm shadow-violet-600/20 sm:p-5">
           <div className="flex items-start justify-between gap-2">
@@ -1923,6 +2004,12 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
       </div>
 
       <ReportCalendarBoard reports={bugs} onOpenReport={onOpenBug} />
+      </div>
+
+      <div
+        id="insight-quality"
+        className="scroll-mt-24 space-y-4 rounded-2xl bg-slate-50/60 p-3 sm:p-4"
+      >
       <ReportReadinessBoard reports={bugs} onOpenReport={onOpenBug} />
       <ReportReleaseReadinessGate reports={bugs} onOpenReport={onOpenBug} />
       <ReportDataIntegrityAudit
@@ -1931,7 +2018,12 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
       />
       <ReportAuditHistory reports={bugs} email={email} />
       <ReportQualityTrends reports={bugs} />
+      </div>
 
+      <div
+        id="insight-triage"
+        className="scroll-mt-24 space-y-4 rounded-2xl bg-slate-50/60 p-3 sm:p-4"
+      >
       <PriorityInbox
         bugs={bugs}
         onOpenBug={onOpenBug}
@@ -1944,6 +2036,12 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
       />
       <ReportResponseTargets reports={bugs} onOpenReport={onOpenBug} />
       <ReportRiskMatrix reports={bugs} onOpenReport={onOpenBug} />
+      </div>
+
+      <div
+        id="insight-tools"
+        className="scroll-mt-24 space-y-4 rounded-2xl bg-slate-50/60 p-3 sm:p-4"
+      >
       <ReportBriefBuilder reports={bugs} onOpenReport={onOpenBug} />
       <ReportEnvironmentCoverage reports={bugs} onOpenReport={onOpenBug} />
       <ReportVerificationWorkspace
@@ -1967,7 +2065,12 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         email={loadedEmail}
         onOpenReport={onOpenBug}
       />
+      </div>
 
+      <div
+        id="insight-summary"
+        className="scroll-mt-24 space-y-4 rounded-2xl bg-slate-50/60 p-3 sm:p-4"
+      >
       <div className="grid gap-4 lg:grid-cols-2">
         <SeverityDistribution statistics={statistics} />
         <ResolutionOverview statistics={statistics} />
@@ -2001,6 +2104,7 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
       </div>
 
       <MetricQualityPanel reports={bugs} />
+      </div>
     </section>
   );
 }
