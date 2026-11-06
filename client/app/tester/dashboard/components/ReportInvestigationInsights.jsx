@@ -781,6 +781,7 @@ export default function ReportInvestigationInsights({
   const [sessions, setSessions] = useState({});
   const [loadError, setLoadError] = useState("");
   const [stateFilter, setStateFilter] = useState("all");
+  const [stepResultFilter, setStepResultFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [windowFilter, setWindowFilter] = useState("all");
@@ -861,6 +862,31 @@ export default function ReportInvestigationInsights({
       .filter((entry) => {
         if (stateFilter !== "all" && entry.state !== stateFilter) return false;
         if (
+          stepResultFilter === "failed" &&
+          entry.steps.failed === 0
+        ) {
+          return false;
+        }
+        if (
+          stepResultFilter === "blocked" &&
+          entry.steps.blocked === 0
+        ) {
+          return false;
+        }
+        if (
+          stepResultFilter === "unfinished" &&
+          entry.steps.recorded >= entry.steps.total
+        ) {
+          return false;
+        }
+        if (
+          stepResultFilter === "complete" &&
+          (!entry.steps.total ||
+            entry.steps.recorded < entry.steps.total)
+        ) {
+          return false;
+        }
+        if (
           severityFilter !== "all" &&
           entry.severity !== severityFilter
         ) {
@@ -909,6 +935,7 @@ export default function ReportInvestigationInsights({
     severityFilter,
     sortBy,
     stateFilter,
+    stepResultFilter,
     windowFilter,
   ]);
   const recentEntries = filteredEntries.filter(
@@ -962,6 +989,7 @@ export default function ReportInvestigationInsights({
   const visibleEntries = filteredEntries.slice(0, visibleCount);
   const hasFilters =
     stateFilter !== "all" ||
+    stepResultFilter !== "all" ||
     severityFilter !== "all" ||
     categoryFilter !== "all" ||
     windowFilter !== "all" ||
@@ -978,6 +1006,7 @@ export default function ReportInvestigationInsights({
 
   const resetFilters = () => {
     setStateFilter("all");
+    setStepResultFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
     setWindowFilter("all");
@@ -1125,6 +1154,18 @@ export default function ReportInvestigationInsights({
               value={stateFilter}
               onChange={(value) => setFilter(setStateFilter, value)}
               options={STATE_OPTIONS}
+            />
+            <SelectField
+              label="Step results"
+              value={stepResultFilter}
+              onChange={(value) => setFilter(setStepResultFilter, value)}
+              options={[
+                { value: "all", label: "Any step results" },
+                { value: "failed", label: "Has failed steps" },
+                { value: "blocked", label: "Has blocked steps" },
+                { value: "unfinished", label: "Has unfinished steps" },
+                { value: "complete", label: "All steps recorded" },
+              ]}
             />
             <SelectField
               label="Severity"
