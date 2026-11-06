@@ -816,19 +816,27 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     setNextCheckId(nextPending.id);
   };
 
-  const markPendingNotApplicable = () => {
-    if (!selectedAudit || !metrics.pending) return;
-    if (!window.confirm(`Mark all ${metrics.pending} unreviewed check(s) as not applicable?`)) return;
+  const markPendingNotApplicable = (groupId = "all") => {
+    if (!selectedAudit) return;
+    const pendingCount = selectedAudit.checks.filter(
+      (item) => item.status === "pending" &&
+        (groupId === "all" || item.groupId === groupId),
+    ).length;
+    if (!pendingCount) return;
+    const groupLabel = GROUPS.find((group) => group.id === groupId)?.label;
+    const scope = groupLabel ? ` in ${groupLabel}` : "";
+    if (!window.confirm(`Mark ${pendingCount} unreviewed check(s)${scope} as not applicable?`)) return;
     updateAudit(selectedAudit.id, (audit) => ({
       ...audit,
-      checks: audit.checks.map((item) => item.status === "pending"
+      checks: audit.checks.map((item) => item.status === "pending" &&
+        (groupId === "all" || item.groupId === groupId)
         ? { ...item, status: "na", updatedAt: new Date().toISOString() }
         : item),
       activity: appendActivity(
         audit,
-        `Marked ${metrics.pending} unreviewed check(s) not applicable`,
+        `Marked ${pendingCount} unreviewed check(s)${scope} not applicable`,
       ),
-    }), `${metrics.pending} unreviewed check(s) marked not applicable.`);
+    }), `${pendingCount} unreviewed check(s)${scope} marked not applicable.`);
   };
 
   const exportCsv = () => {
@@ -899,6 +907,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
       ...group,
       count: selectedAudit.checks.filter((item) => item.groupId === group.id).length,
       reviewed: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status !== "pending").length,
+      pending: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status === "pending").length,
       issues: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status === "issue").length,
     }))
     : [];
@@ -1007,13 +1016,30 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                   {groupCounts.map((group) => {
                     const Icon = group.icon;
                     return (
-                      <button type="button" key={group.id} onClick={() => setGroupFilter(groupFilter === group.id ? "all" : group.id)} aria-pressed={groupFilter === group.id} className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left ${groupFilter === group.id ? "bg-sky-50 text-sky-800" : "text-slate-600 hover:bg-slate-50"}`}>
-                        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-xs font-medium">{group.label}</span>
-                          <span className="block text-[10px] text-slate-400">{group.reviewed}/{group.count} reviewed{group.issues ? ` · ${group.issues} issue(s)` : ""}</span>
-                        </span>
-                      </button>
+                      <div key={group.id} className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setGroupFilter(groupFilter === group.id ? "all" : group.id)}
+                          aria-pressed={groupFilter === group.id}
+                          className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2.5 py-2 text-left ${groupFilter === group.id ? "bg-sky-50 text-sky-800" : "text-slate-600 hover:bg-slate-50"}`}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-xs font-medium">{group.label}</span>
+                            <span className="block text-[10px] text-slate-400">{group.reviewed}/{group.count} reviewed{group.issues ? ` · ${group.issues} issue(s)` : ""}</span>
+                          </span>
+                        </button>
+                        {canEdit && group.pending > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => markPendingNotApplicable(group.id)}
+                            aria-label={`Mark ${group.pending} pending ${group.label} checks not applicable`}
+                            className="shrink-0 rounded px-1.5 py-1 text-[10px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                          >
+                            N/A {group.pending}
+                          </button>
+                        ) : null}
+                      </div>
                     );
                   })}
                   <button type="button" onClick={() => setGroupFilter(groupFilter === "custom" ? "all" : "custom")} aria-pressed={groupFilter === "custom"} className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left ${groupFilter === "custom" ? "bg-sky-50 text-sky-800" : "text-slate-600 hover:bg-slate-50"}`}>
