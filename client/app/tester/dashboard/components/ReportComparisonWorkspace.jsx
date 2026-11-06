@@ -568,6 +568,7 @@ export default function ReportComparisonWorkspace({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [quickFilter, setQuickFilter] = useState("all");
   const [sortMode, setSortMode] = useState("recent");
   const [onlyDifferences, setOnlyDifferences] = useState(false);
   const [selectedGroups, setSelectedGroups] = useState(GROUPS);
@@ -597,6 +598,9 @@ export default function ReportComparisonWorkspace({
     () => new Set(availableReports.map(getReportId)),
     [availableReports],
   );
+  const referenceCategory = selectedReports[0]
+    ? getText(selectedReports[0]?.category, "Uncategorized")
+    : "";
 
   useEffect(() => {
     setSelectedIds((current) => current.filter((id) => reportById.has(id)));
@@ -624,6 +628,21 @@ export default function ReportComparisonWorkspace({
     return availableReports
       .filter((report) => {
         if (selectedIds.includes(getReportId(report))) return false;
+        if (quickFilter === "open" && getStatus(report) !== "open") return false;
+        if (
+          quickFilter === "high" &&
+          !["critical", "blocker", "urgent", "high"].includes(
+            getSeverity(report),
+          )
+        ) {
+          return false;
+        }
+        if (
+          quickFilter === "category" &&
+          getText(report?.category, "Uncategorized") !== referenceCategory
+        ) {
+          return false;
+        }
         if (statusFilter !== "all" && getStatus(report) !== statusFilter) {
           return false;
         }
@@ -668,7 +687,34 @@ export default function ReportComparisonWorkspace({
         };
         return getTime(right) - getTime(left);
       });
-  }, [availableReports, search, selectedIds, severityFilter, sortMode, statusFilter]);
+  }, [
+    availableReports,
+    quickFilter,
+    referenceCategory,
+    search,
+    selectedIds,
+    severityFilter,
+    sortMode,
+    statusFilter,
+  ]);
+
+  const quickFilterCounts = useMemo(() => {
+    const candidates = availableReports.filter(
+      (report) => !selectedIds.includes(getReportId(report)),
+    );
+    return {
+      open: candidates.filter((report) => getStatus(report) === "open").length,
+      high: candidates.filter((report) =>
+        ["critical", "blocker", "urgent", "high"].includes(getSeverity(report)),
+      ).length,
+      category: referenceCategory
+        ? candidates.filter(
+            (report) =>
+              getText(report?.category, "Uncategorized") === referenceCategory,
+          ).length
+        : 0,
+    };
+  }, [availableReports, referenceCategory, selectedIds]);
 
   const comparisonFields = useMemo(
     () =>
@@ -803,6 +849,16 @@ export default function ReportComparisonWorkspace({
         ? current.filter((item) => item !== group)
         : [...current, group],
     );
+  };
+
+  const selectQuickFilter = (filter) => {
+    if (filter === "category" && !referenceCategory) {
+      setFeedback("Select a report first to use its category as a comparison filter.");
+      return;
+    }
+
+    setQuickFilter((current) => (current === filter ? "all" : filter));
+    setFeedback("");
   };
 
   const saveComparison = () => {
@@ -1082,6 +1138,66 @@ export default function ReportComparisonWorkspace({
               options={SEVERITY_FILTERS}
               onChange={setSeverityFilter}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+              Quick filters
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                {
+                  id: "open",
+                  label: "Open reports",
+                  count: quickFilterCounts.open,
+                },
+                {
+                  id: "high",
+                  label: "High / critical",
+                  count: quickFilterCounts.high,
+                },
+                {
+                  id: "category",
+                  label: referenceCategory
+                    ? `Same category: ${referenceCategory}`
+                    : "Same category",
+                  count: quickFilterCounts.category,
+                  disabled: !referenceCategory,
+                },
+              ].map(({ id, label, count, disabled }) => {
+                const active = quickFilter === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => selectQuickFilter(id)}
+                    disabled={disabled}
+                    aria-pressed={active}
+                    className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40 ${
+                      active
+                        ? "border-violet-200 bg-violet-50 text-violet-700"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+                    }`}
+                  >
+                    {label}
+                    <span
+                      className={`rounded px-1 py-0.5 text-[9px] tabular-nums ${
+                        active
+                          ? "bg-white/80 text-violet-700"
+                          : "bg-slate-50 text-slate-400"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {quickFilter === "category" && referenceCategory && (
+              <p className="text-[9px] text-slate-400">
+                Matching category from the first selected report.
+              </p>
+            )}
           </div>
 
           <label className="relative block">
