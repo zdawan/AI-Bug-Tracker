@@ -26,6 +26,7 @@ import ReleasePlanningWorkspace from "./components/ReleasePlanningWorkspace";
 import TestSessionWorkspace from "./components/TestSessionWorkspace";
 import BugBashCampaignWorkspace from "./components/BugBashCampaignWorkspace";
 import IncidentRetrospectiveWorkspace from "./components/IncidentRetrospectiveWorkspace";
+import AccessibilityAuditWorkspace from "./components/AccessibilityAuditWorkspace";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -2331,6 +2332,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <IncidentRetrospectiveWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <AccessibilityAuditWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
