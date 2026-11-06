@@ -56,6 +56,7 @@ const ACTION_STATES = [
 
 const ACTION_FILTERS = [
   { id: "all", label: "All actions" },
+  { id: "overdue", label: "Overdue" },
   { id: "open", label: "Open" },
   { id: "in-progress", label: "In progress" },
   { id: "done", label: "Done" },
@@ -227,6 +228,11 @@ function appendActivity(retrospective, label) {
   ].slice(-100);
 }
 
+function isActionOverdue(action) {
+  const dueTime = Date.parse(action.dueDate || "");
+  return action.status !== "done" && Number.isFinite(dueTime) && dueTime < Date.now();
+}
+
 function formatElapsed(start, end) {
   const startTime = Date.parse(start || "");
   const endTime = Date.parse(end || "");
@@ -309,12 +315,9 @@ function getMetrics(retrospective) {
   );
   retrospective.actions.forEach((action) => {
     actionCounts[action.status] += 1;
-  });
+  }  );
   const overdue = retrospective.actions.filter(
-    (action) =>
-      action.status !== "done" &&
-      action.dueDate &&
-      Date.parse(action.dueDate) < Date.now(),
+    isActionOverdue,
   ).length;
   const linkedOpen = retrospective.reportIds.length;
   const checkpoints = [
@@ -498,7 +501,7 @@ function FactorCard({ factor, canEdit, onUpdate, onRemove }) {
 function ActionCard({ action, canEdit, onUpdate, onRemove }) {
   const state = ACTION_STATES.find((item) => item.id === action.status) || ACTION_STATES[0];
   const StateIcon = state.icon;
-  const isOverdue = action.status !== "done" && action.dueDate && Date.parse(action.dueDate) < Date.now();
+  const isOverdue = isActionOverdue(action);
   return (
     <article className={`rounded-xl border p-3 ${isOverdue ? "border-rose-200 bg-rose-50/40" : "border-slate-200 bg-white"}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -628,7 +631,11 @@ export default function IncidentRetrospectiveWorkspace({
   const visibleActions = useMemo(() => {
     if (!selected) return [];
     return selected.actions
-      .filter((action) => actionFilter === "all" || action.status === actionFilter)
+      .filter((action) => {
+        if (actionFilter === "all") return true;
+        if (actionFilter === "overdue") return isActionOverdue(action);
+        return action.status === actionFilter;
+      })
       .sort((left, right) => {
         const rank = { High: 0, Medium: 1, Low: 2 };
         return rank[left.priority] - rank[right.priority] ||
