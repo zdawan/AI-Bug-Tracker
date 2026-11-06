@@ -914,6 +914,36 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     }
   };
 
+  const copyIssueList = async () => {
+    if (!selectedAudit) return;
+    const issues = selectedAudit.checks.filter((item) => item.status === "issue");
+    const content = [
+      `Accessibility issue list: ${selectedAudit.name}`,
+      `Target: ${selectedAudit.targetUrl || "Not specified"}`,
+      `Build: ${selectedAudit.build || "Not specified"}`,
+      `Environment: ${selectedAudit.environment || "Not specified"}`,
+      `Reviewer: ${selectedAudit.reviewer || "Not specified"}`,
+      `Manual review findings: ${issues.length}`,
+      "",
+      ...(issues.length
+        ? issues.flatMap((item, index) => [
+          `${index + 1}. [${item.priority}] ${item.groupLabel} — ${item.title}`,
+          `   Observation: ${item.notes || "No observation recorded"}`,
+          item.evidenceUrl ? `   Evidence: ${item.evidenceUrl}` : "",
+          item.reportId ? `   Related report ID: ${item.reportId}` : "",
+        ].filter(Boolean))
+        : ["No checks are currently marked as issues."]),
+      "",
+      "Draft from a manual checklist; verify findings and context before sharing. This is not an automated conformance report.",
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(content);
+      setNotice("Issue list copied. Verify findings and context before sharing.");
+    } catch (error) {
+      setNotice(`Could not copy the issue list: ${error.message}`);
+    }
+  };
+
   const groupCounts = selectedAudit
     ? GROUPS.map((group) => ({
       ...group,
@@ -1117,6 +1147,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                         {Object.entries(AUDIT_STATES).map(([id, state]) => <option key={id} value={id}>{state.label}</option>)}
                       </select>
                       <button type="button" onClick={copySummary} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><ClipboardCheck className="h-3.5 w-3.5" aria-hidden="true" /> Copy summary</button>
+                      <button type="button" onClick={copyIssueList} disabled={metrics.issueCount === 0} className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"><ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" /> Copy issue list</button>
                       <button type="button" onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><Download className="h-3.5 w-3.5" aria-hidden="true" /> Export CSV</button>
                       <button type="button" onClick={exportJson} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><ArrowDownToLine className="h-3.5 w-3.5" aria-hidden="true" /> Export JSON</button>
                     </div>
