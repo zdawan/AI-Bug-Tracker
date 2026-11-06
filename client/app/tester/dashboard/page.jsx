@@ -1911,7 +1911,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         className="scroll-mt-24 space-y-4 rounded-2xl bg-slate-50/60 p-3 sm:p-4"
       >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="relative min-h-[146px] overflow-hidden rounded-[20px] bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-500 p-4 text-white shadow-sm shadow-violet-600/20 sm:p-5">
+        <a
+          href="#insight-summary"
+          aria-label="View report totals and repeat submissions"
+          className="group relative min-h-[146px] cursor-pointer overflow-hidden rounded-[20px] bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-500 p-4 text-white shadow-sm shadow-violet-600/20 transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 sm:p-5"
+        >
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-white/95">
               Total submissions
@@ -1930,9 +1934,13 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
             {formatNumber(statistics.total)} unique issues tracked
           </p>
           <div className="pointer-events-none absolute -bottom-9 -right-6 h-24 w-24 rounded-full border border-white/10 bg-white/[0.06]" />
-        </div>
+        </a>
 
-        <div className="min-h-[146px] rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+        <a
+          href="#insight-triage"
+          aria-label="View reports awaiting triage"
+          className="group min-h-[146px] cursor-pointer rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 transition duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 sm:p-5"
+        >
           <div className="flex items-start justify-between gap-2">
             <span className="text-sm font-semibold text-slate-700">
               Open Bugs
@@ -1950,9 +1958,13 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
             </span>
             Awaiting resolution
           </p>
-        </div>
+        </a>
 
-        <div className="min-h-[146px] rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+        <a
+          href="#insight-summary"
+          aria-label="View report resolution summary"
+          className="group min-h-[146px] cursor-pointer rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 sm:p-5"
+        >
           <div className="flex items-start justify-between gap-2">
             <span className="text-sm font-semibold text-slate-700">
               Resolved Bugs
@@ -1970,9 +1982,13 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
             </span>
             {formatPercentage(statistics.resolutionRate)} resolution rate
           </p>
-        </div>
+        </a>
 
-        <div className="min-h-[146px] rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 sm:p-5">
+        <a
+          href="#insight-quality"
+          aria-label="View high-severity report quality checks"
+          className="group min-h-[146px] cursor-pointer rounded-[20px] border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/40 transition duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 sm:p-5"
+        >
           <div className="flex items-start justify-between gap-2">
             <span className="text-sm font-semibold text-slate-700">
               High Severity
@@ -1990,7 +2006,7 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
             </span>
             {formatPercentage(statistics.highSeverityRate)} of all reports
           </p>
-        </div>
+        </a>
       </div>
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
