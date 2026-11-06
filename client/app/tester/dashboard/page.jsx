@@ -1818,6 +1818,11 @@ function AnalyticsSectionNavigator() {
   const [readingProgress, setReadingProgress] = useState(0);
   const sectionLinksRef = useRef(null);
   const activeSectionLinkRef = useRef(null);
+  const activeSectionIndex = ANALYTICS_SECTIONS.findIndex(
+    ({ id }) => id === activeSection,
+  );
+  const activeSectionLabel =
+    ANALYTICS_SECTIONS[Math.max(0, activeSectionIndex)]?.label;
 
   useEffect(() => {
     const targets = ANALYTICS_SECTIONS.map(({ id }) =>
@@ -1928,8 +1933,18 @@ function AnalyticsSectionNavigator() {
           <p className="text-[10px] font-semibold text-slate-700">
             Jump to a section
           </p>
-          <p className="mt-0.5 text-[9px] text-slate-400">
-            Active area updates as you scroll
+          <p
+            aria-live="polite"
+            className="mt-0.5 text-[9px] text-slate-400"
+          >
+            Viewing{" "}
+            <span className="font-semibold text-violet-700">
+              {activeSectionLabel}
+            </span>
+            <span className="ml-1 tabular-nums">
+              ({Math.max(0, activeSectionIndex) + 1} of{" "}
+              {ANALYTICS_SECTIONS.length})
+            </span>
           </p>
         </div>
         <div
