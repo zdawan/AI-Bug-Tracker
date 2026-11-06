@@ -64,6 +64,13 @@ const AGE_FILTERS = [
   ...AGE_BUCKETS.map(({ id, label }) => ({ id, label })),
 ];
 
+const SORT_OPTIONS = [
+  { id: "priority", label: "Recommended" },
+  { id: "oldest", label: "Oldest first" },
+  { id: "newest", label: "Newest first" },
+  { id: "severity", label: "Severity first" },
+];
+
 function getTimestamp(report) {
   const timestamp = new Date(report?.createdAt || report?.created_at || "").getTime();
 
@@ -190,7 +197,7 @@ function getTriagePriority(report, now = Date.now()) {
   return severityWeight + repeatWeight + ageWeight;
 }
 
-function filterOpenIssues(reports, ageFilter, severityFilter, query, now) {
+function filterOpenIssues(reports, ageFilter, severityFilter, query, sortBy, now) {
   const normalizedQuery = query.trim().toLowerCase();
 
   return reports
@@ -223,13 +230,15 @@ function filterOpenIssues(reports, ageFilter, severityFilter, query, now) {
         .includes(normalizedQuery);
     })
     .sort((left, right) => {
-      const priorityDifference =
-        getTriagePriority(right, now) - getTriagePriority(left, now);
-
-      return (
-        priorityDifference ||
-        (getTimestamp(left) ?? 0) - (getTimestamp(right) ?? 0)
-      );
+      const ageDifference = (getTimestamp(left) ?? 0) - (getTimestamp(right) ?? 0);
+      if (sortBy === "oldest") return ageDifference;
+      if (sortBy === "newest") return -ageDifference;
+      if (sortBy === "severity") {
+        return getSeverityRank(right) - getSeverityRank(left) ||
+          getTriagePriority(right, now) - getTriagePriority(left, now) ||
+          ageDifference;
+      }
+      return getTriagePriority(right, now) - getTriagePriority(left, now) || ageDifference;
     });
 }
 
@@ -426,21 +435,23 @@ export default function ReportAgingBoard({
 }) {
   const [ageFilter, setAgeFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("priority");
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_REPORTS);
   const now = Date.now();
   const insight = useMemo(() => getAgeInsight(reports, now), [reports, now]);
   const openReports = useMemo(
-    () => filterOpenIssues(reports, ageFilter, severityFilter, search, now),
-    [reports, ageFilter, severityFilter, search, now],
+    () => filterOpenIssues(reports, ageFilter, severityFilter, search, sortBy, now),
+    [reports, ageFilter, severityFilter, search, sortBy, now],
   );
   const visibleReports = openReports.slice(0, visibleCount);
   const filtersActive =
-    ageFilter !== "all" || severityFilter !== "All" || Boolean(search.trim());
+    ageFilter !== "all" || severityFilter !== "All" || sortBy !== "priority" || Boolean(search.trim());
 
   const resetFilters = () => {
     setAgeFilter("all");
     setSeverityFilter("All");
+    setSortBy("priority");
     setSearch("");
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
   };
@@ -616,6 +627,22 @@ export default function ReportAgingBoard({
                 <option value="High">High severity</option>
                 <option value="Medium">Medium severity</option>
                 <option value="Low">Low severity</option>
+              </select>
+              <label className="sr-only" htmlFor="aging-sort-order">
+                Sort open issues
+              </label>
+              <select
+                id="aging-sort-order"
+                value={sortBy}
+                onChange={(event) => {
+                  setSortBy(event.target.value);
+                  setVisibleCount(INITIAL_VISIBLE_REPORTS);
+                }}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-medium text-slate-600 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
               </select>
             </div>
           </div>
