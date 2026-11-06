@@ -733,6 +733,7 @@ export default function ReportInvestigationWorkspace({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stepFilter, setStepFilter] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const normalizedEmail = getText(email, 320).toLowerCase();
@@ -869,47 +870,45 @@ export default function ReportInvestigationWorkspace({
           return matchesSearch(report, query);
         })
         .sort((left, right) => {
+          let comparison = 0;
           if (sortBy === "oldest") {
-            return (
+            comparison =
               (getReportDate(left)?.getTime() ?? 0) -
-              (getReportDate(right)?.getTime() ?? 0)
-            );
-          }
-          if (sortBy === "newest") {
-            return (
+              (getReportDate(right)?.getTime() ?? 0);
+          } else if (sortBy === "newest") {
+            comparison =
               (getReportDate(right)?.getTime() ?? 0) -
-              (getReportDate(left)?.getTime() ?? 0)
+              (getReportDate(left)?.getTime() ?? 0);
+          } else if (sortBy === "severity") {
+            comparison = getSeverityRank(right) - getSeverityRank(left);
+          } else if (sortBy === "title") {
+            comparison = getTitle(left).localeCompare(getTitle(right));
+          } else {
+            const leftState = getSessionState(
+              sessions[getReportId(left)] || makeEmptySession(left),
             );
+            const rightState = getSessionState(
+              sessions[getReportId(right)] || makeEmptySession(right),
+            );
+            const order = {
+              reproduced: 0,
+              blocked: 1,
+              "in-progress": 2,
+              pending: 3,
+              "not-reproduced": 4,
+            };
+            comparison =
+              (order[leftState] ?? 5) - (order[rightState] ?? 5);
+            if (!comparison) {
+              comparison = getSeverityRank(right) - getSeverityRank(left);
+            }
+            if (!comparison) {
+              comparison =
+                (getReportDate(left)?.getTime() ?? 0) -
+                (getReportDate(right)?.getTime() ?? 0);
+            }
           }
-          if (sortBy === "severity") {
-            return getSeverityRank(right) - getSeverityRank(left);
-          }
-          if (sortBy === "title") {
-            return getTitle(left).localeCompare(getTitle(right));
-          }
-          const leftState = getSessionState(
-            sessions[getReportId(left)] || makeEmptySession(left),
-          );
-          const rightState = getSessionState(
-            sessions[getReportId(right)] || makeEmptySession(right),
-          );
-          const order = {
-            reproduced: 0,
-            blocked: 1,
-            "in-progress": 2,
-            pending: 3,
-            "not-reproduced": 4,
-          };
-          const stateDifference =
-            (order[leftState] ?? 5) - (order[rightState] ?? 5);
-          if (stateDifference) return stateDifference;
-          const severityDifference =
-            getSeverityRank(right) - getSeverityRank(left);
-          if (severityDifference) return severityDifference;
-          return (
-            (getReportDate(left)?.getTime() ?? 0) -
-            (getReportDate(right)?.getTime() ?? 0)
-          );
+          return sortDirection === "asc" ? -comparison : comparison;
         }),
     [
       categoryFilter,
@@ -918,6 +917,7 @@ export default function ReportInvestigationWorkspace({
       sessions,
       severityFilter,
       sortBy,
+      sortDirection,
       stepFilter,
       stateFilter,
     ],
@@ -998,6 +998,7 @@ export default function ReportInvestigationWorkspace({
     setCategoryFilter("all");
     setStepFilter("all");
     setSortBy("priority");
+    setSortDirection("desc");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE);
   };
@@ -1025,6 +1026,10 @@ export default function ReportInvestigationWorkspace({
   };
 
   const hasMore = visibleCount < filteredReports.length;
+  const toggleSortDirection = () => {
+    setSortDirection((current) => (current === "desc" ? "asc" : "desc"));
+    setVisibleCount(INITIAL_VISIBLE);
+  };
 
   return (
     <section className="mt-5 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-sm shadow-slate-200/30">
@@ -1210,6 +1215,23 @@ export default function ReportInvestigationWorkspace({
             Showing {formatNumber(filteredReports.length)} of{" "}
             {formatNumber(openReports.length)} open reports
           </p>
+          <div className="mt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={toggleSortDirection}
+              aria-label={`Sort ${
+                sortDirection === "desc" ? "ascending" : "descending"
+              }`}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[9px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            >
+              <ChevronDown
+                size={11}
+                className={sortDirection === "asc" ? "rotate-180" : ""}
+                aria-hidden="true"
+              />
+              {sortDirection === "desc" ? "Descending" : "Ascending"}
+            </button>
+          </div>
         </div>
 
         {(exportError || exportNotice) && (
