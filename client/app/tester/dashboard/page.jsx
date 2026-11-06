@@ -1816,6 +1816,8 @@ function AnalyticsSectionNavigator() {
     ANALYTICS_SECTIONS[0].id,
   );
   const [readingProgress, setReadingProgress] = useState(0);
+  const sectionLinksRef = useRef(null);
+  const activeSectionLinkRef = useRef(null);
 
   useEffect(() => {
     const targets = ANALYTICS_SECTIONS.map(({ id }) =>
@@ -1891,6 +1893,31 @@ function AnalyticsSectionNavigator() {
     };
   }, []);
 
+  useEffect(() => {
+    const container = sectionLinksRef.current;
+    const activeLink = activeSectionLinkRef.current;
+    if (!container || !activeLink) return;
+
+    const containerBounds = container.getBoundingClientRect();
+    const linkBounds = activeLink.getBoundingClientRect();
+    let nextScrollLeft = container.scrollLeft;
+
+    if (linkBounds.left < containerBounds.left) {
+      nextScrollLeft += linkBounds.left - containerBounds.left - 8;
+    } else if (linkBounds.right > containerBounds.right) {
+      nextScrollLeft += linkBounds.right - containerBounds.right + 8;
+    } else {
+      return;
+    }
+
+    container.scrollTo({
+      left: nextScrollLeft,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  }, [activeSection]);
+
   return (
     <nav
       aria-label="Report analytics sections"
@@ -1905,12 +1932,16 @@ function AnalyticsSectionNavigator() {
             Active area updates as you scroll
           </p>
         </div>
-        <div className="flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+        <div
+          ref={sectionLinksRef}
+          className="flex min-w-0 gap-2 overflow-x-auto pb-0.5"
+        >
           {ANALYTICS_SECTIONS.map(({ id, label, icon: Icon }) => {
             const active = activeSection === id;
             return (
               <a
                 key={id}
+                ref={active ? activeSectionLinkRef : null}
                 href={`#${id}`}
                 aria-current={active ? "location" : undefined}
                 onClick={() => setActiveSection(id)}
