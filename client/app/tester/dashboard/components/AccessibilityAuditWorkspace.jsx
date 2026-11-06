@@ -1307,6 +1307,15 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       </button>
                       <button
                         type="button"
+                        onClick={() => jumpToCheck("blocked")}
+                        disabled={metrics.blocked === 0}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                        Review next blocked
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => jumpToCheck((item) =>
                           item.status === "issue" && item.priority === "Critical"
                         )}
