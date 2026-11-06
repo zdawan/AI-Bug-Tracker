@@ -45,6 +45,14 @@ const SORT_OPTIONS = [
   { value: "completion", label: "Most complete" },
   { value: "title", label: "Title A–Z" },
 ];
+const QUICK_STATE_OPTIONS = [
+  { value: "all", label: "All sessions" },
+  { value: "reproduced", label: "Reproduced" },
+  { value: "blocked", label: "Blocked" },
+  { value: "in-progress", label: "In progress" },
+  { value: "pending", label: "Not started" },
+  { value: "not-reproduced", label: "Not reproduced" },
+];
 
 function getText(value, limit = 320) {
   return typeof value === "string" ? value.trim().slice(0, limit) : "";
@@ -912,6 +920,25 @@ export default function ReportInvestigationInsights({
   const blockedCount = filteredEntries.filter(
     (entry) => entry.state === "blocked",
   ).length;
+  const stateCounts = useMemo(
+    () =>
+      allEntries.reduce(
+        (counts, entry) => {
+          counts.all += 1;
+          counts[entry.state] = (counts[entry.state] || 0) + 1;
+          return counts;
+        },
+        {
+          all: 0,
+          pending: 0,
+          "in-progress": 0,
+          reproduced: 0,
+          "not-reproduced": 0,
+          blocked: 0,
+        },
+      ),
+    [allEntries],
+  );
   const sessionsStarted = filteredEntries.filter(
     (entry) => entry.state !== "pending",
   ).length;
@@ -1140,6 +1167,29 @@ export default function ReportInvestigationInsights({
                 />
               </span>
             </label>
+          </div>
+          <div
+            className="mt-3 flex flex-wrap gap-2"
+            aria-label="Quick investigation state filters"
+          >
+            {QUICK_STATE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={stateFilter === option.value}
+                onClick={() => setFilter(setStateFilter, option.value)}
+                className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
+                  stateFilter === option.value
+                    ? "border-violet-300 bg-violet-100 text-violet-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+                }`}
+              >
+                {option.label}
+                <span className="rounded-full bg-white/80 px-1.5 py-0.5 tabular-nums">
+                  {formatNumber(stateCounts[option.value])}
+                </span>
+              </button>
+            ))}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <label className="relative min-w-48 flex-1">
