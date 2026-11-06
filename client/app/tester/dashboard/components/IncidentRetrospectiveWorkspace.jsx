@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   CircleDashed,
   Clock3,
+  Copy,
   Download,
   ExternalLink,
   FileText,
@@ -1000,6 +1001,28 @@ export default function IncidentRetrospectiveWorkspace({
     }
   };
 
+  const copyIncidentUpdate = async () => {
+    if (!selected) return;
+    const update = [
+      `INCIDENT UPDATE — DRAFT (review before sharing)`,
+      `Incident: ${selected.title}`,
+      `Current status: ${LIFECYCLE[selected.status].label}`,
+      `Severity: ${selected.severity}`,
+      `Impact: ${selected.impact || "[Add confirmed user impact]"}`,
+      `Affected scope: ${selected.affectedUsers || "[Confirm affected users or scope]"}`,
+      `Started: ${selected.startedAt ? formatDate(selected.startedAt) : "[Confirm start time]"}`,
+      `Detected: ${selected.detectedAt ? formatDate(selected.detectedAt) : "[Confirm detection time]"}`,
+      `Mitigation / resolution: ${selected.resolution || "[Add verified mitigation or resolution details]"}`,
+      "Next update: [Add a time for the next update, or remove this line]",
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(update);
+      setNotice("Draft incident update copied. Verify details and remove placeholders before sharing.");
+    } catch (error) {
+      setNotice(`Could not copy the incident update: ${error.message}`);
+    }
+  };
+
   const completeRetrospective = () => {
     if (!selected) return;
     const openActions = selected.actions.filter((action) => action.status !== "done");
@@ -1199,6 +1222,9 @@ export default function IncidentRetrospectiveWorkspace({
                       ) : null}
                       <button type="button" onClick={copySummary} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                         <Link2 className="h-3.5 w-3.5" aria-hidden="true" /> Copy summary
+                      </button>
+                      <button type="button" onClick={copyIncidentUpdate} className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-800 hover:bg-sky-100">
+                        <Copy className="h-3.5 w-3.5" aria-hidden="true" /> Copy update draft
                       </button>
                       <button type="button" onClick={exportJson} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                         <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden="true" /> Export JSON
