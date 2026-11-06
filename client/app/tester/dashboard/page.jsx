@@ -23,6 +23,7 @@ import ReportAuditHistory from "./components/ReportAuditHistory";
 import ReportComparisonWorkspace from "./components/ReportComparisonWorkspace";
 import ReportReviewWorkspace from "./components/ReportReviewWorkspace";
 import ReleasePlanningWorkspace from "./components/ReleasePlanningWorkspace";
+import TestSessionWorkspace from "./components/TestSessionWorkspace";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -2313,6 +2314,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <ReleasePlanningWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <TestSessionWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
