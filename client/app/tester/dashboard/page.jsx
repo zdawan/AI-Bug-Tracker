@@ -1864,7 +1864,25 @@ function AnalyticsSectionNavigator() {
     const targets = ANALYTICS_SECTIONS.map(({ id }) =>
       document.getElementById(id),
     ).filter(Boolean);
-    if (!targets.length || !("IntersectionObserver" in window)) return undefined;
+    if (!targets.length) return undefined;
+
+    if (!("IntersectionObserver" in window)) {
+      const updateActiveSection = () => {
+        const activationLine = window.innerHeight * 0.25;
+        const currentTarget = [...targets]
+          .reverse()
+          .find((target) => target.getBoundingClientRect().top <= activationLine);
+        setActiveSection((currentTarget || targets[0]).id);
+      };
+
+      updateActiveSection();
+      window.addEventListener("scroll", updateActiveSection, { passive: true });
+      window.addEventListener("resize", updateActiveSection);
+      return () => {
+        window.removeEventListener("scroll", updateActiveSection);
+        window.removeEventListener("resize", updateActiveSection);
+      };
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
