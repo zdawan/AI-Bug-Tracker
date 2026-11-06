@@ -816,6 +816,21 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     setNextCheckId(nextPending.id);
   };
 
+  const markPendingNotApplicable = () => {
+    if (!selectedAudit || !metrics.pending) return;
+    if (!window.confirm(`Mark all ${metrics.pending} unreviewed check(s) as not applicable?`)) return;
+    updateAudit(selectedAudit.id, (audit) => ({
+      ...audit,
+      checks: audit.checks.map((item) => item.status === "pending"
+        ? { ...item, status: "na", updatedAt: new Date().toISOString() }
+        : item),
+      activity: appendActivity(
+        audit,
+        `Marked ${metrics.pending} unreviewed check(s) not applicable`,
+      ),
+    }), `${metrics.pending} unreviewed check(s) marked not applicable.`);
+  };
+
   const exportCsv = () => {
     if (!selectedAudit) return;
     const rows = [
@@ -1079,6 +1094,14 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       >
                         <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
                         Review next pending
+                      </button>
+                      <button
+                        type="button"
+                        onClick={markPendingNotApplicable}
+                        disabled={!canEdit || metrics.pending === 0}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Mark pending N/A
                       </button>
                       <label className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
