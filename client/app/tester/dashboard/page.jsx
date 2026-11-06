@@ -2027,7 +2027,26 @@ function AnalyticsSectionNavigator() {
                 ref={active ? activeSectionLinkRef : null}
                 href={`#${id}`}
                 aria-current={active ? "location" : undefined}
+                aria-keyshortcuts="ArrowLeft ArrowRight"
                 onClick={() => setActiveSection(id)}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+                    return;
+                  }
+
+                  const direction = event.key === "ArrowRight" ? 1 : -1;
+                  const nextIndex =
+                    ANALYTICS_SECTIONS.findIndex(
+                      (section) => section.id === id,
+                    ) + direction;
+                  const nextLink =
+                    sectionLinksRef.current?.querySelectorAll("a")[nextIndex];
+                  if (!nextLink) return;
+
+                  event.preventDefault();
+                  nextLink.click();
+                  nextLink.focus();
+                }}
                 className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
                   active
                     ? "border-violet-200 bg-violet-50 text-violet-700"
