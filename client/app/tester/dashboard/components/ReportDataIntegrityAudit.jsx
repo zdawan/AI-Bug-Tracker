@@ -696,6 +696,8 @@ export default function ReportDataIntegrityAudit({
   const [levelFilter, setLevelFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [checkFilter, setCheckFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("risk");
   const [onlyFindings, setOnlyFindings] = useState(true);
@@ -751,6 +753,18 @@ export default function ReportDataIntegrityAudit({
         if (categoryFilter !== "all" && entry.category !== categoryFilter) {
           return false;
         }
+        if (
+          statusFilter === "open" &&
+          entry.status.toLowerCase() !== "open"
+        ) {
+          return false;
+        }
+        if (
+          statusFilter === "closed" &&
+          entry.status.toLowerCase() !== "closed"
+        ) {
+          return false;
+        }
         if (onlyFindings && !entry.visibleIssues.length) return false;
         if (
           normalizedQuery &&
@@ -773,26 +787,27 @@ export default function ReportDataIntegrityAudit({
         return true;
       })
       .sort((left, right) => {
+        let comparison = 0;
         if (sortBy === "severity") {
           const leftIssues = left.visibleIssues;
           const rightIssues = right.visibleIssues;
           const countLevel = (issues, level) =>
             issues.filter((issue) => issue.level === level).length;
-          return (
+          comparison =
             countLevel(rightIssues, "error") - countLevel(leftIssues, "error") ||
             countLevel(rightIssues, "warning") -
               countLevel(leftIssues, "warning") ||
-            countLevel(rightIssues, "info") - countLevel(leftIssues, "info")
-          );
-        }
-        if (sortBy === "title") return left.title.localeCompare(right.title);
-        if (sortBy === "category") {
-          return (
+            countLevel(rightIssues, "info") - countLevel(leftIssues, "info");
+        } else if (sortBy === "title") {
+          comparison = left.title.localeCompare(right.title);
+        } else if (sortBy === "category") {
+          comparison =
             left.category.localeCompare(right.category) ||
-            left.title.localeCompare(right.title)
-          );
+            left.title.localeCompare(right.title);
+        } else {
+          comparison = getIssueWeight(right) - getIssueWeight(left);
         }
-        return getIssueWeight(right) - getIssueWeight(left);
+        return sortDirection === "asc" ? -comparison : comparison;
       });
   }, [
     auditedEntries,
@@ -802,6 +817,8 @@ export default function ReportDataIntegrityAudit({
     onlyFindings,
     query,
     sortBy,
+    sortDirection,
+    statusFilter,
   ]);
 
   const summary = useMemo(
@@ -830,6 +847,7 @@ export default function ReportDataIntegrityAudit({
   const hasFilters =
     levelFilter !== "all" ||
     categoryFilter !== "all" ||
+    statusFilter !== "all" ||
     checkFilter !== "all" ||
     Boolean(query.trim()) ||
     !onlyFindings;
@@ -845,10 +863,16 @@ export default function ReportDataIntegrityAudit({
     setExportMessage("");
   };
 
+  const toggleSortDirection = () => {
+    setSortDirection((current) => (current === "desc" ? "asc" : "desc"));
+    setVisibleCount(INITIAL_VISIBLE);
+  };
+
   const resetFilters = () => {
     setLevelFilter("all");
     setCategoryFilter("all");
     setCheckFilter("all");
+    setStatusFilter("all");
     setQuery("");
     setOnlyFindings(true);
     setVisibleCount(INITIAL_VISIBLE);
@@ -1059,6 +1083,16 @@ export default function ReportDataIntegrityAudit({
               options={categoryOptions}
             />
             <SelectField
+              label="Report status"
+              value={statusFilter}
+              onChange={(value) => setFilter(setStatusFilter, value)}
+              options={[
+                { value: "all", label: "Any status" },
+                { value: "open", label: "Open reports" },
+                { value: "closed", label: "Closed reports" },
+              ]}
+            />
+            <SelectField
               label="Sort by"
               value={sortBy}
               onChange={(value) => setFilter(setSortBy, value)}
@@ -1112,6 +1146,26 @@ export default function ReportDataIntegrityAudit({
                 </button>
               );
             })}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[9px] text-slate-500">
+              Sorted by {SORT_OPTIONS.find((option) => option.value === sortBy)?.label.toLowerCase()}
+            </p>
+            <button
+              type="button"
+              onClick={toggleSortDirection}
+              aria-label={`Sort ${
+                sortDirection === "desc" ? "ascending" : "descending"
+              }`}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[9px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            >
+              <ArrowDownWideNarrow
+                size={11}
+                className={sortDirection === "asc" ? "rotate-180" : ""}
+                aria-hidden="true"
+              />
+              {sortDirection === "desc" ? "Descending" : "Ascending"}
+            </button>
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <label className="inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-[9px] font-medium text-slate-600">
