@@ -927,6 +927,50 @@ export default function ReportComparisonWorkspace({
     }
   };
 
+  const copyComparisonTable = async () => {
+    if (selectedReports.length < 2) {
+      setFeedback("Choose at least two reports before copying the comparison.");
+      return;
+    }
+
+    const exportFields = onlyDifferences ? differences : comparisonFields;
+    if (!exportFields.length) {
+      setFeedback(
+        onlyDifferences
+          ? "No differing fields to copy with “Differences only” enabled."
+          : "Select at least one detail group before copying the comparison.",
+      );
+      return;
+    }
+
+    const rows = [
+      ["Field", ...selectedReports.map((report) => getTitle(report))],
+      ...exportFields.map((field) => [
+        field.label,
+        ...selectedReports.map((report) => field.getValue(report)),
+      ]),
+    ];
+    const table = rows
+      .map((row) =>
+        row.map((value) => String(value).replace(/\s+/g, " ").trim()).join("\t"),
+      )
+      .join("\n");
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+      await navigator.clipboard.writeText(table);
+      setFeedback(
+        onlyDifferences
+          ? `Copied ${exportFields.length} differing fields as a table.`
+          : `Copied ${exportFields.length} comparison fields as a table.`,
+      );
+    } catch {
+      setFeedback("Could not copy the table. Check clipboard permissions.");
+    }
+  };
+
   const reportGroupCount = useMemo(
     () =>
       selectedReports.reduce((count, report) => {
@@ -1203,6 +1247,15 @@ export default function ReportComparisonWorkspace({
               )}
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={copyComparisonTable}
+                disabled={selectedReports.length < 2}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-medium text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Clipboard size={12} aria-hidden="true" />
+                Copy table
+              </button>
               <button
                 type="button"
                 onClick={copySummary}
