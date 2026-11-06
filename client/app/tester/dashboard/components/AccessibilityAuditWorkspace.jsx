@@ -731,10 +731,6 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
 
   const updateCheck = (checkId, field, value) => {
     if (!selectedAudit) return;
-    if (field === "evidenceUrl" && !validHttpUrl(getText(value, 1000))) {
-      setNotice("Evidence URL must be empty or use http:// or https://.");
-      return;
-    }
     const limits = { notes: MAX_NOTE_LENGTH, evidenceUrl: 1000, reportId: 120 };
     const nextValue = field === "status"
       ? CHECK_STATES.some((state) => state.id === value) ? value : "pending"
@@ -1209,6 +1205,17 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       >
                         <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                         Review next issue
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => jumpToCheck((item) =>
+                          item.status === "issue" && item.priority === "Critical"
+                        )}
+                        disabled={metrics.criticalIssues === 0}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                        Review critical issue
                       </button>
                       <button
                         type="button"
