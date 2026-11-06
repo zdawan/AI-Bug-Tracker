@@ -947,6 +947,15 @@ export default function ReportInvestigationInsights({
   const blockedCount = filteredEntries.filter(
     (entry) => entry.state === "blocked",
   ).length;
+  const highSeveritySessions = filteredEntries.filter(
+    (entry) => entry.severityRank >= 3 && entry.state !== "pending",
+  );
+  const highSeverityReproduced = highSeveritySessions.filter(
+    (entry) => entry.state === "reproduced",
+  ).length;
+  const highSeverityBlocked = highSeveritySessions.filter(
+    (entry) => entry.state === "blocked",
+  ).length;
   const updatedShare = filteredEntries.length
     ? Math.round((sessionsStarted / filteredEntries.length) * 100)
     : 0;
@@ -1470,6 +1479,93 @@ export default function ReportInvestigationInsights({
             </p>
           )}
         </div>
+
+        <section
+          aria-label="High severity investigation follow-up"
+          className="rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50/70 via-white to-amber-50/50 p-4 sm:p-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="inline-flex items-center gap-2 text-xs font-semibold text-rose-950">
+                <ShieldAlert size={14} aria-hidden="true" />
+                High-severity follow-up
+              </h3>
+              <p className="mt-1 text-[9px] leading-4 text-rose-900/70">
+                Focus on started high/critical investigations that reproduced
+                or hit a blocker. This does not change issue status.
+              </p>
+            </div>
+            <span className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[9px] font-semibold text-rose-800">
+              {formatNumber(highSeveritySessions.length)} started
+            </span>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              {
+                label: "Reproduced",
+                value: highSeverityReproduced,
+                detail: "High/critical reports with a failed step",
+                tone: "border-rose-100 bg-white text-rose-800",
+              },
+              {
+                label: "Blocked",
+                value: highSeverityBlocked,
+                detail: "High/critical reports with a blocked step",
+                tone: "border-amber-100 bg-white text-amber-800",
+              },
+              {
+                label: "Other started",
+                value: Math.max(
+                  0,
+                  highSeveritySessions.length -
+                    highSeverityReproduced -
+                    highSeverityBlocked,
+                ),
+                detail: "In progress or not reproduced",
+                tone: "border-slate-200 bg-white text-slate-700",
+              },
+            ].map((item) => (
+              <article
+                key={item.label}
+                className={`rounded-xl border p-3 ${item.tone}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[9px] font-semibold">{item.label}</p>
+                  <span className="text-lg font-semibold tabular-nums">
+                    {formatNumber(item.value)}
+                  </span>
+                </div>
+                <p className="mt-1 text-[8px] leading-4 text-slate-500">
+                  {item.detail}
+                </p>
+              </article>
+            ))}
+          </div>
+          {highSeveritySessions.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-100 bg-white/80 px-3 py-2.5">
+              <p className="text-[9px] text-slate-600">
+                {highSeverityReproduced || highSeverityBlocked
+                  ? "Some high-severity investigations may need a follow-up discussion."
+                  : "No high-severity session currently records a failed or blocked step."}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSeverityFilter("all");
+                  setStateFilter("all");
+                  setStepResultFilter("all");
+                  setQuery("");
+                  setVisibleCount(8);
+                  setExportMessage("");
+                }}
+                className="inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-[9px] font-semibold text-rose-700 hover:bg-rose-50"
+              >
+                Review current filtered list
+                <ArrowUpRight size={10} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+        </section>
 
         <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/80 via-white to-violet-50/60 p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
