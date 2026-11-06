@@ -1209,6 +1209,17 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       <button
                         type="button"
                         onClick={() => jumpToCheck((item) =>
+                          item.status === "issue" && item.priority === "Critical"
+                        )}
+                        disabled={metrics.criticalIssues === 0}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                        Review critical issue
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => jumpToCheck((item) =>
                           item.status === "issue" &&
                           (!item.notes.trim() || !item.evidenceUrl.trim())
                         )}
