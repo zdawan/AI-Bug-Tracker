@@ -1815,6 +1815,7 @@ function AnalyticsSectionNavigator() {
   const [activeSection, setActiveSection] = useState(
     ANALYTICS_SECTIONS[0].id,
   );
+  const [readingProgress, setReadingProgress] = useState(0);
 
   useEffect(() => {
     const targets = ANALYTICS_SECTIONS.map(({ id }) =>
@@ -1837,6 +1838,47 @@ function AnalyticsSectionNavigator() {
 
     targets.forEach((target) => observer.observe(target));
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let frameId = 0;
+    const updateProgress = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        const firstSection = document.getElementById(ANALYTICS_SECTIONS[0].id);
+        const lastSection = document.getElementById(
+          ANALYTICS_SECTIONS[ANALYTICS_SECTIONS.length - 1].id,
+        );
+        if (!firstSection || !lastSection) return;
+
+        const scrollPosition = window.scrollY;
+        const start =
+          firstSection.getBoundingClientRect().top + scrollPosition;
+        const end =
+          lastSection.getBoundingClientRect().bottom +
+          scrollPosition -
+          window.innerHeight;
+        const progress =
+          end <= start
+            ? scrollPosition >= start
+              ? 100
+              : 0
+            : Math.min(
+                100,
+                Math.max(0, ((scrollPosition - start) / (end - start)) * 100),
+              );
+        setReadingProgress(Math.round(progress));
+      });
+    };
+
+    updateProgress();
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", updateProgress);
+      window.removeEventListener("resize", updateProgress);
+    };
   }, []);
 
   return (
@@ -1874,6 +1916,27 @@ function AnalyticsSectionNavigator() {
             );
           })}
         </div>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <span className="shrink-0 text-[9px] font-medium text-slate-400">
+          Analytics progress
+        </span>
+        <div
+          role="progressbar"
+          aria-label="Analytics reading progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={readingProgress}
+          className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"
+        >
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-[width] duration-150"
+            style={{ width: `${readingProgress}%` }}
+          />
+        </div>
+        <span className="w-8 shrink-0 text-right text-[9px] tabular-nums text-slate-400">
+          {readingProgress}%
+        </span>
       </div>
     </nav>
   );
