@@ -947,6 +947,37 @@ export default function ReportInvestigationInsights({
   const blockedCount = filteredEntries.filter(
     (entry) => entry.state === "blocked",
   ).length;
+  const updatedShare = filteredEntries.length
+    ? Math.round((sessionsStarted / filteredEntries.length) * 100)
+    : 0;
+  const reproducedShare = sessionsStarted
+    ? Math.round((reproducedCount / sessionsStarted) * 100)
+    : 0;
+  const blockerPatterns = useMemo(() => {
+    const totals = new Map();
+    filteredEntries.forEach((entry) => {
+      if (entry.steps.blocked === 0) return;
+      const key = entry.category;
+      const current = totals.get(key) || {
+        category: key,
+        sessions: 0,
+        blockedSteps: 0,
+        highSeveritySessions: 0,
+        titles: [],
+      };
+      current.sessions += 1;
+      current.blockedSteps += entry.steps.blocked;
+      if (entry.severityRank >= 3) current.highSeveritySessions += 1;
+      if (current.titles.length < 3) current.titles.push(entry.title);
+      totals.set(key, current);
+    });
+    return [...totals.values()].sort(
+      (left, right) =>
+        right.highSeveritySessions - left.highSeveritySessions ||
+        right.blockedSteps - left.blockedSteps ||
+        right.sessions - left.sessions,
+    );
+  }, [filteredEntries]);
   const recentComparison = useMemo(() => {
     const now = Date.now();
     const currentStart = now - 7 * 86_400_000;
@@ -1151,6 +1182,81 @@ export default function ReportInvestigationInsights({
           />
         </div>
 
+        <section
+          aria-label="Investigation funnel"
+          className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="inline-flex items-center gap-2 text-xs font-semibold text-slate-800">
+                <Activity size={14} className="text-violet-600" aria-hidden="true" />
+                Investigation progress funnel
+              </h3>
+              <p className="mt-1 text-[9px] leading-4 text-slate-500">
+                How the filtered open-report queue moves from session activity
+                to a recorded reproduction result.
+              </p>
+            </div>
+            <span className="text-[9px] text-slate-500">
+              Session start: {updatedShare}% · Reproduced: {reproducedShare}% of
+              started
+            </span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            {[
+              {
+                label: "Open reports in view",
+                value: filteredEntries.length,
+                detail: "Includes sessions not started",
+                width: 100,
+                color: "bg-slate-400",
+              },
+              {
+                label: "Session started",
+                value: sessionsStarted,
+                detail: `${updatedShare}% of reports in view`,
+                width: updatedShare,
+                color: "bg-violet-500",
+              },
+              {
+                label: "Issue reproduced",
+                value: reproducedCount,
+                detail: `${reproducedShare}% of started sessions`,
+                width: sessionsStarted
+                  ? Math.round((reproducedCount / sessionsStarted) * 100)
+                  : 0,
+                color: "bg-rose-500",
+              },
+            ].map((stage) => (
+              <article
+                key={stage.label}
+                className="rounded-xl border border-slate-100 bg-slate-50/60 p-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[9px] font-medium text-slate-500">
+                    {stage.label}
+                  </p>
+                  <span className="text-base font-semibold leading-none text-slate-900 tabular-nums">
+                    {formatNumber(stage.value)}
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+                  <div
+                    className={`h-full rounded-full ${stage.color}`}
+                    style={{ width: `${stage.width}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-[8px] text-slate-500">{stage.detail}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-3 text-[8px] leading-4 text-slate-400">
+            This funnel is descriptive, not a pass rate or quality measure;
+            starting and reproducing an issue can reflect different tester
+            workflows and report mixes.
+          </p>
+        </section>
+
         <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3.5 sm:p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -1305,6 +1411,64 @@ export default function ReportInvestigationInsights({
         <div className="grid gap-4 xl:grid-cols-2">
           <CategoryBreakdown entries={filteredEntries} />
           <SeverityBreakdown entries={filteredEntries} />
+        </div>
+
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="inline-flex items-center gap-2 text-xs font-semibold text-amber-950">
+                <AlertTriangle size={14} aria-hidden="true" />
+                Blocked-step follow-up
+              </h3>
+              <p className="mt-1 text-[9px] leading-4 text-amber-900/70">
+                Categories with recorded blockers in the filtered sessions.
+                Use as a personal investigation aid, not a workflow escalation.
+              </p>
+            </div>
+            <span className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-[9px] font-semibold text-amber-800">
+              {formatNumber(blockedCount)} blocked sessions
+            </span>
+          </div>
+          {blockerPatterns.length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {blockerPatterns.slice(0, 6).map((pattern) => (
+                <article
+                  key={pattern.category}
+                  className="rounded-xl border border-amber-100 bg-white/90 p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="min-w-0 truncate text-[10px] font-semibold text-slate-800">
+                      {pattern.category}
+                    </h4>
+                    <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[8px] font-semibold text-amber-800">
+                      {pattern.blockedSteps} blocked steps
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[9px] text-slate-500">
+                    {pattern.sessions} sessions ·{" "}
+                    {pattern.highSeveritySessions} high/critical
+                  </p>
+                  {pattern.titles.length > 0 && (
+                    <ul className="mt-2 space-y-1 border-t border-slate-100 pt-2">
+                      {pattern.titles.map((title) => (
+                        <li
+                          key={title}
+                          className="truncate text-[8px] text-slate-500"
+                          title={title}
+                        >
+                          {title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-xl border border-amber-100 bg-white/80 px-3 py-5 text-center text-[9px] text-slate-500">
+              No blocked investigation steps match these filters.
+            </p>
+          )}
         </div>
 
         <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/80 via-white to-violet-50/60 p-4 sm:p-5">
