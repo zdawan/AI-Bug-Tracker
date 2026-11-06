@@ -1874,10 +1874,20 @@ function AnalyticsSectionNavigator() {
     updateProgress();
     window.addEventListener("scroll", updateProgress, { passive: true });
     window.addEventListener("resize", updateProgress);
+    const sectionResizeObserver =
+      "ResizeObserver" in window ? new ResizeObserver(updateProgress) : null;
+    if (sectionResizeObserver) {
+      ANALYTICS_SECTIONS.forEach(({ id }) => {
+        const section = document.getElementById(id);
+        if (section) sectionResizeObserver.observe(section);
+      });
+    }
+
     return () => {
       cancelAnimationFrame(frameId);
       window.removeEventListener("scroll", updateProgress);
       window.removeEventListener("resize", updateProgress);
+      sectionResizeObserver?.disconnect();
     };
   }, []);
 
