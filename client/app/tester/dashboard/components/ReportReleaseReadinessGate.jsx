@@ -626,6 +626,7 @@ export default function ReportReleaseReadinessGate({
   const [showAllOpen, setShowAllOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [sortBy, setSortBy] = useState("risk");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [exportError, setExportError] = useState("");
   const [exportNotice, setExportNotice] = useState("");
 
@@ -718,28 +719,27 @@ export default function ReportReleaseReadinessGate({
           .includes(normalizedSearch);
       })
       .sort((left, right) => {
+        let comparison = 0;
         if (sortBy === "severity") {
-          return (
+          comparison =
             right.severityRank - left.severityRank ||
-            right.riskScore - left.riskScore
-          );
-        }
-        if (sortBy === "readiness") {
-          return (
+            right.riskScore - left.riskScore;
+        } else if (sortBy === "readiness") {
+          comparison =
             left.readinessScore - right.readinessScore ||
-            right.riskScore - left.riskScore
-          );
-        }
-        if (sortBy === "oldest") {
-          return (
+            right.riskScore - left.riskScore;
+        } else if (sortBy === "oldest") {
+          comparison =
             (right.age ?? -1) - (left.age ?? -1) ||
-            right.riskScore - left.riskScore
-          );
+            right.riskScore - left.riskScore;
+        } else if (sortBy === "title") {
+          comparison = left.title.localeCompare(right.title);
+        } else {
+          comparison = right.riskScore - left.riskScore;
         }
-        if (sortBy === "title") return left.title.localeCompare(right.title);
-        return right.riskScore - left.riskScore;
+        return sortDirection === "asc" ? -comparison : comparison;
       });
-  }, [gate.blockers, search, severityFilter, sortBy]);
+  }, [gate.blockers, search, severityFilter, sortBy, sortDirection]);
 
   const visibleBlockers = filteredBlockers.slice(0, visibleCount);
   const failedChecks = gate.failedChecks.length;
@@ -791,6 +791,11 @@ export default function ReportReleaseReadinessGate({
 
   const setReviewFilter = (value) => {
     setSeverityFilter(value);
+    setVisibleCount(INITIAL_VISIBLE);
+  };
+
+  const toggleSortDirection = () => {
+    setSortDirection((current) => (current === "desc" ? "asc" : "desc"));
     setVisibleCount(INITIAL_VISIBLE);
   };
 
@@ -1164,6 +1169,26 @@ export default function ReportReleaseReadinessGate({
                 </label>
               </div>
             </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[10px] text-slate-500">
+                {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
+              </p>
+              <button
+                type="button"
+                onClick={toggleSortDirection}
+                aria-label={`Sort ${
+                  sortDirection === "desc" ? "ascending" : "descending"
+                }`}
+                className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+              >
+                <ArrowDownWideNarrow
+                  size={12}
+                  className={sortDirection === "asc" ? "rotate-180" : ""}
+                  aria-hidden="true"
+                />
+                {sortDirection === "desc" ? "Descending" : "Ascending"}
+              </button>
+            </div>
             <div
               className="mt-3 flex flex-wrap gap-2"
               aria-label="Quick report review filters"
@@ -1282,19 +1307,20 @@ export default function ReportReleaseReadinessGate({
                         .includes(normalizedSearch);
                     })
                     .sort((left, right) => {
+                      let comparison = 0;
                       if (sortBy === "severity") {
-                        return right.severityRank - left.severityRank;
+                        comparison = right.severityRank - left.severityRank;
+                      } else if (sortBy === "readiness") {
+                        comparison = left.readinessScore - right.readinessScore;
+                      } else if (sortBy === "oldest") {
+                        comparison = (right.age ?? -1) - (left.age ?? -1);
+                      } else if (sortBy === "title") {
+                        comparison = left.title.localeCompare(right.title);
+                      } else {
+                        comparison =
+                          getRiskScore(right) - getRiskScore(left);
                       }
-                      if (sortBy === "readiness") {
-                        return left.readinessScore - right.readinessScore;
-                      }
-                      if (sortBy === "oldest") {
-                        return (right.age ?? -1) - (left.age ?? -1);
-                      }
-                      if (sortBy === "title") {
-                        return left.title.localeCompare(right.title);
-                      }
-                      return getRiskScore(right) - getRiskScore(left);
+                      return sortDirection === "asc" ? -comparison : comparison;
                     })
                 : filteredBlockers;
               const rowsToShow = rows.slice(0, visibleCount);
