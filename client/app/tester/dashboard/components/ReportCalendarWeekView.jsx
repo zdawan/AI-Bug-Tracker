@@ -7,10 +7,12 @@ import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
+  Check,
   CheckCircle2,
   ChevronDown,
   CircleDashed,
   Clock3,
+  Copy,
   FileSearch,
   Flame,
   Layers3,
@@ -328,6 +330,8 @@ function WeekNavigation({
   busiestDay,
   onGoToBusiest,
   onJumpToDate,
+  onCopyWeekSummary,
+  copyStatus,
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -398,6 +402,18 @@ function WeekNavigation({
             className="w-[116px] bg-transparent text-xs font-medium text-slate-700 outline-none"
           />
         </label>
+        <button
+          type="button"
+          onClick={onCopyWeekSummary}
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
+        >
+          {copyStatus === "copied" ? (
+            <Check size={13} aria-hidden="true" />
+          ) : (
+            <Copy size={13} aria-hidden="true" />
+          )}
+          {copyStatus === "copied" ? "Copied" : "Copy week"}
+        </button>
       </div>
     </div>
   );
@@ -1082,6 +1098,7 @@ export default function ReportCalendarWeekView({
 }) {
   const [showHelp, setShowHelp] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [copyStatus, setCopyStatus] = useState("idle");
   const safeAnchorDate = isValidDate(anchorDate) ? anchorDate : new Date();
   const weekDays = useMemo(
     () => getWeekDays(safeAnchorDate),
@@ -1137,6 +1154,29 @@ export default function ReportCalendarWeekView({
 
   const selectDate = (date) => {
     onSelectDate?.(getLocalDateKey(date));
+  };
+
+  const copyWeekSummary = async () => {
+    const lines = [
+      `Report activity: ${formatWeekRange(weekDays)}`,
+      `Total: ${statistics.total} · Open: ${statistics.open} · Resolved: ${statistics.resolved}`,
+      ...dayCards.map((day) => {
+        const counts = getWeekStatistics(day.entries);
+        return `${formatDayName(day.date)} ${formatMonthDay(day.date)}: ${day.entries.length} report(s) (${counts.open} open, ${counts.resolved} resolved)`;
+      }),
+    ];
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable in this browser.");
+      }
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopyStatus("copied");
+      window.setTimeout(() => setCopyStatus("idle"), 2000);
+    } catch (error) {
+      setCopyStatus("error");
+      window.setTimeout(() => setCopyStatus("idle"), 4000);
+      console.error("Could not copy weekly report summary:", error);
+    }
   };
 
   const moveWeek = (amount) => {
@@ -1211,8 +1251,15 @@ export default function ReportCalendarWeekView({
             if (busiestDay) selectDate(busiestDay.date);
           }}
           onJumpToDate={jumpToDate}
+          onCopyWeekSummary={copyWeekSummary}
+          copyStatus={copyStatus}
         />
       </div>
+      {copyStatus === "error" ? (
+        <p role="status" className="text-xs text-rose-700">
+          Could not copy the week summary. Check clipboard permissions and retry.
+        </p>
+      ) : null}
 
       <WeekViewHeader
         range={formatWeekRange(weekDays)}

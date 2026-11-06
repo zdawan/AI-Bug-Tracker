@@ -106,6 +106,7 @@ const QUEUE_FILTERS = [
 
 const SORT_OPTIONS = [
   { value: "urgency", label: "Most urgent" },
+  { value: "overdue", label: "Most overdue" },
   { value: "age", label: "Oldest first" },
   { value: "severity", label: "Severity first" },
   { value: "target", label: "Shortest target" },
@@ -322,6 +323,13 @@ function filterEntries(entries, filters) {
 function sortEntries(entries, sortBy) {
   const sorted = [...entries];
   sorted.sort((left, right) => {
+    if (sortBy === "overdue") {
+      const leftOverdue = left.state === "breached" ? left.age - left.target : 0;
+      const rightOverdue = right.state === "breached" ? right.age - right.target : 0;
+      return rightOverdue - leftOverdue ||
+        getPriority(right) - getPriority(left) ||
+        left.title.localeCompare(right.title);
+    }
     if (sortBy === "age") {
       return (
         (right.age ?? -1) - (left.age ?? -1) ||
@@ -872,7 +880,8 @@ export default function ReportResponseTargets({
     queue !== "all" ||
     severityFilter !== "all" ||
     categoryFilter !== "all" ||
-    Boolean(search.trim());
+    Boolean(search.trim()) ||
+    sortBy !== "urgency";
   const hasReports = Array.isArray(reports) && reports.length > 0;
 
   const resetFilters = () => {
@@ -1013,7 +1022,10 @@ export default function ReportResponseTargets({
             label="Sort response target queue"
             value={sortBy}
             options={SORT_OPTIONS}
-            onChange={setSortBy}
+            onChange={(value) => {
+              setSortBy(value);
+              setVisibleCount(INITIAL_VISIBLE);
+            }}
           />
           {hasFilters && (
             <button
