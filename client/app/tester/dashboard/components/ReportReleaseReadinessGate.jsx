@@ -748,6 +748,31 @@ export default function ReportReleaseReadinessGate({
     categoryFilter !== "all" ||
     severityFilter !== "all" ||
     Boolean(search.trim());
+  const reviewQuickFilters = [
+    { value: "all", label: "All flagged", count: gate.blockers.length },
+    {
+      value: "critical",
+      label: "Critical",
+      count: gate.blockers.filter((entry) => entry.severityRank === 4).length,
+    },
+    {
+      value: "severity",
+      label: "Critical + high",
+      count: gate.blockers.filter((entry) => entry.severityRank >= 3).length,
+    },
+    {
+      value: "quality",
+      label: "Below readiness floor",
+      count: gate.blockers.filter((entry) => entry.reasons.includes("quality"))
+        .length,
+    },
+    {
+      value: "aging",
+      label: `${AGING_REVIEW_DAYS}+ days`,
+      count: gate.blockers.filter((entry) => entry.reasons.includes("aging"))
+        .length,
+    },
+  ];
 
   const applyProfile = (profile) => {
     setProfileId(profile.id);
@@ -1138,6 +1163,29 @@ export default function ReportReleaseReadinessGate({
                   </span>
                 </label>
               </div>
+            </div>
+            <div
+              className="mt-3 flex flex-wrap gap-2"
+              aria-label="Quick report review filters"
+            >
+              {reviewQuickFilters.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  aria-pressed={severityFilter === filter.value}
+                  onClick={() => setReviewFilter(filter.value)}
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
+                    severityFilter === filter.value
+                      ? "border-violet-300 bg-violet-100 text-violet-800"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+                  }`}
+                >
+                  {filter.label}
+                  <span className="rounded-full bg-white/80 px-1.5 py-0.5 tabular-nums">
+                    {formatNumber(filter.count)}
+                  </span>
+                </button>
+              ))}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <label className="relative min-w-48 flex-1">
