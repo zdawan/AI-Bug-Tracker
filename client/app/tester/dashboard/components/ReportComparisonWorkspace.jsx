@@ -118,6 +118,14 @@ const COMPARISON_FIELDS = [
 ];
 
 const GROUPS = ["Overview", "Report details", "Reproduction", "Environment"];
+const COMPLETENESS_FIELD_IDS = [
+  "description",
+  "steps",
+  "expected",
+  "actual",
+  "environment",
+  "pageUrl",
+];
 const STATUS_FILTERS = [
   { value: "all", label: "All statuses" },
   { value: "open", label: "Open" },
@@ -750,6 +758,36 @@ export default function ReportComparisonWorkspace({
       COMPARISON_FIELDS.filter((field) => selectedGroups.includes(field.group)),
     [selectedGroups],
   );
+  const completenessFields = useMemo(
+    () =>
+      COMPLETENESS_FIELD_IDS.map((id) =>
+        COMPARISON_FIELDS.find((field) => field.id === id),
+      ).filter(Boolean),
+    [],
+  );
+  const reportCompleteness = useMemo(
+    () =>
+      selectedReports.map((report) => {
+        const missingFields = completenessFields.filter((field) => {
+          const value = field.getValue(report);
+          return (
+            !value ||
+            /^(not provided|no description|none)$/i.test(value.trim())
+          );
+        });
+
+        return {
+          report,
+          missingFields,
+          percentage: Math.round(
+            ((completenessFields.length - missingFields.length) /
+              completenessFields.length) *
+              100,
+          ),
+        };
+      }),
+    [completenessFields, selectedReports],
+  );
   const differences = useMemo(
     () =>
       selectedReports.length < 2
@@ -894,6 +932,16 @@ export default function ReportComparisonWorkspace({
 
   const expandAllGroups = () => setCollapsedGroups([]);
   const collapseAllGroups = () => setCollapsedGroups(GROUPS);
+
+  const reviewMissingFields = (missingFields) => {
+    const groupsToShow = [...new Set(missingFields.map((field) => field.group))];
+    setSelectedGroups((current) => [...new Set([...current, ...groupsToShow])]);
+    setCollapsedGroups((current) =>
+      current.filter((group) => !groupsToShow.includes(group)),
+    );
+    setOnlyDifferences(false);
+    setFeedback("Opened detail groups containing missing report information.");
+  };
 
   const selectQuickFilter = (filter) => {
     if (filter === "category" && !referenceCategory) {
@@ -1517,6 +1565,98 @@ export default function ReportComparisonWorkspace({
                       {triageSnapshot.repeatedSubmissions}
                     </p>
                   </div>
+                </div>
+              </section>
+
+              <section
+                aria-label="Report detail completeness"
+                className="rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-700">
+                      Detail completeness
+                    </p>
+                    <p className="mt-0.5 text-[9px] text-slate-400">
+                      Checks six useful fields; it does not change report data.
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-slate-50 px-2 py-1 text-[9px] font-medium tabular-nums text-slate-500">
+                    {COMPLETENESS_FIELD_IDS.length} fields checked
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {reportCompleteness.map(
+                    ({ report, missingFields, percentage }, index) => {
+                      const complete = missingFields.length === 0;
+                      return (
+                        <article
+                          key={getReportId(report)}
+                          className="min-w-0 rounded-lg border border-slate-100 bg-slate-50/60 p-2.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-[9px] font-semibold text-slate-600">
+                                Report {index + 1}
+                              </p>
+                              <p className="mt-0.5 truncate text-[10px] font-medium text-slate-800">
+                                {getTitle(report)}
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold tabular-nums ${
+                                complete
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : "bg-amber-50 text-amber-700"
+                              }`}
+                            >
+                              {percentage}%
+                            </span>
+                          </div>
+                          <div
+                            role="progressbar"
+                            aria-label={`Detail completeness for ${getTitle(report)}`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={percentage}
+                            className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"
+                          >
+                            <div
+                              className={`h-full rounded-full ${
+                                complete ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          {complete ? (
+                            <p className="mt-2 inline-flex items-center gap-1 text-[9px] font-medium text-emerald-700">
+                              <CheckCheck size={11} aria-hidden="true" />
+                              All checked details are present
+                            </p>
+                          ) : (
+                            <div className="mt-2">
+                              <p className="text-[9px] text-slate-500">
+                                Missing:{" "}
+                                {missingFields
+                                  .map((field) => field.label)
+                                  .join(", ")}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  reviewMissingFields(missingFields)
+                                }
+                                className="mt-1 inline-flex min-h-7 items-center gap-1 rounded-md px-1.5 text-[9px] font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+                              >
+                                Review missing details
+                                <ArrowUpRight size={10} aria-hidden="true" />
+                              </button>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    },
+                  )}
                 </div>
               </section>
 
