@@ -2364,9 +2364,18 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
   );
 }
 
-function BugDetails({ bug, onClose }) {
+function BugDetails({ bug, reports, onNavigate, onClose }) {
   const dialogRef = useRef(null);
   const [testUrlCopyStatus, setTestUrlCopyStatus] = useState("");
+  const reportId = normalizeString(bug?._id);
+  const reportIndex = reportId
+    ? reports.findIndex((report) => normalizeString(report?._id) === reportId)
+    : -1;
+  const previousReport = reportIndex > 0 ? reports[reportIndex - 1] : null;
+  const nextReport =
+    reportIndex >= 0 && reportIndex < reports.length - 1
+      ? reports[reportIndex + 1]
+      : null;
 
   const copyTestUrl = async () => {
     try {
@@ -2471,7 +2480,34 @@ function BugDetails({ bug, onClose }) {
             </div>
           </div>
 
-          <IconButton icon={X} label="Close bug details" onClick={onClose} />
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <IconButton icon={X} label="Close bug details" onClick={onClose} />
+            {reportIndex >= 0 && reports.length > 1 && (
+              <div className="flex items-center gap-1">
+                <span className="mr-1 text-[10px] tabular-nums text-slate-400">
+                  {reportIndex + 1} of {reports.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => previousReport && onNavigate(previousReport)}
+                  disabled={!previousReport}
+                  aria-label="View previous report"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft size={15} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => nextReport && onNavigate(nextReport)}
+                  disabled={!nextReport}
+                  aria-label="View next report"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronRight size={15} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="space-y-7 p-5 sm:p-7">
@@ -4430,7 +4466,12 @@ export default function TesterDashboardPage() {
             </footer>
           </div>
         </div>
-        <BugDetails bug={selectedBug} onClose={handleCloseBug} />
+        <BugDetails
+          bug={selectedBug}
+          reports={bugs}
+          onNavigate={setSelectedBug}
+          onClose={handleCloseBug}
+        />
       </div>
     </main>
   );
