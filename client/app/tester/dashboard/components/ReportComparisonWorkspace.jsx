@@ -862,9 +862,15 @@ export default function ReportComparisonWorkspace({
       return;
     }
 
+    const exportFields = onlyDifferences ? differences : comparisonFields;
+    if (onlyDifferences && exportFields.length === 0) {
+      setFeedback("No differing fields to export with “Differences only” enabled.");
+      return;
+    }
+
     const rows = [
       ["Field", ...selectedReports.map((report) => getTitle(report))],
-      ...comparisonFields.map((field) => [
+      ...exportFields.map((field) => [
         field.label,
         ...selectedReports.map((report) => field.getValue(report)),
       ]),
@@ -881,7 +887,11 @@ export default function ReportComparisonWorkspace({
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setFeedback("Comparison exported as CSV.");
+    setFeedback(
+      onlyDifferences
+        ? `Exported ${exportFields.length} differing fields as CSV.`
+        : `Exported ${exportFields.length} comparison fields as CSV.`,
+    );
   };
 
   const copySummary = async () => {
@@ -917,6 +927,50 @@ export default function ReportComparisonWorkspace({
     }
   };
 
+  const copyComparisonTable = async () => {
+    if (selectedReports.length < 2) {
+      setFeedback("Choose at least two reports before copying the comparison.");
+      return;
+    }
+
+    const exportFields = onlyDifferences ? differences : comparisonFields;
+    if (!exportFields.length) {
+      setFeedback(
+        onlyDifferences
+          ? "No differing fields to copy with “Differences only” enabled."
+          : "Select at least one detail group before copying the comparison.",
+      );
+      return;
+    }
+
+    const rows = [
+      ["Field", ...selectedReports.map((report) => getTitle(report))],
+      ...exportFields.map((field) => [
+        field.label,
+        ...selectedReports.map((report) => field.getValue(report)),
+      ]),
+    ];
+    const table = rows
+      .map((row) =>
+        row.map((value) => String(value).replace(/\s+/g, " ").trim()).join("\t"),
+      )
+      .join("\n");
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+      await navigator.clipboard.writeText(table);
+      setFeedback(
+        onlyDifferences
+          ? `Copied ${exportFields.length} differing fields as a table.`
+          : `Copied ${exportFields.length} comparison fields as a table.`,
+      );
+    } catch {
+      setFeedback("Could not copy the table. Check clipboard permissions.");
+    }
+  };
+
   const reportGroupCount = useMemo(
     () =>
       selectedReports.reduce((count, report) => {
@@ -929,6 +983,25 @@ export default function ReportComparisonWorkspace({
   const sharedCategories = [...reportGroupCount.entries()]
     .filter(([, count]) => count > 1)
     .map(([category]) => category);
+  const triageSnapshot = useMemo(() => {
+    const openReports = selectedReports.filter(
+      (report) => getStatus(report) === "open",
+    );
+    const highSeverityOpen = openReports.filter((report) =>
+      ["critical", "blocker", "urgent", "high"].includes(getSeverity(report)),
+    );
+    const totalSubmissions = selectedReports.reduce(
+      (total, report) => total + getPositiveCount(report?.reports),
+      0,
+    );
+
+    return {
+      open: openReports.length,
+      resolved: selectedReports.length - openReports.length,
+      highSeverityOpen: highSeverityOpen.length,
+      repeatedSubmissions: Math.max(0, totalSubmissions - selectedReports.length),
+    };
+  }, [selectedReports]);
 
   return (
     <section
@@ -1176,6 +1249,15 @@ export default function ReportComparisonWorkspace({
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
+                onClick={copyComparisonTable}
+                disabled={selectedReports.length < 2}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-medium text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Clipboard size={12} aria-hidden="true" />
+                Copy table
+              </button>
+              <button
+                type="button"
                 onClick={copySummary}
                 disabled={selectedReports.length < 2}
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-medium text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1218,6 +1300,59 @@ export default function ReportComparisonWorkspace({
                   value={sharedCategories.length}
                 />
               </div>
+
+              <section
+                aria-label="Triage snapshot of selected reports"
+                className="rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-700">
+                      Triage snapshot
+                    </p>
+                    <p className="mt-0.5 text-[9px] text-slate-400">
+                      Counts reflect only the selected reports
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-slate-50 px-2 py-1 text-[9px] font-medium text-slate-500">
+                    Advisory
+                  </span>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="rounded-lg bg-violet-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-violet-700">
+                      Open
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-violet-900">
+                      {triageSnapshot.open}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-emerald-700">
+                      Resolved
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-900">
+                      {triageSnapshot.resolved}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-rose-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-rose-700">
+                      High severity open
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-900">
+                      {triageSnapshot.highSeverityOpen}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-amber-700">
+                      Repeat submissions
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-amber-900">
+                      {triageSnapshot.repeatedSubmissions}
+                    </p>
+                  </div>
+                </div>
+              </section>
 
               {sharedCategories.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50/50 px-3 py-2">
