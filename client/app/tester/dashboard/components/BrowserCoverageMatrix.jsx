@@ -509,6 +509,8 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
   const [search, setSearch] = useState("");
   const [checkQuery, setCheckQuery] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [checkSort, setCheckSort] = useState("original");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -557,11 +559,25 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
         check.priority,
         check.expected,
       ].some((value) => value.toLowerCase().includes(query)))
+      .filter(({ check }) => priorityFilter === "all" || check.priority === priorityFilter)
       .filter(({ check }) => resultFilter === "all" ||
         selectedMatrix.environments.some((environment) =>
           getResult(selectedMatrix, environment.id, check.id).status === resultFilter,
-        ));
-  }, [selectedMatrix, checkQuery, resultFilter]);
+        ))
+      .sort((left, right) => {
+        if (checkSort === "priority") {
+          const rank = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+          return rank[left.check.priority] - rank[right.check.priority] || left.index - right.index;
+        }
+        if (checkSort === "area") {
+          return left.check.area.localeCompare(right.check.area) || left.index - right.index;
+        }
+        if (checkSort === "title") {
+          return left.check.title.localeCompare(right.check.title) || left.index - right.index;
+        }
+        return left.index - right.index;
+      });
+  }, [selectedMatrix, checkQuery, resultFilter, priorityFilter, checkSort]);
 
   const comparison = useMemo(() => {
     if (!selectedMatrix) return null;
@@ -970,6 +986,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
 
   const clearResultFilter = () => {
     setResultFilter("all");
+    setPriorityFilter("all");
     setCheckQuery("");
   };
 
@@ -1433,6 +1450,12 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
                         <input value={checkQuery} onChange={(event) => setCheckQuery(event.target.value)} placeholder="Search checks" className="w-40 rounded-lg border border-slate-200 bg-white py-2 pl-8 pr-2.5 text-xs outline-none focus:border-sky-400" />
                       </label>
+                      <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} aria-label="Filter checks by priority" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        <option value="all">All priorities</option>
+                        {["Critical", "High", "Medium", "Low"].map((priority) => (
+                          <option key={priority} value={priority}>{priority} ({selectedMatrix.checks.filter((check) => check.priority === priority).length})</option>
+                        ))}
+                      </select>
                       <select value={resultFilter} onChange={(event) => setResultFilter(event.target.value)} aria-label="Filter checks by environment result" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
                         {RESULT_FILTERS.map((filter) => (
                           <option key={filter.id} value={filter.id}>
@@ -1440,7 +1463,13 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                           </option>
                         ))}
                       </select>
-                      {checkQuery || resultFilter !== "all" ? <button type="button" onClick={clearResultFilter} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset</button> : null}
+                      <select value={checkSort} onChange={(event) => setCheckSort(event.target.value)} aria-label="Sort matrix checks" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        <option value="original">Original order</option>
+                        <option value="priority">Priority: highest first</option>
+                        <option value="area">Area: A–Z</option>
+                        <option value="title">Check: A–Z</option>
+                      </select>
+                      {checkQuery || resultFilter !== "all" || priorityFilter !== "all" ? <button type="button" onClick={clearResultFilter} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset filters</button> : null}
                       <button type="button" onClick={exportVisibleCsv} disabled={!visibleChecks.length || !selectedMatrix.environments.length} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"><Download className="h-3.5 w-3.5" aria-hidden="true" /> Export shown</button>
                       {canEdit ? <button type="button" onClick={() => setShowCheckForm((value) => !value)} disabled={selectedMatrix.checks.length >= MAX_CHECKS} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add check</button> : null}
                     </div>
