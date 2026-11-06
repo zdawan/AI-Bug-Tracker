@@ -480,6 +480,7 @@ export default function ReportAuditHistory({ reports = [], email }) {
   const [storageError, setStorageError] = useState("");
   const [notice, setNotice] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
+  const [sortDirection, setSortDirection] = useState("desc");
   const normalizedEmail = getText(email, 320).toLowerCase();
   const storageKey = normalizedEmail ? getStorageKey(normalizedEmail) : "";
   const currentSnapshot = useMemo(
@@ -535,13 +536,20 @@ export default function ReportAuditHistory({ reports = [], email }) {
   const comparison = baseline
     ? compareSnapshots(currentSnapshot, baseline)
     : null;
-  const recentTrend = [...snapshots]
-    .sort(compareCaptureTime)
-    .slice(0, 8)
-    .reverse();
+  const recentTrend = useMemo(() => {
+    const ordered = [...snapshots].sort(compareCaptureTime);
+    return (sortDirection === "desc" ? ordered : [...ordered].reverse()).slice(
+      0,
+      8,
+    );
+  }, [snapshots, sortDirection]);
   const newestSnapshot = snapshots[0];
   const currentHasFindings = currentSnapshot.findings > 0;
   const hasSavedBaseline = snapshots.length > 0;
+  const trendMaximum = Math.max(
+    1,
+    ...recentTrend.map((snapshot) => snapshot.findings),
+  );
 
   const handleCapture = () => {
     setNotice("");
@@ -933,23 +941,49 @@ export default function ReportAuditHistory({ reports = [], email }) {
           </div>
 
           <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="text-[10px] font-semibold text-slate-800">
                   Recent findings trend
                 </h3>
                 <p className="mt-1 text-[8px] text-slate-500">
-                  Total findings at each saved capture.
+                  {sortDirection === "desc"
+                    ? "Newest captures first."
+                    : "Oldest captures first."}
                 </p>
               </div>
-              <BarChart3 size={13} className="text-violet-500" aria-hidden="true" />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSortDirection((current) =>
+                      current === "desc" ? "asc" : "desc",
+                    )
+                  }
+                  aria-label={`Sort ${
+                    sortDirection === "desc" ? "oldest" : "newest"
+                  } captures first`}
+                  className="inline-flex min-h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[8px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+                >
+                  <ChevronDown
+                    size={10}
+                    className={sortDirection === "asc" ? "rotate-180" : ""}
+                    aria-hidden="true"
+                  />
+                  {sortDirection === "desc" ? "Newest" : "Oldest"}
+                </button>
+                <BarChart3 size={13} className="text-violet-500" aria-hidden="true" />
+              </div>
             </div>
             {recentTrend.length > 0 ? (
               <div className="mt-3 space-y-2">
                 {recentTrend.map((snapshot, index) => {
-                  const previous = recentTrend[index - 1];
-                  const delta = previous
-                    ? snapshot.findings - previous.findings
+                  const comparisonIndex =
+                    sortDirection === "desc" ? index + 1 : index - 1;
+                  const comparisonSnapshot =
+                    recentTrend[comparisonIndex];
+                  const delta = comparisonSnapshot
+                    ? snapshot.findings - comparisonSnapshot.findings
                     : 0;
                   return (
                     <div
@@ -964,17 +998,10 @@ export default function ReportAuditHistory({ reports = [], email }) {
                           className="block h-full rounded-full bg-violet-400"
                           style={{
                             width: `${
-                              recentTrend.length
+                              snapshot.findings
                                 ? Math.max(
-                                    snapshot.findings ? 3 : 0,
-                                    (snapshot.findings /
-                                      Math.max(
-                                        1,
-                                        ...recentTrend.map(
-                                          (item) => item.findings,
-                                        ),
-                                      )) *
-                                      100,
+                                    3,
+                                    (snapshot.findings / trendMaximum) * 100,
                                   )
                                 : 0
                             }%`,
@@ -983,7 +1010,7 @@ export default function ReportAuditHistory({ reports = [], email }) {
                       </span>
                       <span className="text-right text-[8px] font-semibold text-slate-700 tabular-nums">
                         {formatNumber(snapshot.findings)}
-                        {previous && delta !== 0 && (
+                        {comparisonSnapshot && delta !== 0 && (
                           <span
                             className={
                               delta > 0 ? "text-rose-600" : "text-emerald-600"
