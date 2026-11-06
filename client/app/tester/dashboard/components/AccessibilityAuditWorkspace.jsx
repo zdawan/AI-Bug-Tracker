@@ -113,6 +113,7 @@ const CHECK_FILTERS = [
   { id: "pending", label: "Not reviewed" },
   { id: "pass", label: "Looks good" },
   { id: "issue", label: "Issues found" },
+  { id: "needs-documentation", label: "Issues missing notes or evidence" },
   { id: "blocked", label: "Unable to assess" },
   { id: "na", label: "Not applicable" },
 ];
@@ -311,6 +312,17 @@ function getMetrics(audit) {
     issueCount: counts.issue,
     linkedReports: audit.reportIds.length,
   };
+}
+
+function getCheckFilterCount(audit, filterId) {
+  if (filterId === "all") return audit.checks.length;
+  if (filterId === "needs-documentation") {
+    return audit.checks.filter(
+      (item) => item.status === "issue" &&
+        (!item.notes.trim() || !item.evidenceUrl.trim()),
+    ).length;
+  }
+  return audit.checks.filter((item) => item.status === filterId).length;
 }
 
 function newAudit(name) {
@@ -555,7 +567,11 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
       .filter(({ item }) => groupFilter === "all" || (
         groupFilter === "custom" ? item.custom : item.groupId === groupFilter
       ))
-      .filter(({ item }) => checkFilter === "all" || item.status === checkFilter)
+      .filter(({ item }) => checkFilter === "all" || (
+        checkFilter === "needs-documentation"
+          ? item.status === "issue" && (!item.notes.trim() || !item.evidenceUrl.trim())
+          : item.status === checkFilter
+      ))
       .filter(({ item }) => priorityFilter === "all" || item.priority === priorityFilter)
       .filter(({ item }) => !query || [
         item.title,
@@ -1203,7 +1219,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                         <input value={checkQuery} onChange={(event) => setCheckQuery(event.target.value)} placeholder="Search checks" className="w-40 rounded-lg border border-slate-200 bg-white py-2 pl-8 pr-2.5 text-xs outline-none focus:border-sky-400" />
                       </label>
                       <select value={checkFilter} onChange={(event) => setCheckFilter(event.target.value)} aria-label="Filter accessibility check results" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
-                        {CHECK_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label} ({filter.id === "all" ? metrics.total : metrics[filter.id]})</option>)}
+                        {CHECK_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label} ({getCheckFilterCount(selectedAudit, filter.id)})</option>)}
                       </select>
                       <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} aria-label="Filter accessibility checks by priority" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
                         {PRIORITY_FILTERS.map((filter) => (
