@@ -652,6 +652,7 @@ export default function ReportInvestigationWorkspace({
   const [stateFilter, setStateFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stepFilter, setStepFilter] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
@@ -692,6 +693,7 @@ export default function ReportInvestigationWorkspace({
     setStateFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setStepFilter("all");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE);
     if (!normalizedEmail) return;
@@ -766,9 +768,22 @@ export default function ReportInvestigationWorkspace({
           }
           const id = getReportId(report);
           const session = sessions[id] || makeEmptySession(report);
+          const completion = getCompletion(session);
           if (
             stateFilter !== "all" &&
             getSessionState(session) !== stateFilter
+          ) {
+            return false;
+          }
+          if (stepFilter === "with-failures" && completion.failed === 0) {
+            return false;
+          }
+          if (stepFilter === "with-blockers" && completion.blocked === 0) {
+            return false;
+          }
+          if (
+            stepFilter === "unfinished" &&
+            completion.finished >= completion.total
           ) {
             return false;
           }
@@ -824,6 +839,7 @@ export default function ReportInvestigationWorkspace({
       sessions,
       severityFilter,
       sortBy,
+      stepFilter,
       stateFilter,
     ],
   );
@@ -843,6 +859,7 @@ export default function ReportInvestigationWorkspace({
     stateFilter !== "all" ||
     severityFilter !== "all" ||
     categoryFilter !== "all" ||
+    stepFilter !== "all" ||
     Boolean(query.trim());
 
   const updateSession = (reportId, updater) => {
@@ -900,6 +917,7 @@ export default function ReportInvestigationWorkspace({
     setStateFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setStepFilter("all");
     setSortBy("priority");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE);
@@ -1053,6 +1071,17 @@ export default function ReportInvestigationWorkspace({
               value={stateFilter}
               onChange={(value) => setFilter(setStateFilter, value)}
               options={SESSION_STATES}
+            />
+            <FilterSelect
+              label="Step results"
+              value={stepFilter}
+              onChange={(value) => setFilter(setStepFilter, value)}
+              options={[
+                { value: "all", label: "Any step results" },
+                { value: "with-failures", label: "Has failed steps" },
+                { value: "with-blockers", label: "Has blocked steps" },
+                { value: "unfinished", label: "Has unfinished steps" },
+              ]}
             />
             <FilterSelect
               label="Severity"
