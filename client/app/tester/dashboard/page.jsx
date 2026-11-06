@@ -2051,10 +2051,11 @@ function AnalyticsSectionNavigator() {
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={readingProgress}
+          aria-valuetext={`${readingProgress}% through analytics`}
           className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-[width] duration-150"
+            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-[width] duration-150 motion-reduce:transition-none"
             style={{ width: `${readingProgress}%` }}
           />
         </div>
