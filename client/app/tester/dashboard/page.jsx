@@ -27,6 +27,7 @@ import TestSessionWorkspace from "./components/TestSessionWorkspace";
 import BugBashCampaignWorkspace from "./components/BugBashCampaignWorkspace";
 import IncidentRetrospectiveWorkspace from "./components/IncidentRetrospectiveWorkspace";
 import AccessibilityAuditWorkspace from "./components/AccessibilityAuditWorkspace";
+import BrowserCoverageMatrix from "./components/BrowserCoverageMatrix";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -2337,6 +2338,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <AccessibilityAuditWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <BrowserCoverageMatrix
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
