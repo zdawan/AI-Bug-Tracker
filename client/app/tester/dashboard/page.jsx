@@ -1816,6 +1816,7 @@ function AnalyticsSectionNavigator() {
     ANALYTICS_SECTIONS[0].id,
   );
   const [readingProgress, setReadingProgress] = useState(0);
+  const [copyLinkStatus, setCopyLinkStatus] = useState("");
   const sectionLinksRef = useRef(null);
   const activeSectionLinkRef = useRef(null);
   const activeSectionIndex = ANALYTICS_SECTIONS.findIndex(
@@ -1825,6 +1826,25 @@ function AnalyticsSectionNavigator() {
     ANALYTICS_SECTIONS[Math.max(0, activeSectionIndex)]?.label;
   const previousSection = ANALYTICS_SECTIONS[activeSectionIndex - 1];
   const nextSection = ANALYTICS_SECTIONS[activeSectionIndex + 1];
+
+  const copyActiveSectionLink = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      const sectionUrl = new URL(window.location.href);
+      sectionUrl.hash = activeSection;
+      await navigator.clipboard.writeText(sectionUrl.toString());
+      setCopyLinkStatus("Link copied.");
+    } catch {
+      setCopyLinkStatus("Could not copy link.");
+    }
+  };
+
+  useEffect(() => {
+    setCopyLinkStatus("");
+  }, [activeSection]);
 
   useEffect(() => {
     const targets = ANALYTICS_SECTIONS.map(({ id }) =>
@@ -1948,6 +1968,20 @@ function AnalyticsSectionNavigator() {
               {ANALYTICS_SECTIONS.length})
             </span>
           </p>
+          <div className="mt-1 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={copyActiveSectionLink}
+              className="text-[9px] font-medium text-violet-700 underline-offset-2 transition hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            >
+              Copy section link
+            </button>
+            {copyLinkStatus && (
+              <span role="status" className="text-[9px] text-slate-500">
+                {copyLinkStatus}
+              </span>
+            )}
+          </div>
         </div>
         <div
           ref={sectionLinksRef}
