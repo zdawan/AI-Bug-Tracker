@@ -300,6 +300,47 @@ function auditReport(report, idCounts, now) {
   };
 }
 
+export function createReportAuditSnapshot(reports = []) {
+  const now = Date.now();
+  const idCounts = buildDuplicateIdCounts(reports);
+  const seenIds = new Map();
+  const entries = reports.map((report, index) => {
+    const id = getId(report);
+    const ordinal = id ? (seenIds.get(id) || 0) + 1 : index + 1;
+    if (id) seenIds.set(id, ordinal);
+    const entry = auditReport(report, idCounts, now);
+    return {
+      id,
+      record: {
+        key: id ? `${id}#${ordinal}` : `missing-id#${index + 1}`,
+        id,
+        issues: entry.issues.map(({ code, level }) => ({ code, level })),
+      },
+      issues: entry.issues,
+    };
+  });
+  const counts = entries.reduce(
+    (result, record) => {
+      record.issues.forEach((issue) => {
+        result[issue.level] += 1;
+        result.findings += 1;
+      });
+      return result;
+    },
+    { findings: 0, error: 0, warning: 0, info: 0 },
+  );
+
+  return {
+    capturedAt: new Date(now).toISOString(),
+    reportCount: reports.length,
+    findings: counts.findings,
+    errors: counts.error,
+    warnings: counts.warning,
+    info: counts.info,
+    records: entries.map((entry) => entry.record),
+  };
+}
+
 function getIssueWeight(entry) {
   const issues = entry.visibleIssues || entry.issues;
   return (
