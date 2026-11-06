@@ -947,6 +947,30 @@ export default function ReportInvestigationInsights({
   const blockedCount = filteredEntries.filter(
     (entry) => entry.state === "blocked",
   ).length;
+  const recentComparison = useMemo(() => {
+    const now = Date.now();
+    const currentStart = now - 7 * 86_400_000;
+    const previousStart = now - 14 * 86_400_000;
+    return filteredEntries.reduce(
+      (result, entry) => {
+        if (!Number.isFinite(entry.updatedAt)) return result;
+        if (entry.updatedAt >= currentStart) {
+          result.current += 1;
+          if (entry.state === "reproduced") result.currentReproduced += 1;
+        } else if (entry.updatedAt >= previousStart) {
+          result.previous += 1;
+          if (entry.state === "reproduced") result.previousReproduced += 1;
+        }
+        return result;
+      },
+      {
+        current: 0,
+        previous: 0,
+        currentReproduced: 0,
+        previousReproduced: 0,
+      },
+    );
+  }, [filteredEntries]);
   const stateCounts = useMemo(
     () =>
       allEntries.reduce(
@@ -1281,6 +1305,97 @@ export default function ReportInvestigationInsights({
         <div className="grid gap-4 xl:grid-cols-2">
           <CategoryBreakdown entries={filteredEntries} />
           <SeverityBreakdown entries={filteredEntries} />
+        </div>
+
+        <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/80 via-white to-violet-50/60 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="inline-flex items-center gap-2 text-xs font-semibold text-slate-800">
+                <Activity size={14} className="text-sky-600" aria-hidden="true" />
+                Recent session comparison
+              </p>
+              <p className="mt-1 text-[9px] leading-4 text-slate-500">
+                Compared with the preceding 7-day window. Uses the current
+                category, severity, state, and search filters.
+              </p>
+            </div>
+            {(() => {
+              const difference =
+                recentComparison.current - recentComparison.previous;
+              return (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold ${
+                    difference > 0
+                      ? "border-violet-200 bg-violet-50 text-violet-700"
+                      : difference < 0
+                        ? "border-slate-200 bg-white text-slate-600"
+                        : "border-sky-200 bg-sky-50 text-sky-700"
+                  }`}
+                >
+                  {difference > 0 ? (
+                    <ArrowUpRight size={12} aria-hidden="true" />
+                  ) : difference < 0 ? (
+                    <ArrowDownWideNarrow size={12} aria-hidden="true" />
+                  ) : (
+                    <CircleDashed size={12} aria-hidden="true" />
+                  )}
+                  {difference > 0
+                    ? `${formatNumber(difference)} more sessions`
+                    : difference < 0
+                      ? `${formatNumber(Math.abs(difference))} fewer sessions`
+                      : "Same session count"}
+                </span>
+              );
+            })()}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {[
+              {
+                label: "Last 7 days",
+                sessions: recentComparison.current,
+                reproduced: recentComparison.currentReproduced,
+                tone: "bg-violet-500",
+              },
+              {
+                label: "Previous 7 days",
+                sessions: recentComparison.previous,
+                reproduced: recentComparison.previousReproduced,
+                tone: "bg-slate-400",
+              },
+            ].map((period) => (
+              <div
+                key={period.label}
+                className="rounded-xl border border-white/80 bg-white/80 p-3"
+              >
+                <div className="flex items-center justify-between gap-2 text-[10px]">
+                  <span className="font-semibold text-slate-700">
+                    {period.label}
+                  </span>
+                  <span className="text-slate-500">
+                    {formatNumber(period.sessions)} sessions
+                  </span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full ${period.tone}`}
+                    style={{
+                      width: `${
+                        period.sessions
+                          ? Math.max(
+                              4,
+                              (period.reproduced / period.sessions) * 100,
+                            )
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-1.5 text-[9px] text-slate-500">
+                  {formatNumber(period.reproduced)} reported as reproduced
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white">
