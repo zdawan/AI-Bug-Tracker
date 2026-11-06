@@ -226,6 +226,22 @@ function appendActivity(retrospective, label) {
   ].slice(-100);
 }
 
+function formatElapsed(start, end) {
+  const startTime = Date.parse(start || "");
+  const endTime = Date.parse(end || "");
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime) {
+    return "Not available";
+  }
+  const minutes = Math.round((endTime - startTime) / 60000);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours < 48) return remainingMinutes ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return remainingHours ? `${days}d ${remainingHours}h` : `${days}d`;
+}
+
 function getReportId(report) {
   const id = report?._id ?? report?.id;
   return id === null || id === undefined ? "" : String(id).trim();
@@ -306,6 +322,9 @@ function getMetrics(retrospective) {
     events: retrospective.events.length,
     factors: retrospective.factors.length,
     completeness,
+    timeToDetect: formatElapsed(retrospective.startedAt, retrospective.detectedAt),
+    timeToMitigate: formatElapsed(retrospective.startedAt, retrospective.mitigatedAt),
+    timeToResolve: formatElapsed(retrospective.startedAt, retrospective.resolvedAt),
   };
 }
 
@@ -1226,6 +1245,11 @@ export default function IncidentRetrospectiveWorkspace({
                         {selected[field] ? <span className="mt-1 block text-[10px] font-normal text-slate-400">{formatDate(selected[field])}</span> : null}
                       </label>
                     ))}
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <MetricCard label="Time to detect" value={metrics.timeToDetect} detail="Incident start to detection" tone="sky" />
+                    <MetricCard label="Time to mitigate" value={metrics.timeToMitigate} detail="Incident start to mitigation" tone="amber" />
+                    <MetricCard label="Time to resolve" value={metrics.timeToResolve} detail="Incident start to resolution" tone="green" />
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="text-xs font-medium text-slate-600">How was the incident detected?
