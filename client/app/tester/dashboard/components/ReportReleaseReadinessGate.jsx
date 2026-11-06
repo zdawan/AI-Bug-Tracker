@@ -24,6 +24,7 @@ import { assessReport } from "./ReportReadinessBoard";
 
 const INITIAL_VISIBLE = 8;
 const MAX_LIMIT = 25;
+const AGING_REVIEW_DAYS = 30;
 
 const PROFILES = [
   {
@@ -171,6 +172,9 @@ function getAssessmentReasons(entry, config) {
   if (entry.severityRank === 4) reasons.push("critical");
   else if (entry.severityRank === 3) reasons.push("high");
   if (entry.readinessScore < config.qualityFloor) reasons.push("quality");
+  if (entry.age !== null && entry.age >= AGING_REVIEW_DAYS) {
+    reasons.push("aging");
+  }
 
   return reasons;
 }
@@ -231,6 +235,9 @@ function evaluateGate(entries, config) {
     critical,
     high,
     belowQuality,
+    aging: open.filter(
+      (entry) => entry.age !== null && entry.age >= AGING_REVIEW_DAYS,
+    ).length,
     checks,
     passed: checks.every((check) => check.passed),
     failedChecks: checks.filter((check) => !check.passed),
@@ -497,6 +504,10 @@ function ReasonBadge({ reason }) {
       label: "Below readiness floor",
       className: "border-violet-200 bg-violet-50 text-violet-700",
     },
+    aging: {
+      label: `${AGING_REVIEW_DAYS}+ days open`,
+      className: "border-sky-200 bg-sky-50 text-sky-700",
+    },
   }[reason];
   if (!config) return null;
   return (
@@ -680,6 +691,12 @@ export default function ReportReleaseReadinessGate({
           return false;
         }
         if (
+          severityFilter === "aging" &&
+          !entry.reasons.includes("aging")
+        ) {
+          return false;
+        }
+        if (
           severityFilter === "quality" &&
           !entry.reasons.includes("quality")
         ) {
@@ -843,7 +860,7 @@ export default function ReportReleaseReadinessGate({
       </div>
 
       <div className="space-y-4 p-4 sm:p-5">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard
             label="Reports in scope"
             value={formatNumber(scopedAssessments.length)}
@@ -866,6 +883,13 @@ export default function ReportReleaseReadinessGate({
             detail={`Allowed by profile: ${formatNumber(config.highLimit)}`}
             icon={AlertTriangle}
             tone={gate.high > config.highLimit ? "rose" : "amber"}
+          />
+          <MetricCard
+            label={`Open ${AGING_REVIEW_DAYS}+ days`}
+            value={formatNumber(gate.aging)}
+            detail="Age is a review signal, not a gate failure by itself"
+            icon={AlertTriangle}
+            tone={gate.aging ? "sky" : "emerald"}
           />
           <MetricCard
             label="Average open readiness"
@@ -1084,6 +1108,10 @@ export default function ReportReleaseReadinessGate({
                     { value: "high", label: "High only" },
                     { value: "severity", label: "Critical and high" },
                     { value: "quality", label: "Readiness below floor" },
+                    {
+                      value: "aging",
+                      label: `${AGING_REVIEW_DAYS}+ days open`,
+                    },
                   ]}
                 />
                 <label className="grid gap-1.5">
@@ -1172,6 +1200,12 @@ export default function ReportReleaseReadinessGate({
                       if (
                         severityFilter === "high" &&
                         entry.severityRank !== 3
+                      ) {
+                        return false;
+                      }
+                      if (
+                        severityFilter === "aging" &&
+                        !entry.reasons.includes("aging")
                       ) {
                         return false;
                       }
@@ -1275,7 +1309,9 @@ export default function ReportReleaseReadinessGate({
               Quality checks use the dashboard&apos;s shared readiness
               assessment for title, description, reproduction steps, expected
               and actual behavior, and affected page. Missing screenshots are
-              shown as context, not a release-gate failure.
+              shown as context, not a release-gate failure. Open reports
+              older than {AGING_REVIEW_DAYS} days are also surfaced for review,
+              but age alone does not fail a threshold check.
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -1285,8 +1321,8 @@ export default function ReportReleaseReadinessGate({
             </p>
             <p className="mt-1.5 text-[10px] leading-5 text-slate-600">
               The selected category filter applies to metrics, threshold checks,
-              blockers, and export. Closed reports appear in the report scope
-              count but do not count as open gate violations.
+              review signals, and export. Closed reports appear in the report
+              scope count but do not count as open gate violations.
             </p>
           </div>
         </div>
