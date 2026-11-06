@@ -255,16 +255,43 @@ export function StatusOverview({
       title="Issue status"
       subtitle={`${total} issues across all statuses`}
     >
+      <div
+        className="mb-5 flex h-2.5 overflow-hidden rounded-full bg-slate-100"
+        role="img"
+        aria-label={statuses.map((status) => {
+          const percentage = total ? Math.round((status.value / total) * 100) : 0;
+          return `${status.label}: ${status.value} (${percentage}%)`;
+        }).join(", ")}
+      >
+        {statuses.map((status) => {
+          const percentage = total ? (status.value / total) * 100 : 0;
+          return (
+            <div
+              key={status.label}
+              className={`h-full ${status.color}`}
+              style={{ width: `${percentage}%` }}
+              title={`${status.label}: ${status.value}`}
+            />
+          );
+        })}
+      </div>
       <div className="space-y-4">
         {statuses.map((status) => (
-          <div key={status.label} className="flex items-center gap-3">
-            <span className={`h-2.5 w-2.5 rounded-full ${status.color}`} />
-            <span className="flex-1 text-sm text-slate-600">
-              {status.label}
-            </span>
-            <span className="text-sm font-semibold text-slate-900">
-              {status.value}
-            </span>
+          <div key={status.label}>
+            <div className="flex items-center gap-3">
+              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${status.color}`} />
+              <span className="flex-1 text-sm text-slate-600">{status.label}</span>
+              <span className="text-sm font-semibold text-slate-900">{status.value}</span>
+              <span className="w-10 text-right text-xs text-slate-400">
+                {total ? Math.round((status.value / total) * 100) : 0}%
+              </span>
+            </div>
+            <div className="ml-5 mt-2">
+              <ProgressBar
+                value={total ? (status.value / total) * 100 : 0}
+                color={status.color}
+              />
+            </div>
           </div>
         ))}
       </div>
