@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Accessibility,
   AlertCircle,
+  ArrowDown,
   ArrowDownToLine,
   Check,
   CheckCircle2,
@@ -386,7 +387,11 @@ function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenRepo
   const state = checkState(item.status);
   const Icon = state.icon;
   return (
-    <article className={`overflow-hidden rounded-2xl border ${item.status === "issue" ? "border-rose-200 bg-rose-50/20" : "border-slate-200 bg-white"}`}>
+    <article
+      id={`accessibility-check-${item.id}`}
+      tabIndex={-1}
+      className={`overflow-hidden rounded-2xl border outline-none focus:ring-2 focus:ring-sky-400 ${item.status === "issue" ? "border-rose-200 bg-rose-50/20" : "border-slate-200 bg-white"}`}
+    >
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-1 gap-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-600">{index + 1}</span>
@@ -501,6 +506,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
   const [checkQuery, setCheckQuery] = useState("");
   const [checkFilter, setCheckFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
+  const [nextCheckId, setNextCheckId] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newAuditName, setNewAuditName] = useState("");
   const [newTargetUrl, setNewTargetUrl] = useState("");
@@ -548,6 +554,14 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
         item.priority,
       ].some((value) => value.toLowerCase().includes(query)));
   }, [selectedAudit, checkQuery, checkFilter, groupFilter]);
+
+  useEffect(() => {
+    if (!nextCheckId || !visibleChecks.some(({ item }) => item.id === nextCheckId)) return;
+    const element = document.getElementById(`accessibility-check-${nextCheckId}`);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    element?.focus({ preventScroll: true });
+    setNextCheckId("");
+  }, [nextCheckId, visibleChecks]);
 
   const reportOptions = useMemo(() => {
     const query = getText(reportSearch, 120).toLowerCase();
@@ -791,6 +805,15 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     setCheckFilter("all");
     setGroupFilter("all");
     setCheckQuery("");
+  };
+
+  const reviewNextPending = () => {
+    const nextPending = selectedAudit?.checks.find((item) => item.status === "pending");
+    if (!nextPending) return;
+    setGroupFilter("all");
+    setCheckFilter("all");
+    setCheckQuery("");
+    setNextCheckId(nextPending.id);
   };
 
   const exportCsv = () => {
@@ -1048,6 +1071,15 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={reviewNextPending}
+                        disabled={!canEdit || metrics.pending === 0}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-800 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+                        Review next pending
+                      </button>
                       <label className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
                         <input value={checkQuery} onChange={(event) => setCheckQuery(event.target.value)} placeholder="Search checks" className="w-40 rounded-lg border border-slate-200 bg-white py-2 pl-8 pr-2.5 text-xs outline-none focus:border-sky-400" />
