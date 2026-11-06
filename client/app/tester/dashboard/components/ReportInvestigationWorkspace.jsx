@@ -148,6 +148,41 @@ function parseReproductionSteps(description) {
   return allNumbered;
 }
 
+function getReportContext(report) {
+  const description = getText(report?.description, 8000);
+  const sections = [
+    { key: "expected", label: "Expected behavior", pattern: /^\s*expected behavior\s*:?\s*$/i },
+    { key: "actual", label: "Actual behavior", pattern: /^\s*actual behavior\s*:?\s*$/i },
+    { key: "environment", label: "Environment", pattern: /^\s*(?:browser environment|environment)\s*:?\s*$/i },
+  ];
+  const context = {};
+  let activeKey = "";
+
+  description.replace(/\r\n?/g, "\n").split("\n").forEach((line) => {
+    const section = sections.find((candidate) => candidate.pattern.test(line));
+    if (section) {
+      activeKey = section.key;
+      context[activeKey] = context[activeKey] || [];
+      return;
+    }
+
+    const isOtherHeading =
+      /^\s*(?:steps to reproduce|reproduction steps|steps|additional context|notes)\s*:?\s*$/i.test(
+        line,
+      );
+    if (isOtherHeading) {
+      activeKey = "";
+      return;
+    }
+    if (activeKey && line.trim()) context[activeKey].push(line.trim());
+  });
+
+  return sections.reduce((result, section) => {
+    result[section.key] = (context[section.key] || []).join(" ").slice(0, 900);
+    return result;
+  }, {});
+}
+
 function getInitialSteps(report) {
   const parsed = parseReproductionSteps(report?.description);
   if (parsed.length) return parsed;
@@ -453,6 +488,7 @@ function InvestigationCard({
         ? "border-amber-200 bg-amber-50 text-amber-700"
         : "border-slate-200 bg-slate-50 text-slate-600";
   const started = Boolean(session.startedAt);
+  const context = getReportContext(report);
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/20">
@@ -537,6 +573,49 @@ function InvestigationCard({
             />
           ))}
         </ol>
+
+        {(context.expected || context.actual || context.environment) && (
+          <details className="mt-3 rounded-xl border border-slate-200 bg-white">
+            <summary className="cursor-pointer list-none px-3 py-2.5 text-[10px] font-semibold text-slate-700 outline-none focus-visible:ring-4 focus-visible:ring-violet-100">
+              <span className="inline-flex items-center gap-1.5">
+                <Info size={12} className="text-violet-600" aria-hidden="true" />
+                Report context
+              </span>
+            </summary>
+            <div className="space-y-2 border-t border-slate-100 px-3 py-3">
+              {context.expected && (
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                    Expected behavior
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[10px] leading-5 text-slate-700">
+                    {context.expected}
+                  </p>
+                </div>
+              )}
+              {context.actual && (
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                    Actual behavior
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[10px] leading-5 text-slate-700">
+                    {context.actual}
+                  </p>
+                </div>
+              )}
+              {context.environment && (
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                    Environment context
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[10px] leading-5 text-slate-700">
+                    {context.environment}
+                  </p>
+                </div>
+              )}
+            </div>
+          </details>
+        )}
 
         <label className="mt-3 block">
           <span className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
@@ -652,6 +731,7 @@ export default function ReportInvestigationWorkspace({
   const [stateFilter, setStateFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stepFilter, setStepFilter] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
@@ -692,6 +772,7 @@ export default function ReportInvestigationWorkspace({
     setStateFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setStepFilter("all");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE);
     if (!normalizedEmail) return;
@@ -766,9 +847,22 @@ export default function ReportInvestigationWorkspace({
           }
           const id = getReportId(report);
           const session = sessions[id] || makeEmptySession(report);
+          const completion = getCompletion(session);
           if (
             stateFilter !== "all" &&
             getSessionState(session) !== stateFilter
+          ) {
+            return false;
+          }
+          if (stepFilter === "with-failures" && completion.failed === 0) {
+            return false;
+          }
+          if (stepFilter === "with-blockers" && completion.blocked === 0) {
+            return false;
+          }
+          if (
+            stepFilter === "unfinished" &&
+            completion.finished >= completion.total
           ) {
             return false;
           }
@@ -824,6 +918,7 @@ export default function ReportInvestigationWorkspace({
       sessions,
       severityFilter,
       sortBy,
+      stepFilter,
       stateFilter,
     ],
   );
@@ -843,6 +938,7 @@ export default function ReportInvestigationWorkspace({
     stateFilter !== "all" ||
     severityFilter !== "all" ||
     categoryFilter !== "all" ||
+    stepFilter !== "all" ||
     Boolean(query.trim());
 
   const updateSession = (reportId, updater) => {
@@ -900,6 +996,7 @@ export default function ReportInvestigationWorkspace({
     setStateFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setStepFilter("all");
     setSortBy("priority");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE);
@@ -1053,6 +1150,17 @@ export default function ReportInvestigationWorkspace({
               value={stateFilter}
               onChange={(value) => setFilter(setStateFilter, value)}
               options={SESSION_STATES}
+            />
+            <FilterSelect
+              label="Step results"
+              value={stepFilter}
+              onChange={(value) => setFilter(setStepFilter, value)}
+              options={[
+                { value: "all", label: "Any step results" },
+                { value: "with-failures", label: "Has failed steps" },
+                { value: "with-blockers", label: "Has blocked steps" },
+                { value: "unfinished", label: "Has unfinished steps" },
+              ]}
             />
             <FilterSelect
               label="Severity"
