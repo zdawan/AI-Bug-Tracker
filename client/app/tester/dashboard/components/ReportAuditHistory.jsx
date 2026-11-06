@@ -400,6 +400,7 @@ function ChangeSummary({ comparison, baseline, current }) {
 }
 
 function ChangeList({ title, items, tone, emptyText }) {
+  const [showAll, setShowAll] = useState(false);
   const tones = {
     rose: "border-rose-100 bg-rose-50/50 text-rose-800",
     emerald: "border-emerald-100 bg-emerald-50/50 text-emerald-800",
@@ -410,6 +411,7 @@ function ChangeList({ title, items, tone, emptyText }) {
     emerald: "border-emerald-100 bg-white",
     slate: "border-slate-100 bg-white",
   };
+  const visibleItems = showAll ? items : items.slice(0, 20);
   return (
     <section className={`rounded-2xl border p-3.5 ${tones[tone]}`}>
       <div className="flex items-center justify-between gap-2">
@@ -419,8 +421,9 @@ function ChangeList({ title, items, tone, emptyText }) {
         </span>
       </div>
       {items.length ? (
-        <ul className="mt-2 max-h-52 space-y-1.5 overflow-auto">
-          {items.slice(0, 20).map((item, index) => (
+        <>
+          <ul className="mt-2 max-h-64 space-y-1.5 overflow-auto">
+          {visibleItems.map((item, index) => (
             <li
               key={`${item.key}-${item.code}-${index}`}
               className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-2 ${itemTones[tone]}`}
@@ -438,12 +441,24 @@ function ChangeList({ title, items, tone, emptyText }) {
               </span>
             </li>
           ))}
+          </ul>
           {items.length > 20 && (
-            <li className="px-2 py-1 text-[8px] text-slate-500">
-              {formatNumber(items.length - 20)} more changes in export.
-            </li>
+            <button
+              type="button"
+              onClick={() => setShowAll((current) => !current)}
+              className="mt-2 inline-flex min-h-7 items-center gap-1 rounded-lg px-2 text-[8px] font-semibold text-slate-600 transition hover:bg-white hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            >
+              {showAll
+                ? "Show fewer changes"
+                : `Show all ${formatNumber(items.length)} changes`}
+              <ChevronDown
+                size={10}
+                className={showAll ? "rotate-180" : ""}
+                aria-hidden="true"
+              />
+            </button>
           )}
-        </ul>
+        </>
       ) : (
         <p className="mt-2 rounded-lg border border-dashed border-current/20 bg-white/70 px-2.5 py-3 text-center text-[8px] opacity-70">
           {emptyText}
