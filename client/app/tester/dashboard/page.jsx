@@ -1816,6 +1816,7 @@ function AnalyticsSectionNavigator() {
     ANALYTICS_SECTIONS[0].id,
   );
   const [readingProgress, setReadingProgress] = useState(0);
+  const [copyLinkStatus, setCopyLinkStatus] = useState("");
   const sectionLinksRef = useRef(null);
   const activeSectionLinkRef = useRef(null);
   const activeSectionIndex = ANALYTICS_SECTIONS.findIndex(
@@ -1823,6 +1824,27 @@ function AnalyticsSectionNavigator() {
   );
   const activeSectionLabel =
     ANALYTICS_SECTIONS[Math.max(0, activeSectionIndex)]?.label;
+  const previousSection = ANALYTICS_SECTIONS[activeSectionIndex - 1];
+  const nextSection = ANALYTICS_SECTIONS[activeSectionIndex + 1];
+
+  const copyActiveSectionLink = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+
+      const sectionUrl = new URL(window.location.href);
+      sectionUrl.hash = activeSection;
+      await navigator.clipboard.writeText(sectionUrl.toString());
+      setCopyLinkStatus("Link copied.");
+    } catch {
+      setCopyLinkStatus("Could not copy link.");
+    }
+  };
+
+  useEffect(() => {
+    setCopyLinkStatus("");
+  }, [activeSection]);
 
   useEffect(() => {
     const targets = ANALYTICS_SECTIONS.map(({ id }) =>
@@ -1946,6 +1968,20 @@ function AnalyticsSectionNavigator() {
               {ANALYTICS_SECTIONS.length})
             </span>
           </p>
+          <div className="mt-1 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={copyActiveSectionLink}
+              className="text-[9px] font-medium text-violet-700 underline-offset-2 transition hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            >
+              Copy section link
+            </button>
+            {copyLinkStatus && (
+              <span role="status" className="text-[9px] text-slate-500">
+                {copyLinkStatus}
+              </span>
+            )}
+          </div>
         </div>
         <div
           ref={sectionLinksRef}
@@ -1993,6 +2029,38 @@ function AnalyticsSectionNavigator() {
         <span className="w-8 shrink-0 text-right text-[9px] tabular-nums text-slate-400">
           {readingProgress}%
         </span>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+        {previousSection ? (
+          <a
+            href={`#${previousSection.id}`}
+            aria-label={`Previous section: ${previousSection.label}`}
+            onClick={() => setActiveSection(previousSection.id)}
+            className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[10px] font-medium text-slate-500 transition hover:bg-slate-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+          >
+            <ChevronLeft size={13} aria-hidden="true" />
+            <span>Previous: {previousSection.label}</span>
+          </a>
+        ) : (
+          <span className="px-2 text-[10px] text-slate-400">
+            First section
+          </span>
+        )}
+        {nextSection ? (
+          <a
+            href={`#${nextSection.id}`}
+            aria-label={`Next section: ${nextSection.label}`}
+            onClick={() => setActiveSection(nextSection.id)}
+            className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[10px] font-medium text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+          >
+            <span>Next: {nextSection.label}</span>
+            <ChevronRight size={13} aria-hidden="true" />
+          </a>
+        ) : (
+          <span className="px-2 text-[10px] text-slate-400">
+            Last section
+          </span>
+        )}
       </div>
     </nav>
   );
