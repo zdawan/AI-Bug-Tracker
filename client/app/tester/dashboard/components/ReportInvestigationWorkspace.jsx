@@ -798,6 +798,11 @@ export default function ReportInvestigationWorkspace({
     }
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(sessions));
+      window.dispatchEvent(
+        new CustomEvent("report-investigation-updated", {
+          detail: { email: normalizedEmail },
+        }),
+      );
       setStorageError("");
     } catch {
       setStorageError(
