@@ -652,6 +652,7 @@ export default function ReportInvestigationWorkspace({
   const [stateFilter, setStateFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("priority");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const normalizedEmail = getText(email, 320).toLowerCase();
@@ -774,6 +775,24 @@ export default function ReportInvestigationWorkspace({
           return matchesSearch(report, query);
         })
         .sort((left, right) => {
+          if (sortBy === "oldest") {
+            return (
+              (getReportDate(left)?.getTime() ?? 0) -
+              (getReportDate(right)?.getTime() ?? 0)
+            );
+          }
+          if (sortBy === "newest") {
+            return (
+              (getReportDate(right)?.getTime() ?? 0) -
+              (getReportDate(left)?.getTime() ?? 0)
+            );
+          }
+          if (sortBy === "severity") {
+            return getSeverityRank(right) - getSeverityRank(left);
+          }
+          if (sortBy === "title") {
+            return getTitle(left).localeCompare(getTitle(right));
+          }
           const leftState = getSessionState(
             sessions[getReportId(left)] || makeEmptySession(left),
           );
@@ -804,6 +823,7 @@ export default function ReportInvestigationWorkspace({
       query,
       sessions,
       severityFilter,
+      sortBy,
       stateFilter,
     ],
   );
@@ -880,6 +900,7 @@ export default function ReportInvestigationWorkspace({
     setStateFilter("all");
     setSeverityFilter("all");
     setCategoryFilter("all");
+    setSortBy("priority");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE);
   };
@@ -1044,6 +1065,18 @@ export default function ReportInvestigationWorkspace({
               value={categoryFilter}
               onChange={(value) => setFilter(setCategoryFilter, value)}
               options={categoryOptions}
+            />
+            <FilterSelect
+              label="Sort by"
+              value={sortBy}
+              onChange={(value) => setFilter(setSortBy, value)}
+              options={[
+                { value: "priority", label: "Investigation priority" },
+                { value: "severity", label: "Severity first" },
+                { value: "oldest", label: "Oldest report first" },
+                { value: "newest", label: "Newest report first" },
+                { value: "title", label: "Title A–Z" },
+              ]}
             />
             <label className="grid gap-1.5">
               <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
