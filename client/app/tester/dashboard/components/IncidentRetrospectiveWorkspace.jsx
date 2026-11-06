@@ -243,6 +243,23 @@ function formatElapsed(start, end) {
   return remainingHours ? `${days}d ${remainingHours}h` : `${days}d`;
 }
 
+function getChronologyIssues(retrospective) {
+  const milestones = [
+    ["startedAt", "Incident began"],
+    ["detectedAt", "Detection"],
+    ["mitigatedAt", "Mitigation"],
+    ["resolvedAt", "Resolution"],
+  ]
+    .filter(([field]) => retrospective[field])
+    .map(([field, label]) => ({ label, time: Date.parse(retrospective[field]) }));
+
+  return milestones.slice(1).flatMap((milestone, index) => {
+    const previous = milestones[index];
+    if (milestone.time >= previous.time) return [];
+    return [`${milestone.label} is earlier than ${previous.label.toLowerCase()}.`];
+  });
+}
+
 function getReportId(report) {
   const id = report?._id ?? report?.id;
   return id === null || id === undefined ? "" : String(id).trim();
@@ -572,6 +589,7 @@ export default function IncidentRetrospectiveWorkspace({
   const requestedEmail = getText(email, 240).toLowerCase();
   const selected = retrospectives.find((item) => item.id === selectedId) || null;
   const metrics = selected ? getMetrics(selected) : null;
+  const chronologyIssues = selected ? getChronologyIssues(selected) : [];
 
   const visibleRetrospectives = useMemo(() => {
     const query = getText(search, 120).toLowerCase();
@@ -1277,6 +1295,15 @@ export default function IncidentRetrospectiveWorkspace({
                     <MetricCard label="Time to mitigate" value={metrics.timeToMitigate} detail="Incident start to mitigation" tone="amber" />
                     <MetricCard label="Time to resolve" value={metrics.timeToResolve} detail="Incident start to resolution" tone="green" />
                   </div>
+                  {chronologyIssues.length ? (
+                    <div role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
+                      <p className="font-semibold">Check milestone order</p>
+                      <ul className="mt-1 list-inside list-disc space-y-0.5">
+                        {chronologyIssues.map((issue) => <li key={issue}>{issue}</li>)}
+                      </ul>
+                      <p className="mt-1 text-amber-800">Durations use the recorded start and end times; confirm the timeline before relying on them.</p>
+                    </div>
+                  ) : null}
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="text-xs font-medium text-slate-600">How was the incident detected?
                       <textarea value={selected.detection} onChange={(event) => updateField("detection", event.target.value)} disabled={!canEdit} maxLength={MAX_TEXT} rows={3} placeholder="Signals, reports, monitoring, or customer feedback that surfaced the issue." className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-sky-400 disabled:bg-slate-50" />
