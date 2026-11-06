@@ -862,9 +862,15 @@ export default function ReportComparisonWorkspace({
       return;
     }
 
+    const exportFields = onlyDifferences ? differences : comparisonFields;
+    if (onlyDifferences && exportFields.length === 0) {
+      setFeedback("No differing fields to export with “Differences only” enabled.");
+      return;
+    }
+
     const rows = [
       ["Field", ...selectedReports.map((report) => getTitle(report))],
-      ...comparisonFields.map((field) => [
+      ...exportFields.map((field) => [
         field.label,
         ...selectedReports.map((report) => field.getValue(report)),
       ]),
@@ -881,7 +887,11 @@ export default function ReportComparisonWorkspace({
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setFeedback("Comparison exported as CSV.");
+    setFeedback(
+      onlyDifferences
+        ? `Exported ${exportFields.length} differing fields as CSV.`
+        : `Exported ${exportFields.length} comparison fields as CSV.`,
+    );
   };
 
   const copySummary = async () => {
