@@ -947,6 +947,12 @@ export default function ReportInvestigationInsights({
   const blockedCount = filteredEntries.filter(
     (entry) => entry.state === "blocked",
   ).length;
+  const updatedShare = filteredEntries.length
+    ? Math.round((sessionsStarted / filteredEntries.length) * 100)
+    : 0;
+  const reproducedShare = sessionsStarted
+    ? Math.round((reproducedCount / sessionsStarted) * 100)
+    : 0;
   const blockerPatterns = useMemo(() => {
     const totals = new Map();
     filteredEntries.forEach((entry) => {
@@ -1175,6 +1181,81 @@ export default function ReportInvestigationInsights({
             tone="sky"
           />
         </div>
+
+        <section
+          aria-label="Investigation funnel"
+          className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="inline-flex items-center gap-2 text-xs font-semibold text-slate-800">
+                <Activity size={14} className="text-violet-600" aria-hidden="true" />
+                Investigation progress funnel
+              </h3>
+              <p className="mt-1 text-[9px] leading-4 text-slate-500">
+                How the filtered open-report queue moves from session activity
+                to a recorded reproduction result.
+              </p>
+            </div>
+            <span className="text-[9px] text-slate-500">
+              Session start: {updatedShare}% · Reproduced: {reproducedShare}% of
+              started
+            </span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            {[
+              {
+                label: "Open reports in view",
+                value: filteredEntries.length,
+                detail: "Includes sessions not started",
+                width: 100,
+                color: "bg-slate-400",
+              },
+              {
+                label: "Session started",
+                value: sessionsStarted,
+                detail: `${updatedShare}% of reports in view`,
+                width: updatedShare,
+                color: "bg-violet-500",
+              },
+              {
+                label: "Issue reproduced",
+                value: reproducedCount,
+                detail: `${reproducedShare}% of started sessions`,
+                width: sessionsStarted
+                  ? Math.round((reproducedCount / sessionsStarted) * 100)
+                  : 0,
+                color: "bg-rose-500",
+              },
+            ].map((stage) => (
+              <article
+                key={stage.label}
+                className="rounded-xl border border-slate-100 bg-slate-50/60 p-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[9px] font-medium text-slate-500">
+                    {stage.label}
+                  </p>
+                  <span className="text-base font-semibold leading-none text-slate-900 tabular-nums">
+                    {formatNumber(stage.value)}
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+                  <div
+                    className={`h-full rounded-full ${stage.color}`}
+                    style={{ width: `${stage.width}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-[8px] text-slate-500">{stage.detail}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-3 text-[8px] leading-4 text-slate-400">
+            This funnel is descriptive, not a pass rate or quality measure;
+            starting and reproducing an issue can reflect different tester
+            workflows and report mixes.
+          </p>
+        </section>
 
         <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3.5 sm:p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
