@@ -42,6 +42,12 @@ const SEVERITY_OPTIONS = [
   { value: "warning", label: "Warnings" },
   { value: "info", label: "Info" },
 ];
+const QUICK_LEVELS = [
+  { value: "all", label: "All levels" },
+  { value: "error", label: "Errors" },
+  { value: "warning", label: "Warnings" },
+  { value: "info", label: "Info" },
+];
 
 const SORT_OPTIONS = [
   { value: "risk", label: "Most issues first" },
@@ -806,6 +812,20 @@ export default function ReportDataIntegrityAudit({
     () => summarizeAudit(auditedEntries),
     [auditedEntries],
   );
+  const levelCounts = useMemo(
+    () =>
+      auditedEntries.reduce(
+        (result, entry) => {
+          const levels = new Set(entry.issues.map((issue) => issue.level));
+          levels.forEach((level) => {
+            result[level] += 1;
+          });
+          return result;
+        },
+        { error: 0, warning: 0, info: 0 },
+      ),
+    [auditedEntries],
+  );
   const visibleEntries = filteredEntries.slice(0, visibleCount);
   const hasFilters =
     levelFilter !== "all" ||
@@ -1063,6 +1083,35 @@ export default function ReportDataIntegrityAudit({
                 />
               </span>
             </label>
+          </div>
+          <div
+            className="mt-3 flex flex-wrap gap-2"
+            aria-label="Quick audit level filters"
+          >
+            {QUICK_LEVELS.map((level) => {
+              const count =
+                level.value === "all"
+                  ? allSummary.affected
+                  : levelCounts[level.value];
+              return (
+                <button
+                  key={level.value}
+                  type="button"
+                  aria-pressed={levelFilter === level.value}
+                  onClick={() => setFilter(setLevelFilter, level.value)}
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 ${
+                    levelFilter === level.value
+                      ? "border-violet-300 bg-violet-100 text-violet-800"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:text-violet-700"
+                  }`}
+                >
+                  {level.label}
+                  <span className="rounded-full bg-white/80 px-1.5 py-0.5 tabular-nums">
+                    {formatNumber(count)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <label className="inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-[9px] font-medium text-slate-600">
