@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Accessibility,
   AlertCircle,
@@ -407,7 +407,7 @@ function AuditListItem({ audit, selected, onSelect, onDuplicate, onDelete }) {
   );
 }
 
-function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenReport, onRemove }) {
+function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenReport, onRemove, onFocusCheck }) {
   const selectedReport = reports.find((report) => getReportId(report) === item.reportId);
   const state = checkState(item.status);
   const Icon = state.icon;
@@ -415,6 +415,7 @@ function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenRepo
     <article
       id={`accessibility-check-${item.id}`}
       tabIndex={-1}
+      onFocus={() => onFocusCheck(item.id)}
       className={`overflow-hidden rounded-2xl border outline-none focus:ring-2 focus:ring-sky-400 ${item.status === "issue" ? "border-rose-200 bg-rose-50/20" : "border-slate-200 bg-white"}`}
     >
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
@@ -521,6 +522,7 @@ function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenRepo
 }
 
 export default function AccessibilityAuditWorkspace({ reports = [], email, onOpenReport }) {
+  const lastFocusedCheckId = useRef("");
   const [audits, setAudits] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [loadedEmail, setLoadedEmail] = useState("");
@@ -531,6 +533,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
   const [checkQuery, setCheckQuery] = useState("");
   const [checkFilter, setCheckFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [checkSort, setCheckSort] = useState("order");
   const [groupFilter, setGroupFilter] = useState("all");
   const [nextCheckId, setNextCheckId] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -583,8 +586,19 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
         item.notes,
         item.groupLabel,
         item.priority,
-      ].some((value) => value.toLowerCase().includes(query)));
-  }, [selectedAudit, checkQuery, checkFilter, priorityFilter, groupFilter]);
+      ].some((value) => value.toLowerCase().includes(query)))
+      .sort((left, right) => {
+        if (checkSort === "priority") {
+          const rank = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+          return rank[left.item.priority] - rank[right.item.priority] || left.index - right.index;
+        }
+        if (checkSort === "status") {
+          const rank = { issue: 0, pending: 1, blocked: 2, pass: 3, na: 4 };
+          return rank[left.item.status] - rank[right.item.status] || left.index - right.index;
+        }
+        return left.index - right.index;
+      });
+  }, [selectedAudit, checkQuery, checkFilter, priorityFilter, groupFilter, checkSort]);
 
   useEffect(() => {
     if (!nextCheckId || !visibleChecks.some(({ item }) => item.id === nextCheckId)) return;
@@ -866,6 +880,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
   const resetFilters = () => {
     setCheckFilter("all");
     setPriorityFilter("all");
+    setCheckSort("order");
     setGroupFilter("all");
     setCheckQuery("");
   };
@@ -874,7 +889,16 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     const predicate = typeof matchesCheck === "function"
       ? matchesCheck
       : (item) => item.status === matchesCheck;
-    const targetCheck = selectedAudit?.checks.find(predicate);
+    if (!selectedAudit) return;
+    const candidates = selectedAudit.checks.filter(predicate);
+    if (!candidates.length) return;
+    const focusedIndex = selectedAudit.checks.findIndex(
+      (item) => item.id === lastFocusedCheckId.current,
+    );
+    const targetCheck = candidates.find((item) =>
+      selectedAudit.checks.findIndex((check) => check.id === item.id) > focusedIndex,
+    ) || candidates[0];
+    lastFocusedCheckId.current = targetCheck.id;
     if (!targetCheck) return;
     setGroupFilter("all");
     setCheckFilter("all");
@@ -1326,7 +1350,12 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                           </option>
                         ))}
                       </select>
-                      {groupFilter !== "all" || checkFilter !== "all" || priorityFilter !== "all" || checkQuery ? (
+                      <select value={checkSort} onChange={(event) => setCheckSort(event.target.value)} aria-label="Sort accessibility checks" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        <option value="order">Checklist order</option>
+                        <option value="priority">Priority first</option>
+                        <option value="status">Issues and pending first</option>
+                      </select>
+                      {groupFilter !== "all" || checkFilter !== "all" || priorityFilter !== "all" || checkSort !== "order" || checkQuery ? (
                         <button type="button" onClick={resetFilters} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset</button>
                       ) : null}
                       <button
@@ -1378,6 +1407,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                         onField={updateCheck}
                         onOpenReport={onOpenReport}
                         onRemove={removeCustomCheck}
+                        onFocusCheck={(id) => { lastFocusedCheckId.current = id; }}
                       />
                     )) : (
                       <EmptyState
