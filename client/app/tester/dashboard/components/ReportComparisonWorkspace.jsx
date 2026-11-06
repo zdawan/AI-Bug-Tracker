@@ -589,6 +589,7 @@ export default function ReportComparisonWorkspace({
   const [sortMode, setSortMode] = useState("recent");
   const [onlyDifferences, setOnlyDifferences] = useState(false);
   const [selectedGroups, setSelectedGroups] = useState(GROUPS);
+  const [collapsedGroups, setCollapsedGroups] = useState([]);
   const [showSavedComparisons, setShowSavedComparisons] = useState(false);
   const [savedComparisons, setSavedComparisons] = useState([]);
   const [savedEmail, setSavedEmail] = useState("");
@@ -882,6 +883,17 @@ export default function ReportComparisonWorkspace({
         : [...current, group],
     );
   };
+
+  const toggleCollapsedGroup = (group) => {
+    setCollapsedGroups((current) =>
+      current.includes(group)
+        ? current.filter((item) => item !== group)
+        : [...current, group],
+    );
+  };
+
+  const expandAllGroups = () => setCollapsedGroups([]);
+  const collapseAllGroups = () => setCollapsedGroups(GROUPS);
 
   const selectQuickFilter = (filter) => {
     if (filter === "category" && !referenceCategory) {
@@ -1569,6 +1581,26 @@ export default function ReportComparisonWorkspace({
                     );
                   })}
                 </fieldset>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={expandAllGroups}
+                    disabled={!collapsedGroups.length}
+                    className="min-h-8 rounded-md px-2 text-[9px] font-medium text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Expand all
+                  </button>
+                  <button
+                    type="button"
+                    onClick={collapseAllGroups}
+                    disabled={selectedGroups.every((group) =>
+                      collapsedGroups.includes(group),
+                    )}
+                    className="min-h-8 rounded-md px-2 text-[9px] font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Collapse all
+                  </button>
+                </div>
                 <label className="inline-flex cursor-pointer items-center gap-2 text-[10px] font-medium text-slate-600">
                   <input
                     type="checkbox"
@@ -1617,17 +1649,64 @@ export default function ReportComparisonWorkspace({
                         </div>
                       ))}
                     </div>
-                    {comparisonFields.map((field, index) => (
-                      <ComparisonRow
-                        key={field.id}
-                        field={field}
-                        reports={selectedReports}
-                        baselineReportId={effectiveBaselineId}
-                        onlyDifferences={onlyDifferences}
-                        onOpenReport={onOpenReport}
-                        lastRow={index === comparisonFields.length - 1}
-                      />
-                    ))}
+                    {GROUPS.filter((group) =>
+                      selectedGroups.includes(group),
+                    ).map((group) => {
+                      const groupFields = comparisonFields.filter(
+                        (field) => field.group === group,
+                      );
+                      const groupDifferences = groupFields.filter((field) =>
+                        differences.some(
+                          (difference) => difference.id === field.id,
+                        ),
+                      ).length;
+                      const isCollapsed = collapsedGroups.includes(group);
+
+                      return (
+                        <div key={group}>
+                          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/80 px-3 py-2 sm:px-4">
+                            <button
+                              type="button"
+                              onClick={() => toggleCollapsedGroup(group)}
+                              aria-expanded={!isCollapsed}
+                              className="inline-flex min-h-7 items-center gap-2 rounded-md text-left text-[10px] font-semibold text-slate-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+                            >
+                              {isCollapsed ? (
+                                <ChevronDown
+                                  size={12}
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <ChevronUp size={12} aria-hidden="true" />
+                              )}
+                              {group}
+                            </button>
+                            <span className="text-[9px] tabular-nums text-slate-400">
+                              {groupFields.length} fields
+                              {groupDifferences > 0
+                                ? ` · ${groupDifferences} differ`
+                                : ""}
+                            </span>
+                          </div>
+                          {!isCollapsed &&
+                            groupFields.map((field, index) => (
+                              <ComparisonRow
+                                key={field.id}
+                                field={field}
+                                reports={selectedReports}
+                                baselineReportId={effectiveBaselineId}
+                                onlyDifferences={onlyDifferences}
+                                onOpenReport={onOpenReport}
+                                lastRow={
+                                  group ===
+                                    selectedGroups[selectedGroups.length - 1] &&
+                                  index === groupFields.length - 1
+                                }
+                              />
+                            ))}
+                        </div>
+                      );
+                    })}
                     {onlyDifferences && differences.length === 0 && (
                       <div className="border-t border-slate-100 px-4 py-8 text-center">
                         <CheckCheck
