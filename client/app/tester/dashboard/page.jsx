@@ -22,6 +22,7 @@ import ReportDataIntegrityAudit from "./components/ReportDataIntegrityAudit";
 import ReportAuditHistory from "./components/ReportAuditHistory";
 import ReportComparisonWorkspace from "./components/ReportComparisonWorkspace";
 import ReportReviewWorkspace from "./components/ReportReviewWorkspace";
+import ReleasePlanningWorkspace from "./components/ReleasePlanningWorkspace";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -2307,6 +2308,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <ReportReviewWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <ReleasePlanningWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
