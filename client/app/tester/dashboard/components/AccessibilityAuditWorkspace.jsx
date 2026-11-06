@@ -731,10 +731,6 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
 
   const updateCheck = (checkId, field, value) => {
     if (!selectedAudit) return;
-    if (field === "evidenceUrl" && !validHttpUrl(getText(value, 1000))) {
-      setNotice("Evidence URL must be empty or use http:// or https://.");
-      return;
-    }
     const limits = { notes: MAX_NOTE_LENGTH, evidenceUrl: 1000, reportId: 120 };
     const nextValue = field === "status"
       ? CHECK_STATES.some((state) => state.id === value) ? value : "pending"
