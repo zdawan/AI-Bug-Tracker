@@ -929,6 +929,25 @@ export default function ReportComparisonWorkspace({
   const sharedCategories = [...reportGroupCount.entries()]
     .filter(([, count]) => count > 1)
     .map(([category]) => category);
+  const triageSnapshot = useMemo(() => {
+    const openReports = selectedReports.filter(
+      (report) => getStatus(report) === "open",
+    );
+    const highSeverityOpen = openReports.filter((report) =>
+      ["critical", "blocker", "urgent", "high"].includes(getSeverity(report)),
+    );
+    const totalSubmissions = selectedReports.reduce(
+      (total, report) => total + getPositiveCount(report?.reports),
+      0,
+    );
+
+    return {
+      open: openReports.length,
+      resolved: selectedReports.length - openReports.length,
+      highSeverityOpen: highSeverityOpen.length,
+      repeatedSubmissions: Math.max(0, totalSubmissions - selectedReports.length),
+    };
+  }, [selectedReports]);
 
   return (
     <section
@@ -1218,6 +1237,59 @@ export default function ReportComparisonWorkspace({
                   value={sharedCategories.length}
                 />
               </div>
+
+              <section
+                aria-label="Triage snapshot of selected reports"
+                className="rounded-xl border border-slate-200 bg-white p-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-700">
+                      Triage snapshot
+                    </p>
+                    <p className="mt-0.5 text-[9px] text-slate-400">
+                      Counts reflect only the selected reports
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-slate-50 px-2 py-1 text-[9px] font-medium text-slate-500">
+                    Advisory
+                  </span>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="rounded-lg bg-violet-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-violet-700">
+                      Open
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-violet-900">
+                      {triageSnapshot.open}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-emerald-700">
+                      Resolved
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-900">
+                      {triageSnapshot.resolved}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-rose-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-rose-700">
+                      High severity open
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-900">
+                      {triageSnapshot.highSeverityOpen}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50/70 px-2.5 py-2">
+                    <p className="text-[9px] font-medium text-amber-700">
+                      Repeat submissions
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-amber-900">
+                      {triageSnapshot.repeatedSubmissions}
+                    </p>
+                  </div>
+                </div>
+              </section>
 
               {sharedCategories.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50/50 px-3 py-2">
