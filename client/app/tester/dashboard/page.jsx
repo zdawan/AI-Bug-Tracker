@@ -17,6 +17,7 @@ import ReportVerificationWorkspace from "./components/ReportVerificationWorkspac
 import ReportWorkloadPlanner from "./components/ReportWorkloadPlanner";
 import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate";
 import ReportInvestigationWorkspace from "./components/ReportInvestigationWorkspace";
+import ReportInvestigationInsights from "./components/ReportInvestigationInsights";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1944,6 +1945,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <ReportInvestigationWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <ReportInvestigationInsights
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
