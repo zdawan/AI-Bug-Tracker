@@ -263,6 +263,10 @@ function filterEntries(entries, filters) {
       return false;
     }
 
+    if (filters.category !== "all" && entry.category !== filters.category) {
+      return false;
+    }
+
     if (!normalizedQuery) return true;
 
     return [
@@ -544,9 +548,12 @@ function LatestReportSpotlight({ entry, summary, onOpenReport, onSelectDate }) {
 function RecentActivityControls({
   status,
   severity,
+  category,
+  categories,
   query,
   onStatusChange,
   onSeverityChange,
+  onCategoryChange,
   onQueryChange,
   onReset,
   hasFilters,
@@ -569,6 +576,15 @@ function RecentActivityControls({
           value={severity}
           options={SEVERITY_FILTERS}
           onChange={onSeverityChange}
+        />
+        <SelectFilter
+          label="Filter recent reports by category"
+          value={category}
+          options={[
+            { value: "all", label: "All categories" },
+            ...categories,
+          ]}
+          onChange={onCategoryChange}
         />
       </div>
       <SearchFilter value={query} onChange={onQueryChange} />
@@ -810,18 +826,29 @@ function RecentActivityPanel({
   const [expanded, setExpanded] = useState(false);
   const [status, setStatus] = useState("all");
   const [severity, setSeverity] = useState("all");
+  const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+  const categories = useMemo(() => {
+    const counts = new Map();
+    entries.forEach((entry) => {
+      counts.set(entry.category, (counts.get(entry.category) || 0) + 1);
+    });
+    return [...counts.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([value, count]) => ({ value, label: `${value} (${formatNumber(count)})` }));
+  }, [entries]);
 
   const filtered = useMemo(
-    () => filterEntries(entries, { status, severity, query }),
-    [entries, status, severity, query],
+    () => filterEntries(entries, { status, severity, category, query }),
+    [entries, status, severity, category, query],
   );
   const hasFilters =
-    status !== "all" || severity !== "all" || Boolean(query.trim());
+    status !== "all" || severity !== "all" || category !== "all" || Boolean(query.trim());
   const resetFilters = () => {
     setStatus("all");
     setSeverity("all");
+    setCategory("all");
     setQuery("");
     setVisibleCount(INITIAL_VISIBLE_COUNT);
   };
@@ -831,6 +858,10 @@ function RecentActivityPanel({
   };
   const updateSeverity = (value) => {
     setSeverity(value);
+    setVisibleCount(INITIAL_VISIBLE_COUNT);
+  };
+  const updateCategory = (value) => {
+    setCategory(value);
     setVisibleCount(INITIAL_VISIBLE_COUNT);
   };
   const updateQuery = (value) => {
@@ -880,15 +911,18 @@ function RecentActivityPanel({
           <RecentActivityControls
             status={status}
             severity={severity}
+            category={category}
+            categories={categories}
             query={query}
             onStatusChange={updateStatus}
             onSeverityChange={updateSeverity}
+            onCategoryChange={updateCategory}
             onQueryChange={updateQuery}
             onReset={resetFilters}
             hasFilters={hasFilters}
           />
           <p className="px-1 text-[10px] text-slate-500" aria-live="polite">
-            Showing the most recent matching reports first.
+            Showing {formatNumber(Math.min(visibleCount, filtered.length))} of {formatNumber(filtered.length)} matching reports, newest first.
           </p>
           <ActivityList
             entries={filtered}
