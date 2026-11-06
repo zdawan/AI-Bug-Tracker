@@ -1072,6 +1072,15 @@ export default function IncidentRetrospectiveWorkspace({
   }
 
   const canEdit = selected?.status !== "complete";
+  const getActionFilterCount = (filterId) => {
+    if (!selected) return 0;
+    if (filterId === "all") return selected.actions.length;
+    if (filterId === "overdue") {
+      return selected.actions.filter(isActionOverdue).length;
+    }
+    return selected.actions.filter((action) => action.status === filterId).length;
+  };
+
   return (
     <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
       <header className="border-b border-slate-200 bg-gradient-to-br from-amber-50 via-white to-sky-50/70 p-5 sm:p-6">
@@ -1431,7 +1440,11 @@ export default function IncidentRetrospectiveWorkspace({
                       </div>
                       <div className="flex items-center gap-2">
                         <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} aria-label="Filter follow-up actions" className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs text-slate-600">
-                          {ACTION_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label}</option>)}
+                          {ACTION_FILTERS.map((filter) => (
+                            <option key={filter.id} value={filter.id}>
+                              {filter.label} ({getActionFilterCount(filter.id)})
+                            </option>
+                          ))}
                         </select>
                         {canEdit ? <button type="button" onClick={() => setShowActionForm((value) => !value)} className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-2 text-xs font-semibold text-white hover:bg-slate-700"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add action</button> : null}
                       </div>
