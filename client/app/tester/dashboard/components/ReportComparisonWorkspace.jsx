@@ -756,6 +756,47 @@ export default function ReportComparisonWorkspace({
     setFeedback("");
   };
 
+  const addVisibleReports = (replace = false) => {
+    if (!filteredReports.length) {
+      setFeedback("No filtered reports are available to add.");
+      return;
+    }
+
+    if (replace) {
+      const nextIds = filteredReports
+        .slice(0, MAX_COMPARISON_REPORTS)
+        .map(getReportId);
+      setSelectedIds(nextIds);
+      setFeedback(
+        `Comparison replaced with ${nextIds.length} visible ${
+          nextIds.length === 1 ? "report" : "reports"
+        }.`,
+      );
+      return;
+    }
+
+    const remainingSlots = MAX_COMPARISON_REPORTS - selectedIds.length;
+    if (remainingSlots <= 0) {
+      setFeedback("Remove a report before adding more to the comparison.");
+      return;
+    }
+
+    const additions = filteredReports
+      .slice(0, remainingSlots)
+      .map(getReportId);
+    setSelectedIds((current) => [
+      ...current,
+      ...additions.filter((id) => !current.includes(id)),
+    ]);
+    setFeedback(
+      additions.length
+        ? `Added ${additions.length} ${
+            additions.length === 1 ? "report" : "reports"
+          } to the comparison.`
+        : "No additional reports could be added.",
+    );
+  };
+
   const toggleGroup = (group) => {
     setSelectedGroups((current) =>
       current.includes(group)
@@ -993,6 +1034,33 @@ export default function ReportComparisonWorkspace({
               className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
           </label>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => addVisibleReports(false)}
+              disabled={
+                !filteredReports.length ||
+                selectedIds.length >= MAX_COMPARISON_REPORTS
+              }
+              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Plus size={12} aria-hidden="true" />
+              Add visible ({Math.min(
+                filteredReports.length,
+                MAX_COMPARISON_REPORTS - selectedIds.length,
+              )})
+            </button>
+            <button
+              type="button"
+              onClick={() => addVisibleReports(true)}
+              disabled={!filteredReports.length}
+              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <GitCompareArrows size={12} aria-hidden="true" />
+              Replace with visible
+            </button>
+          </div>
 
           <div className="max-h-[380px] space-y-2 overflow-y-auto pr-1">
             {filteredReports.length ? (
