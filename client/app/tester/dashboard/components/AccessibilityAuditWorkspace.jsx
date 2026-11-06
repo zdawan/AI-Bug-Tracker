@@ -931,6 +931,35 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     setNotice("Accessibility audit exported as CSV.");
   };
 
+  const exportVisibleChecksCsv = () => {
+    if (!selectedAudit || !visibleChecks.length) return;
+    const rows = [
+      ["Audit", "Target URL", "Build", "Environment", "Reviewer", "Group", "Check", "Priority", "Result", "Observation", "Evidence URL", "Related report ID", "Updated"],
+      ...visibleChecks.map(({ item }) => [
+        selectedAudit.name,
+        selectedAudit.targetUrl,
+        selectedAudit.build,
+        selectedAudit.environment,
+        selectedAudit.reviewer,
+        item.groupLabel,
+        item.title,
+        item.priority,
+        checkState(item.status).label,
+        item.notes,
+        item.evidenceUrl,
+        item.reportId,
+        item.updatedAt,
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+    downloadFile(
+      `${safeFilename(selectedAudit.name)}-filtered-checks.csv`,
+      `\uFEFF${csv}`,
+      "text/csv;charset=utf-8",
+    );
+    setNotice(`${visibleChecks.length} filtered accessibility check(s) exported as CSV.`);
+  };
+
   const exportJson = () => {
     if (!selectedAudit) return;
     const payload = {
@@ -1300,6 +1329,15 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       {groupFilter !== "all" || checkFilter !== "all" || priorityFilter !== "all" || checkQuery ? (
                         <button type="button" onClick={resetFilters} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset</button>
                       ) : null}
+                      <button
+                        type="button"
+                        onClick={exportVisibleChecksCsv}
+                        disabled={!visibleChecks.length}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                        Export shown
+                      </button>
                       {canEdit ? <button type="button" onClick={() => setShowCustomForm((value) => !value)} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Custom check</button> : null}
                     </div>
                   </div>
