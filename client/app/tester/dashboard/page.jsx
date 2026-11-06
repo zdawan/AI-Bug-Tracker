@@ -1847,6 +1847,20 @@ function AnalyticsSectionNavigator() {
   }, [activeSection]);
 
   useEffect(() => {
+    const syncActiveSectionFromHash = () => {
+      const sectionId = window.location.hash.slice(1);
+      if (ANALYTICS_SECTIONS.some(({ id }) => id === sectionId)) {
+        setActiveSection(sectionId);
+      }
+    };
+
+    syncActiveSectionFromHash();
+    window.addEventListener("hashchange", syncActiveSectionFromHash);
+    return () =>
+      window.removeEventListener("hashchange", syncActiveSectionFromHash);
+  }, []);
+
+  useEffect(() => {
     const targets = ANALYTICS_SECTIONS.map(({ id }) =>
       document.getElementById(id),
     ).filter(Boolean);
