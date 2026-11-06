@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   CircleDashed,
   ClipboardCheck,
+  Copy,
   Download,
   ExternalLink,
   Eye,
@@ -376,7 +377,7 @@ function EmptyState({ title, description, icon: Icon = Accessibility }) {
   );
 }
 
-function AuditListItem({ audit, selected, onSelect, onDelete }) {
+function AuditListItem({ audit, selected, onSelect, onDuplicate, onDelete }) {
   const metrics = getMetrics(audit);
   return (
     <article className={`rounded-2xl border p-3 transition ${selected ? "border-sky-300 bg-sky-50/70 shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"}`}>
@@ -394,7 +395,10 @@ function AuditListItem({ audit, selected, onSelect, onDelete }) {
           <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${metrics.completeness}%` }} />
         </div>
       </button>
-      <div className="mt-3 flex justify-end border-t border-slate-100 pt-2">
+      <div className="mt-3 flex justify-end gap-1 border-t border-slate-100 pt-2">
+        <button type="button" onClick={onDuplicate} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100">
+          <Copy className="h-3.5 w-3.5" aria-hidden="true" /> Duplicate
+        </button>
         <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-rose-600 hover:bg-rose-50">
           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Delete
         </button>
@@ -726,6 +730,41 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     if (persistAudits(next)) {
       if (selectedId === audit.id) setSelectedId(next[0]?.id || "");
       setNotice("Accessibility audit and its local notes were deleted.");
+    }
+  };
+
+  const duplicateAudit = (audit) => {
+    if (audits.length >= MAX_AUDITS) {
+      setNotice(`You have reached the ${MAX_AUDITS}-audit browser limit.`);
+      return;
+    }
+    const now = new Date().toISOString();
+    const duplicate = normalizeAudit({
+      ...audit,
+      id: makeId(),
+      name: `${audit.name} (copy)`.slice(0, 180),
+      status: "draft",
+      checks: audit.checks.map((item) => ({
+        ...item,
+        id: makeId(),
+        status: "pending",
+        notes: "",
+        evidenceUrl: "",
+        reportId: "",
+        updatedAt: "",
+      })),
+      activity: [{
+        id: makeId(),
+        message: `Copied setup from "${audit.name}"; all results and notes were reset`,
+        createdAt: now,
+      }],
+      createdAt: now,
+      updatedAt: now,
+      completedAt: "",
+    });
+    if (persistAudits([duplicate, ...audits])) {
+      setSelectedId(duplicate.id);
+      setNotice("Audit duplicated with a fresh checklist. Existing results, observations, and evidence were not copied.");
     }
   };
 
@@ -1064,7 +1103,14 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
               </div>
               <div className="mt-2 max-h-[34rem] space-y-2 overflow-y-auto pr-1">
                 {visibleAudits.length ? visibleAudits.map((audit) => (
-                  <AuditListItem key={audit.id} audit={audit} selected={audit.id === selectedId} onSelect={() => setSelectedId(audit.id)} onDelete={() => deleteAudit(audit)} />
+                  <AuditListItem
+                    key={audit.id}
+                    audit={audit}
+                    selected={audit.id === selectedId}
+                    onSelect={() => setSelectedId(audit.id)}
+                    onDuplicate={() => duplicateAudit(audit)}
+                    onDelete={() => deleteAudit(audit)}
+                  />
                 )) : (
                   <p className="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-6 text-center text-xs text-slate-500">{audits.length ? "No audits match your search." : "Create an audit to get started."}</p>
                 )}
