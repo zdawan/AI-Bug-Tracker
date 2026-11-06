@@ -513,6 +513,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [newBuild, setNewBuild] = useState("");
+  const [comparisonId, setComparisonId] = useState("");
   const [showEnvironmentForm, setShowEnvironmentForm] = useState(false);
   const [environmentName, setEnvironmentName] = useState("");
   const [environmentBrowser, setEnvironmentBrowser] = useState("");
@@ -561,6 +562,56 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
           getResult(selectedMatrix, environment.id, check.id).status === resultFilter,
         ));
   }, [selectedMatrix, checkQuery, resultFilter]);
+
+  const comparison = useMemo(() => {
+    if (!selectedMatrix) return null;
+    const previous = matrices.find((matrix) => matrix.id === comparisonId);
+    if (!previous) return null;
+    const groupByLabel = (items, label) => items.reduce((groups, item) => {
+      const key = getText(label(item), 180).toLowerCase();
+      groups.set(key, [...(groups.get(key) || []), item]);
+      return groups;
+    }, new Map());
+    const previousEnvironments = groupByLabel(previous.environments, (environment) => environment.name);
+    const previousChecks = groupByLabel(previous.checks, (check) => check.title);
+    const currentEnvironments = groupByLabel(selectedMatrix.environments, (environment) => environment.name);
+    const currentChecks = groupByLabel(selectedMatrix.checks, (check) => check.title);
+    const changes = [];
+    let unchanged = 0;
+    let unmatched = 0;
+    selectedMatrix.environments.forEach((environment) => {
+      const oldEnvironments = previousEnvironments.get(getText(environment.name, 180).toLowerCase()) || [];
+      selectedMatrix.checks.forEach((check) => {
+        const oldChecks = previousChecks.get(getText(check.title, 180).toLowerCase()) || [];
+        const sameNameEnvironments = currentEnvironments.get(getText(environment.name, 180).toLowerCase()) || [];
+        const sameTitleChecks = currentChecks.get(getText(check.title, 180).toLowerCase()) || [];
+        if (
+          oldEnvironments.length !== 1 ||
+          oldChecks.length !== 1 ||
+          sameNameEnvironments.length !== 1 ||
+          sameTitleChecks.length !== 1
+        ) {
+          unmatched += 1;
+          return;
+        }
+        const [oldEnvironment] = oldEnvironments;
+        const [oldCheck] = oldChecks;
+        const currentResult = getResult(selectedMatrix, environment.id, check.id);
+        const oldResult = getResult(previous, oldEnvironment.id, oldCheck.id);
+        if (currentResult.status === oldResult.status) {
+          unchanged += 1;
+          return;
+        }
+        changes.push({
+          environment: environment.name,
+          check: check.title,
+          before: oldResult.status,
+          after: currentResult.status,
+        });
+      });
+    });
+    return { previous, changes, unchanged, unmatched };
+  }, [selectedMatrix, matrices, comparisonId]);
 
   useEffect(() => {
     const normalizedEmail = getText(email, 240).toLowerCase();
@@ -1238,6 +1289,53 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                   <MetricCard label="Pending" value={metrics.pending} detail="Results still to record" tone={metrics.pending ? "amber" : "green"} />
                   <MetricCard label="Environments" value={metrics.environments} detail={`${metrics.checks} checks per environment`} />
                 </div>
+
+                {matrices.length > 1 ? (
+                  <section className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">Compare with another matrix</h3>
+                        <p className="mt-1 text-xs text-slate-600">Matches exact environment and check labels. Ambiguous or missing matches are excluded.</p>
+                      </div>
+                      <label className="text-xs font-medium text-slate-600">
+                        Baseline matrix
+                        <select
+                          value={comparisonId}
+                          onChange={(event) => setComparisonId(event.target.value)}
+                          className="mt-1 block min-w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
+                        >
+                          <option value="">Choose a matrix…</option>
+                          {matrices.filter((matrix) => matrix.id !== selectedMatrix.id).map((matrix) => (
+                            <option key={matrix.id} value={matrix.id}>{matrix.name}{matrix.build ? ` · ${matrix.build}` : ""}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    {comparison ? (
+                      <div className="mt-3">
+                        <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-600">
+                          <span><strong className="text-slate-900">{comparison.changes.length}</strong> changed</span>
+                          <span><strong className="text-slate-900">{comparison.unchanged}</strong> unchanged</span>
+                          <span><strong className="text-slate-900">{comparison.unmatched}</strong> unmatched</span>
+                          <span className="text-slate-500">vs. {comparison.previous.name}</span>
+                        </div>
+                        {comparison.changes.length ? (
+                          <ul className="mt-3 max-h-56 divide-y divide-indigo-100 overflow-y-auto rounded-xl border border-indigo-100 bg-white">
+                            {comparison.changes.slice(0, 100).map((change, index) => (
+                              <li key={`${change.environment}-${change.check}-${index}`} className="flex flex-col gap-1 px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between">
+                                <span className="min-w-0"><strong>{change.check}</strong><span className="text-slate-500"> · {change.environment}</span></span>
+                                <span className="shrink-0 text-slate-600">{resultState(change.before).short} <span aria-hidden="true">→</span> <strong>{resultState(change.after).short}</strong></span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-3 rounded-xl border border-indigo-100 bg-white px-3 py-3 text-xs text-slate-600">No result status changes among matched cells.</p>
+                        )}
+                        {comparison.changes.length > 100 ? <p className="mt-2 text-[11px] text-slate-500">Showing the first 100 changed results.</p> : null}
+                      </div>
+                    ) : null}
+                  </section>
+                ) : null}
 
                 {environmentIssues.length ? (
                   <div role="status" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
