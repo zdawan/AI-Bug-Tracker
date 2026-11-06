@@ -948,6 +948,33 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
     }), field === "status" ? "Matrix result updated." : "");
   };
 
+  const markCheckPendingNotApplicable = (checkId) => {
+    if (!selectedMatrix) return;
+    const check = selectedMatrix.checks.find((item) => item.id === checkId);
+    if (!check) return;
+    const pendingEnvironments = selectedMatrix.environments.filter(
+      (environment) => getResult(selectedMatrix, environment.id, checkId).status === "pending",
+    );
+    if (!pendingEnvironments.length) return;
+    if (!window.confirm(`Mark this check not applicable in ${pendingEnvironments.length} pending environment(s)?`)) return;
+    const now = new Date().toISOString();
+    updateMatrix(selectedMatrix.id, (matrix) => {
+      const results = { ...matrix.results };
+      pendingEnvironments.forEach((environment) => {
+        const key = resultKey(environment.id, checkId);
+        const current = getResult(matrix, environment.id, checkId);
+        if (current.status === "pending") {
+          results[key] = { ...current, status: "na", updatedAt: now };
+        }
+      });
+      return {
+        ...matrix,
+        results,
+        activity: appendActivity(matrix, `Marked pending results for "${check.title}" not applicable in ${pendingEnvironments.length} environment(s)`),
+      };
+    }, `Pending results for "${check.title}" marked not applicable.`);
+  };
+
   const markEnvironmentState = (environmentId, status) => {
     if (!selectedMatrix) return;
     if (!RESULT_STATES.some((state) => state.id === status)) return;
@@ -1522,6 +1549,16 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                                   </div>
                                   <p className="mt-1.5 text-xs font-semibold leading-4 text-slate-800">{check.title}</p>
                                   {check.expected ? <p className="mt-1 line-clamp-3 text-[10px] leading-4 text-slate-500">{check.expected}</p> : null}
+                                  {canEdit ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => markCheckPendingNotApplicable(check.id)}
+                                      disabled={!selectedMatrix.environments.some((environment) => getResult(selectedMatrix, environment.id, check.id).status === "pending")}
+                                      className="mt-2 rounded-md border border-violet-200 px-2 py-1 text-[10px] text-violet-700 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                      Pending → N/A ({selectedMatrix.environments.filter((environment) => getResult(selectedMatrix, environment.id, check.id).status === "pending").length})
+                                    </button>
+                                  ) : null}
                                   {check.custom && canEdit ? <button type="button" onClick={() => removeCheck(check.id)} className="mt-1 text-[10px] text-rose-600 hover:underline">Remove custom check</button> : null}
                                 </div>
                               </div>
