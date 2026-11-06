@@ -117,6 +117,14 @@ const CHECK_FILTERS = [
   { id: "na", label: "Not applicable" },
 ];
 
+const PRIORITY_FILTERS = [
+  { id: "all", label: "All priorities" },
+  { id: "Critical", label: "Critical priority" },
+  { id: "High", label: "High priority" },
+  { id: "Medium", label: "Medium priority" },
+  { id: "Low", label: "Low priority" },
+];
+
 function getText(value, limit = 320) {
   return typeof value === "string" ? value.trim().slice(0, limit) : "";
 }
@@ -506,6 +514,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
   const [auditQuery, setAuditQuery] = useState("");
   const [checkQuery, setCheckQuery] = useState("");
   const [checkFilter, setCheckFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [nextCheckId, setNextCheckId] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -547,6 +556,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
         groupFilter === "custom" ? item.custom : item.groupId === groupFilter
       ))
       .filter(({ item }) => checkFilter === "all" || item.status === checkFilter)
+      .filter(({ item }) => priorityFilter === "all" || item.priority === priorityFilter)
       .filter(({ item }) => !query || [
         item.title,
         item.guidance,
@@ -554,7 +564,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
         item.groupLabel,
         item.priority,
       ].some((value) => value.toLowerCase().includes(query)));
-  }, [selectedAudit, checkQuery, checkFilter, groupFilter]);
+  }, [selectedAudit, checkQuery, checkFilter, priorityFilter, groupFilter]);
 
   useEffect(() => {
     if (!nextCheckId || !visibleChecks.some(({ item }) => item.id === nextCheckId)) return;
@@ -804,6 +814,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
 
   const resetFilters = () => {
     setCheckFilter("all");
+    setPriorityFilter("all");
     setGroupFilter("all");
     setCheckQuery("");
   };
@@ -900,6 +911,36 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
       setNotice("Audit summary copied. Review and contextualize it before sharing.");
     } catch (error) {
       setNotice(`Could not copy the audit summary: ${error.message}`);
+    }
+  };
+
+  const copyIssueList = async () => {
+    if (!selectedAudit) return;
+    const issues = selectedAudit.checks.filter((item) => item.status === "issue");
+    const content = [
+      `Accessibility issue list: ${selectedAudit.name}`,
+      `Target: ${selectedAudit.targetUrl || "Not specified"}`,
+      `Build: ${selectedAudit.build || "Not specified"}`,
+      `Environment: ${selectedAudit.environment || "Not specified"}`,
+      `Reviewer: ${selectedAudit.reviewer || "Not specified"}`,
+      `Manual review findings: ${issues.length}`,
+      "",
+      ...(issues.length
+        ? issues.flatMap((item, index) => [
+          `${index + 1}. [${item.priority}] ${item.groupLabel} — ${item.title}`,
+          `   Observation: ${item.notes || "No observation recorded"}`,
+          item.evidenceUrl ? `   Evidence: ${item.evidenceUrl}` : "",
+          item.reportId ? `   Related report ID: ${item.reportId}` : "",
+        ].filter(Boolean))
+        : ["No checks are currently marked as issues."]),
+      "",
+      "Draft from a manual checklist; verify findings and context before sharing. This is not an automated conformance report.",
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(content);
+      setNotice("Issue list copied. Verify findings and context before sharing.");
+    } catch (error) {
+      setNotice(`Could not copy the issue list: ${error.message}`);
     }
   };
 
@@ -1106,6 +1147,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                         {Object.entries(AUDIT_STATES).map(([id, state]) => <option key={id} value={id}>{state.label}</option>)}
                       </select>
                       <button type="button" onClick={copySummary} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><ClipboardCheck className="h-3.5 w-3.5" aria-hidden="true" /> Copy summary</button>
+                      <button type="button" onClick={copyIssueList} disabled={metrics.issueCount === 0} className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"><ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" /> Copy issue list</button>
                       <button type="button" onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><Download className="h-3.5 w-3.5" aria-hidden="true" /> Export CSV</button>
                       <button type="button" onClick={exportJson} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><ArrowDownToLine className="h-3.5 w-3.5" aria-hidden="true" /> Export JSON</button>
                     </div>
@@ -1163,7 +1205,14 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                       <select value={checkFilter} onChange={(event) => setCheckFilter(event.target.value)} aria-label="Filter accessibility check results" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
                         {CHECK_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label} ({filter.id === "all" ? metrics.total : metrics[filter.id]})</option>)}
                       </select>
-                      {groupFilter !== "all" || checkFilter !== "all" || checkQuery ? (
+                      <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} aria-label="Filter accessibility checks by priority" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        {PRIORITY_FILTERS.map((filter) => (
+                          <option key={filter.id} value={filter.id}>
+                            {filter.label} ({filter.id === "all" ? metrics.total : selectedAudit.checks.filter((item) => item.priority === filter.id).length})
+                          </option>
+                        ))}
+                      </select>
+                      {groupFilter !== "all" || checkFilter !== "all" || priorityFilter !== "all" || checkQuery ? (
                         <button type="button" onClick={resetFilters} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset</button>
                       ) : null}
                       {canEdit ? <button type="button" onClick={() => setShowCustomForm((value) => !value)} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Custom check</button> : null}
