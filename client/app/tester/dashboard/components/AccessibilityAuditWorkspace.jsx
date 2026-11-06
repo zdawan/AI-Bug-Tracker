@@ -909,7 +909,10 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
       count: selectedAudit.checks.filter((item) => item.groupId === group.id).length,
       reviewed: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status !== "pending").length,
       pending: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status === "pending").length,
+      passed: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status === "pass").length,
       issues: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status === "issue").length,
+      blocked: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status === "blocked").length,
+      notApplicable: selectedAudit.checks.filter((item) => item.groupId === group.id && item.status === "na").length,
     }))
     : [];
 
@@ -1028,6 +1031,20 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                           <span className="min-w-0 flex-1">
                             <span className="block text-xs font-medium">{group.label}</span>
                             <span className="block text-[10px] text-slate-400">{group.reviewed}/{group.count} reviewed{group.issues ? ` · ${group.issues} issue(s)` : ""}</span>
+                            <span
+                              className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-slate-100"
+                              role="img"
+                              aria-label={`${group.label}: ${group.passed} passed, ${group.issues} issues, ${group.blocked} unable to assess, ${group.notApplicable} not applicable, ${group.pending} pending`}
+                            >
+                              {[
+                                ["bg-emerald-500", group.passed],
+                                ["bg-rose-500", group.issues],
+                                ["bg-amber-400", group.blocked],
+                                ["bg-violet-400", group.notApplicable],
+                              ].map(([tone, count]) => count > 0 ? (
+                                <span key={tone} className={tone} style={{ width: `${(count / group.count) * 100}%` }} />
+                              ) : null)}
+                            </span>
                           </span>
                         </button>
                         {canEdit && group.pending > 0 ? (
