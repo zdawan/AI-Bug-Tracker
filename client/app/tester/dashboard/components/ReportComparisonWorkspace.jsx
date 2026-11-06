@@ -8,6 +8,7 @@ import {
   Check,
   CheckCheck,
   ChevronDown,
+  ChevronUp,
   CircleHelp,
   Clipboard,
   Download,
@@ -729,6 +730,27 @@ export default function ReportComparisonWorkspace({
     setFeedback("");
   };
 
+  const moveReport = (reportId, direction) => {
+    setSelectedIds((current) => {
+      const currentIndex = current.indexOf(reportId);
+      const targetIndex = currentIndex + direction;
+      if (
+        currentIndex < 0 ||
+        targetIndex < 0 ||
+        targetIndex >= current.length
+      ) {
+        return current;
+      }
+
+      const next = [...current];
+      [next[currentIndex], next[targetIndex]] = [
+        next[targetIndex],
+        next[currentIndex],
+      ];
+      return next;
+    });
+  };
+
   const clearComparison = () => {
     setSelectedIds([]);
     setFeedback("");
@@ -1011,14 +1033,42 @@ export default function ReportComparisonWorkspace({
                 In this comparison
               </p>
               {selectedReports.map((report, index) => (
-                <ReportChoiceCard
+                <div
                   key={getReportId(report)}
-                  report={report}
-                  selected
-                  disabled={false}
-                  onToggle={removeReport}
-                  onOpen={onOpenReport}
-                />
+                  className="flex items-center gap-1.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <ReportChoiceCard
+                      report={report}
+                      selected
+                      disabled={false}
+                      onToggle={removeReport}
+                      onOpen={onOpenReport}
+                    />
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveReport(getReportId(report), -1)}
+                      disabled={index === 0}
+                      aria-label={`Move ${getTitle(report)} earlier in comparison`}
+                      title="Move report left"
+                      className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      <ChevronUp size={13} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveReport(getReportId(report), 1)}
+                      disabled={index === selectedReports.length - 1}
+                      aria-label={`Move ${getTitle(report)} later in comparison`}
+                      title="Move report right"
+                      className="grid h-7 w-7 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      <ChevronDown size={13} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
