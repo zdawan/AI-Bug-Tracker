@@ -16,6 +16,7 @@ import ReportEnvironmentCoverage from "./components/ReportEnvironmentCoverage";
 import ReportVerificationWorkspace from "./components/ReportVerificationWorkspace";
 import ReportWorkloadPlanner from "./components/ReportWorkloadPlanner";
 import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate";
+import ReportInvestigationWorkspace from "./components/ReportInvestigationWorkspace";
 import {
   ActivityFollowUpPanel,
   MetricQualityPanel,
@@ -1938,6 +1939,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
       <ReportBriefBuilder reports={bugs} onOpenReport={onOpenBug} />
       <ReportEnvironmentCoverage reports={bugs} onOpenReport={onOpenBug} />
       <ReportVerificationWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <ReportInvestigationWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
