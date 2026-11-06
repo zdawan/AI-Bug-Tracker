@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Accessibility,
   AlertCircle,
@@ -407,7 +407,7 @@ function AuditListItem({ audit, selected, onSelect, onDuplicate, onDelete }) {
   );
 }
 
-function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenReport, onRemove }) {
+function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenReport, onRemove, onFocusCheck }) {
   const selectedReport = reports.find((report) => getReportId(report) === item.reportId);
   const state = checkState(item.status);
   const Icon = state.icon;
@@ -415,6 +415,7 @@ function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenRepo
     <article
       id={`accessibility-check-${item.id}`}
       tabIndex={-1}
+      onFocus={() => onFocusCheck(item.id)}
       className={`overflow-hidden rounded-2xl border outline-none focus:ring-2 focus:ring-sky-400 ${item.status === "issue" ? "border-rose-200 bg-rose-50/20" : "border-slate-200 bg-white"}`}
     >
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
@@ -521,6 +522,7 @@ function CheckCard({ item, index, reports, canEdit, onState, onField, onOpenRepo
 }
 
 export default function AccessibilityAuditWorkspace({ reports = [], email, onOpenReport }) {
+  const lastFocusedCheckId = useRef("");
   const [audits, setAudits] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [loadedEmail, setLoadedEmail] = useState("");
@@ -887,7 +889,16 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
     const predicate = typeof matchesCheck === "function"
       ? matchesCheck
       : (item) => item.status === matchesCheck;
-    const targetCheck = selectedAudit?.checks.find(predicate);
+    if (!selectedAudit) return;
+    const candidates = selectedAudit.checks.filter(predicate);
+    if (!candidates.length) return;
+    const focusedIndex = selectedAudit.checks.findIndex(
+      (item) => item.id === lastFocusedCheckId.current,
+    );
+    const targetCheck = candidates.find((item) =>
+      selectedAudit.checks.findIndex((check) => check.id === item.id) > focusedIndex,
+    ) || candidates[0];
+    lastFocusedCheckId.current = targetCheck.id;
     if (!targetCheck) return;
     setGroupFilter("all");
     setCheckFilter("all");
@@ -1396,6 +1407,7 @@ export default function AccessibilityAuditWorkspace({ reports = [], email, onOpe
                         onField={updateCheck}
                         onOpenReport={onOpenReport}
                         onRemove={removeCustomCheck}
+                        onFocusCheck={(id) => { lastFocusedCheckId.current = id; }}
                       />
                     )) : (
                       <EmptyState
