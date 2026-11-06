@@ -510,6 +510,8 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
   const [checkQuery, setCheckQuery] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [environmentFilter, setEnvironmentFilter] = useState("all");
+  const [areaFilter, setAreaFilter] = useState("all");
   const [checkSort, setCheckSort] = useState("original");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newName, setNewName] = useState("");
@@ -536,6 +538,15 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
   const selectedMatrix = matrices.find((matrix) => matrix.id === selectedId) || null;
   const metrics = selectedMatrix ? getMetrics(selectedMatrix) : null;
   const canEdit = selectedMatrix?.status !== "complete";
+  const activeEnvironmentFilter = selectedMatrix?.environments.some(
+    (environment) => environment.id === environmentFilter,
+  ) ? environmentFilter : "all";
+  const visibleEnvironments = useMemo(() => {
+    if (!selectedMatrix) return [];
+    return activeEnvironmentFilter === "all"
+      ? selectedMatrix.environments
+      : selectedMatrix.environments.filter((environment) => environment.id === activeEnvironmentFilter);
+  }, [selectedMatrix, activeEnvironmentFilter]);
 
   const visibleMatrices = useMemo(() => {
     const query = getText(search, 120).toLowerCase();
@@ -561,8 +572,9 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
         check.expected,
       ].some((value) => value.toLowerCase().includes(query)))
       .filter(({ check }) => priorityFilter === "all" || check.priority === priorityFilter)
+      .filter(({ check }) => areaFilter === "all" || check.area === areaFilter)
       .filter(({ check }) => resultFilter === "all" ||
-        selectedMatrix.environments.some((environment) =>
+        visibleEnvironments.some((environment) =>
           getResult(selectedMatrix, environment.id, check.id).status === resultFilter,
         ))
       .sort((left, right) => {
@@ -578,7 +590,12 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
         }
         return left.index - right.index;
       });
-  }, [selectedMatrix, checkQuery, resultFilter, priorityFilter, checkSort]);
+  }, [selectedMatrix, visibleEnvironments, checkQuery, resultFilter, priorityFilter, areaFilter, checkSort]);
+
+  const checkAreas = useMemo(
+    () => [...new Set(selectedMatrix?.checks.map((check) => check.area) || [])].sort((left, right) => left.localeCompare(right)),
+    [selectedMatrix],
+  );
 
   const comparison = useMemo(() => {
     if (!selectedMatrix) return null;
@@ -1063,6 +1080,8 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
   const clearResultFilter = () => {
     setResultFilter("all");
     setPriorityFilter("all");
+    setEnvironmentFilter("all");
+    setAreaFilter("all");
     setCheckQuery("");
   };
 
@@ -1518,7 +1537,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                       <CheckCircle2 className="h-4 w-4 text-emerald-700" aria-hidden="true" />
                       <div>
                         <h3 className="text-sm font-semibold text-slate-900">Coverage results</h3>
-                        <p className="mt-0.5 text-xs text-slate-500">{visibleChecks.length} checks shown · {selectedMatrix.environments.length} environments · {metrics.total} result cells</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{visibleChecks.length} checks shown · {visibleEnvironments.length} of {selectedMatrix.environments.length} environments · {metrics.total} total result cells</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1532,10 +1551,22 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                           <option key={priority} value={priority}>{priority} ({selectedMatrix.checks.filter((check) => check.priority === priority).length})</option>
                         ))}
                       </select>
+                      <select value={areaFilter} onChange={(event) => setAreaFilter(event.target.value)} aria-label="Filter checks by area" className="max-w-40 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        <option value="all">All areas</option>
+                        {checkAreas.map((area) => (
+                          <option key={area} value={area}>{area} ({selectedMatrix.checks.filter((check) => check.area === area).length})</option>
+                        ))}
+                      </select>
+                      <select value={activeEnvironmentFilter} onChange={(event) => setEnvironmentFilter(event.target.value)} aria-label="Filter matrix environments" className="max-w-48 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        <option value="all">All environments</option>
+                        {selectedMatrix.environments.map((environment) => (
+                          <option key={environment.id} value={environment.id}>{environment.name}</option>
+                        ))}
+                      </select>
                       <select value={resultFilter} onChange={(event) => setResultFilter(event.target.value)} aria-label="Filter checks by environment result" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
                         {RESULT_FILTERS.map((filter) => (
                           <option key={filter.id} value={filter.id}>
-                            {filter.label} ({filter.id === "all" ? selectedMatrix.checks.length : selectedMatrix.checks.filter((check) => selectedMatrix.environments.some((environment) => getResult(selectedMatrix, environment.id, check.id).status === filter.id)).length})
+                            {filter.label} ({filter.id === "all" ? selectedMatrix.checks.length : selectedMatrix.checks.filter((check) => visibleEnvironments.some((environment) => getResult(selectedMatrix, environment.id, check.id).status === filter.id)).length})
                           </option>
                         ))}
                       </select>
@@ -1545,7 +1576,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                         <option value="area">Area: A–Z</option>
                         <option value="title">Check: A–Z</option>
                       </select>
-                      {checkQuery || resultFilter !== "all" || priorityFilter !== "all" ? <button type="button" onClick={clearResultFilter} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset filters</button> : null}
+                      {checkQuery || resultFilter !== "all" || priorityFilter !== "all" || environmentFilter !== "all" || areaFilter !== "all" ? <button type="button" onClick={clearResultFilter} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100"><FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset filters</button> : null}
                       <button type="button" onClick={exportVisibleCsv} disabled={!visibleChecks.length || !selectedMatrix.environments.length} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"><Download className="h-3.5 w-3.5" aria-hidden="true" /> Export shown</button>
                       {canEdit ? <button type="button" onClick={() => { if (showCheckForm) cancelCheckEdit(); else { setEditingCheckId(""); setCheckTitle(""); setCheckArea(""); setCheckPriority("Medium"); setCheckExpected(""); setShowCheckForm(true); } }} disabled={!editingCheckId && selectedMatrix.checks.length >= MAX_CHECKS} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add check</button> : null}
                     </div>
@@ -1574,7 +1605,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                     </div>
                   ) : null}
 
-                  {selectedMatrix.environments.length && visibleChecks.length ? (
+                  {visibleEnvironments.length && visibleChecks.length ? (
                     <div className="overflow-x-auto">
                       <div className="min-w-max">
                         <div className="sticky top-0 z-10 flex border-b border-slate-200 bg-slate-100">
@@ -1585,7 +1616,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                             </div>
                             <p className="mt-1 text-[10px] text-slate-500">Rows are checks, columns are environments</p>
                           </div>
-                          {selectedMatrix.environments.map((environment) => (
+                          {visibleEnvironments.map((environment) => (
                             <EnvironmentHeader key={environment.id} environment={environment} canEdit={canEdit} onUpdate={beginEditEnvironment} onRemove={removeEnvironment} />
                           ))}
                         </div>
@@ -1617,7 +1648,7 @@ export default function BrowserCoverageMatrix({ reports = [], email, onOpenRepor
                                 </div>
                               </div>
                             </div>
-                            {selectedMatrix.environments.map((environment) => (
+                            {visibleEnvironments.map((environment) => (
                               <MatrixCell
                                 key={`${environment.id}:${check.id}`}
                                 environment={environment}
