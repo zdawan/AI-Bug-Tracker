@@ -1216,6 +1216,7 @@ export default function ReportLatestActivitySpotlight({
               entries={normalizedEntries}
               selectedDateKey={latestEntry?.dateKey || ""}
               onSelectDate={onSelectDate}
+              onOpenReport={onOpenReport}
             />
             {normalizedEntries.length > 0 ? (
               <RecentActivityPanel

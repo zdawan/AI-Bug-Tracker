@@ -904,7 +904,13 @@ function PulseHelp({ expanded, onToggle }) {
   );
 }
 
-function FocusSummary({ days, metric, selectedKey, onSelectDate }) {
+function FocusSummary({
+  days,
+  metric,
+  selectedKey,
+  onSelectDate,
+  onOpenReport,
+}) {
   const selectedDay = days.find((day) => day.key === selectedKey);
   const metricValue = getDayMetric(selectedDay, metric);
   const reports = selectedDay?.reports || [];
@@ -943,6 +949,49 @@ function FocusSummary({ days, metric, selectedKey, onSelectDate }) {
           Open calendar date
           <ArrowRight size={10} aria-hidden="true" />
         </button>
+      )}
+      {reports.length > 0 && (
+        <ul className="w-full space-y-1 border-t border-slate-100 pt-2">
+          {reports.slice(0, 4).map((entry) => {
+            const report = entry.report;
+            const reportId = report?._id ?? report?.id;
+            const title =
+              typeof report?.title === "string" && report.title.trim()
+                ? report.title.trim()
+                : typeof report?.summary === "string" && report.summary.trim()
+                  ? report.summary.trim()
+                  : "Untitled report";
+            const status = report?.status === "Closed" ? "Resolved" : "Open";
+
+            return (
+              <li key={String(reportId ?? `${entry.date.getTime()}-${title}`)}>
+                <button
+                  type="button"
+                  onClick={() => onOpenReport?.(report)}
+                  className="flex w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                >
+                  <span className="truncate text-[9px] font-medium text-slate-700">
+                    {title}
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-semibold ${
+                      status === "Resolved"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-violet-50 text-violet-700"
+                    }`}
+                  >
+                    {status}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+          {reports.length > 4 && (
+            <li className="px-2 pt-0.5 text-[8px] text-slate-400">
+              {formatNumber(reports.length - 4)} more reports on this date
+            </li>
+          )}
+        </ul>
       )}
     </div>
   );
@@ -1017,6 +1066,7 @@ export default function ReportActivityPulse({
   entries = [],
   selectedDateKey = "",
   onSelectDate,
+  onOpenReport,
 }) {
   const [rangeDays, setRangeDays] = useState(14);
   const [metric, setMetric] = useState("all");
@@ -1106,6 +1156,7 @@ export default function ReportActivityPulse({
             metric={metric}
             selectedKey={selectedDay?.key}
             onSelectDate={handleSelectDate}
+            onOpenReport={onOpenReport}
           />
         </div>
         <div className="space-y-2">
