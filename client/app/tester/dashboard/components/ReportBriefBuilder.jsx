@@ -768,6 +768,7 @@ export default function ReportBriefBuilder({ reports = [], onOpenReport }) {
   const [status, setStatus] = useState("all");
   const [severity, setSeverity] = useState("all");
   const [category, setCategory] = useState("all");
+  const [selectionFilter, setSelectionFilter] = useState("all");
   const [sortBy, setSortBy] = useState("priority");
   const [search, setSearch] = useState("");
   const [title, setTitle] = useState("");
@@ -798,19 +799,18 @@ export default function ReportBriefBuilder({ reports = [], onOpenReport }) {
     ],
     [entries],
   );
-  const filteredEntries = useMemo(
-    () =>
-      sortEntries(
-        filterEntries(
-          entries,
-          { range, status, severity, category, search },
-          today,
-        ),
-        sortBy,
-        today,
-      ),
-    [category, entries, range, search, severity, sortBy, status, today],
-  );
+  const filteredEntries = useMemo(() => {
+    const matches = filterEntries(
+      entries,
+      { range, status, severity, category, search },
+      today,
+    ).filter((entry) => {
+      if (selectionFilter === "selected") return selectedIds.has(entry.key);
+      if (selectionFilter === "unselected") return !selectedIds.has(entry.key);
+      return true;
+    });
+    return sortEntries(matches, sortBy, today);
+  }, [category, entries, range, search, selectedIds, selectionFilter, severity, sortBy, status, today]);
   const filteredKeys = useMemo(
     () => new Set(filteredEntries.map((entry) => entry.key)),
     [filteredEntries],
@@ -828,6 +828,7 @@ export default function ReportBriefBuilder({ reports = [], onOpenReport }) {
     status !== "all" ||
     severity !== "all" ||
     category !== "all" ||
+    selectionFilter !== "all" ||
     Boolean(search.trim());
   const allVisibleSelected =
     filteredEntries.length > 0 &&
@@ -839,6 +840,7 @@ export default function ReportBriefBuilder({ reports = [], onOpenReport }) {
     setStatus("all");
     setSeverity("all");
     setCategory("all");
+    setSelectionFilter("all");
     setSearch("");
   };
 
@@ -1051,6 +1053,16 @@ export default function ReportBriefBuilder({ reports = [], onOpenReport }) {
             value={sortBy}
             options={SORT_OPTIONS}
             onChange={setSortBy}
+          />
+          <SelectControl
+            label="Filter reports by brief selection"
+            value={selectionFilter}
+            options={[
+              { value: "all", label: "All reports" },
+              { value: "selected", label: "Selected for brief" },
+              { value: "unselected", label: "Not selected" },
+            ]}
+            onChange={setSelectionFilter}
           />
           <label htmlFor={searchId} className="relative min-w-[170px] flex-1 sm:max-w-xs">
             <Search
