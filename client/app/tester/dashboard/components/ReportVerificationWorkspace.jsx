@@ -319,47 +319,6 @@ function MetricCard({ label, value, caption, icon: Icon, tone }) {
     violet: "border-violet-200 bg-violet-50 text-violet-700",
   };
 
-  const toggleSelection = (reportId) => {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(reportId)) next.delete(reportId);
-      else next.add(reportId);
-      return next;
-    });
-  };
-
-  const toggleVisibleSelection = () => {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (allVisibleSelected) visibleIds.forEach((id) => next.delete(id));
-      else visibleIds.forEach((id) => next.add(id));
-      return next;
-    });
-  };
-
-  const applyBulkOutcome = (outcome) => {
-    if (!OUTCOMES.some((candidate) => candidate.id === outcome)) return;
-    const timestamp = new Date().toISOString();
-    const visibleSelection = new Set(visibleIds);
-    setReviews((current) => {
-      const next = { ...current };
-      selectedIds.forEach((reportId) => {
-        if (!visibleSelection.has(reportId)) return;
-        const existing = getReview(current, reportId);
-        next[reportId] = {
-          ...existing,
-          outcome,
-          reviewedAt: outcome === "pending" ? "" : timestamp,
-          updatedAt: timestamp,
-        };
-      });
-      return next;
-    });
-    setSelectedIds(new Set());
-    setExportError("");
-    setExportNotice("");
-  };
-
   return (
     <article className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/30">
       <div className="flex items-start justify-between gap-3">
@@ -883,8 +842,14 @@ export default function ReportVerificationWorkspace({
   const selectedVisibleCount = visibleIds.filter((id) =>
     selectedIds.has(id),
   ).length;
+  const selectedFilteredCount = filteredReports.filter((report) =>
+    selectedIds.has(getReportId(report)),
+  ).length;
   const allVisibleSelected =
     visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+  const allFilteredSelected =
+    filteredReports.length > 0 &&
+    filteredReports.every((report) => selectedIds.has(getReportId(report)));
   const hasActiveFilters =
     outcomeFilter !== "all" ||
     severityFilter !== "all" ||
@@ -897,6 +862,61 @@ export default function ReportVerificationWorkspace({
   const coveragePercent = counts.total
     ? Math.round((reviewedCount / counts.total) * 100)
     : 0;
+
+  const toggleSelection = (reportId) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(reportId)) next.delete(reportId);
+      else next.add(reportId);
+      return next;
+    });
+  };
+
+  const toggleVisibleSelection = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) visibleIds.forEach((id) => next.delete(id));
+      else visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const toggleFilteredSelection = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allFilteredSelected) {
+        filteredReports.forEach((report) => next.delete(getReportId(report)));
+      } else {
+        filteredReports.forEach((report) => next.add(getReportId(report)));
+      }
+      return next;
+    });
+  };
+
+  const applyBulkOutcome = (outcome) => {
+    if (!OUTCOMES.some((candidate) => candidate.id === outcome)) return;
+    const timestamp = new Date().toISOString();
+    const filteredSelection = new Set(
+      filteredReports.map((report) => getReportId(report)),
+    );
+    setReviews((current) => {
+      const next = { ...current };
+      selectedIds.forEach((reportId) => {
+        if (!filteredSelection.has(reportId)) return;
+        const existing = getReview(current, reportId);
+        next[reportId] = {
+          ...existing,
+          outcome,
+          reviewedAt: outcome === "pending" ? "" : timestamp,
+          updatedAt: timestamp,
+        };
+      });
+      return next;
+    });
+    setSelectedIds(new Set());
+    setExportError("");
+    setExportNotice("");
+  };
 
   const updateReview = (reportId, updater) => {
     if (!reportId) return;
@@ -1340,25 +1360,39 @@ export default function ReportVerificationWorkspace({
         {filteredReports.length ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-100 bg-violet-50/60 px-3.5 py-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={allVisibleSelected}
-                  onChange={toggleVisibleSelection}
-                  aria-label="Select all visible reports"
-                  className="h-4 w-4 rounded border-slate-300 text-violet-600 accent-violet-600 focus:ring-4 focus:ring-violet-100"
-                />
-                Select visible ({formatNumber(visibleReports.length)})
-              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleVisibleSelection}
+                    aria-label="Select all visible reports"
+                    className="h-4 w-4 rounded border-slate-300 text-violet-600 accent-violet-600 focus:ring-4 focus:ring-violet-100"
+                  />
+                  Select visible ({formatNumber(visibleReports.length)})
+                </label>
+                {filteredReports.length > visibleReports.length ? (
+                  <button
+                    type="button"
+                    onClick={toggleFilteredSelection}
+                    aria-pressed={allFilteredSelected}
+                    className="rounded-lg border border-violet-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-violet-700 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                  >
+                    {allFilteredSelected
+                      ? `Unselect all ${formatNumber(filteredReports.length)} matching`
+                      : `Select all ${formatNumber(filteredReports.length)} matching`}
+                  </button>
+                ) : null}
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[10px] text-slate-500" aria-live="polite">
-                  {formatNumber(selectedVisibleCount)} selected
+                  {formatNumber(selectedFilteredCount)} selected
                 </span>
                 <label className="flex items-center gap-2 text-[10px] font-medium text-slate-600">
                   <span className="sr-only">Set selected reports to</span>
                   <select
                     value=""
-                    disabled={!selectedVisibleCount}
+                    disabled={!selectedFilteredCount}
                     onChange={(event) => {
                       if (event.target.value) applyBulkOutcome(event.target.value);
                     }}
@@ -1372,7 +1406,7 @@ export default function ReportVerificationWorkspace({
                     ))}
                   </select>
                 </label>
-                {selectedVisibleCount > 0 && (
+                {selectedFilteredCount > 0 && (
                   <button
                     type="button"
                     onClick={() => setSelectedIds(new Set())}
