@@ -780,6 +780,7 @@ export default function TestSessionWorkspace({
   const [sessionSearch, setSessionSearch] = useState("");
   const [caseSearch, setCaseSearch] = useState("");
   const [caseFilter, setCaseFilter] = useState("all");
+  const [caseAreaFilter, setCaseAreaFilter] = useState("all");
   const [createTemplateId, setCreateTemplateId] = useState("smoke");
   const [newSessionName, setNewSessionName] = useState("");
   const [newBuild, setNewBuild] = useState("");
@@ -824,6 +825,8 @@ export default function TestSessionWorkspace({
     return indexed
       .filter(({ testCase }) => {
         const matchesFilter = caseFilter === "all" || testCase.status === caseFilter;
+        const matchesArea =
+          caseAreaFilter === "all" || testCase.area === caseAreaFilter;
         const matchesSearch = !query || [
           testCase.title,
           testCase.area,
@@ -831,7 +834,7 @@ export default function TestSessionWorkspace({
           testCase.expected,
           testCase.observation,
         ].some((value) => value?.toLowerCase().includes(query));
-        return matchesFilter && matchesSearch;
+        return matchesFilter && matchesArea && matchesSearch;
       })
       .sort((a, b) => {
         if (sortMode === "priority") {
@@ -844,7 +847,23 @@ export default function TestSessionWorkspace({
         }
         return a.index - b.index;
       });
-  }, [selectedSession, caseSearch, caseFilter, sortMode]);
+  }, [caseAreaFilter, selectedSession, caseSearch, caseFilter, sortMode]);
+
+  const caseAreaOptions = useMemo(() => {
+    if (!selectedSession) return [{ id: "all", label: "All areas" }];
+    return [
+      { id: "all", label: "All areas" },
+      ...[
+        ...new Set(
+          selectedSession.cases
+            .map((testCase) => testCase.area)
+            .filter(Boolean),
+        ),
+      ]
+        .sort((left, right) => left.localeCompare(right))
+        .map((area) => ({ id: area, label: area })),
+    ];
+  }, [selectedSession]);
 
   const metrics = selectedSession ? getSessionMetrics(selectedSession) : null;
 
@@ -1174,6 +1193,7 @@ export default function TestSessionWorkspace({
 
   const resetFilters = () => {
     setCaseFilter("all");
+    setCaseAreaFilter("all");
     setCaseSearch("");
     setSortMode("order");
   };
@@ -1547,12 +1567,15 @@ export default function TestSessionWorkspace({
                       <select value={caseFilter} onChange={(event) => setCaseFilter(event.target.value)} aria-label="Filter test cases" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
                         {CASE_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label}</option>)}
                       </select>
+                      <select value={caseAreaFilter} onChange={(event) => setCaseAreaFilter(event.target.value)} aria-label="Filter test cases by area" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
+                        {caseAreaOptions.map((area) => <option key={area.id} value={area.id}>{area.label}</option>)}
+                      </select>
                       <select value={sortMode} onChange={(event) => setSortMode(event.target.value)} aria-label="Sort test cases" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-600">
                         <option value="order">Template order</option>
                         <option value="priority">Priority</option>
                         <option value="status">Status</option>
                       </select>
-                      {(caseFilter !== "all" || caseSearch || sortMode !== "order") ? (
+                      {(caseFilter !== "all" || caseAreaFilter !== "all" || caseSearch || sortMode !== "order") ? (
                         <button type="button" onClick={resetFilters} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-100">
                           <FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset
                         </button>
