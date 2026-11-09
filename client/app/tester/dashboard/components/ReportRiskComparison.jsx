@@ -8,13 +8,16 @@ import {
   BarChart3,
   CalendarRange,
   CheckCircle2,
+  Check,
   ChevronDown,
   CircleAlert,
+  Clipboard,
   Download,
   Minus,
   Sparkles,
   TrendingDown,
   TrendingUp,
+  Trash2,
 } from "lucide-react";
 
 const DAY_MS = 86_400_000;
@@ -910,6 +913,154 @@ function EmptyComparison() {
   );
 }
 
+function DecisionLog({ current, previous, metric }) {
+  const [decisions, setDecisions] = useState([]);
+  const [draft, setDraft] = useState("");
+  const [outcome, setOutcome] = useState("monitor");
+  const delta = current[metric] - previous[metric];
+
+  const addDecision = () => {
+    const note = draft.trim().slice(0, 280);
+    if (!note) return;
+    setDecisions((items) => [
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        note,
+        outcome,
+        delta,
+        createdAt: new Date().toISOString(),
+      },
+      ...items,
+    ].slice(0, 12));
+    setDraft("");
+    setOutcome("monitor");
+  };
+
+  const exportLog = () => {
+    if (!decisions.length) return;
+    const escape = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const rows = [
+      ["Recorded", "Decision", "Outcome", "Metric delta"],
+      ...decisions.map((decision) => [
+        new Date(decision.createdAt).toISOString(),
+        decision.note,
+        decision.outcome,
+        decision.delta,
+      ]),
+    ];
+    const blob = new Blob(
+      [`\uFEFF${rows.map((row) => row.map(escape).join(",")).join("\r\n")}`],
+      { type: "text/csv;charset=utf-8" },
+    );
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "risk-comparison-decisions.csv";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  return (
+    <section className="rounded-xl border border-slate-200/80 bg-white p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h4 className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-slate-800">
+            <Clipboard size={13} className="text-violet-600" aria-hidden="true" />
+            Decision log
+          </h4>
+          <p className="mt-0.5 text-[8px] leading-4 text-slate-400">
+            Record why this period’s movement needs action. Notes stay in this
+            browser session and do not change report data.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={exportLog}
+          disabled={!decisions.length}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-500 hover:bg-slate-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Download size={11} aria-hidden="true" />
+          Export log
+        </button>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_130px_auto]">
+        <label className="sr-only" htmlFor="risk-decision-note">
+          Decision note
+        </label>
+        <input
+          id="risk-decision-note"
+          value={draft}
+          maxLength={280}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") addDecision();
+          }}
+          placeholder="e.g. Investigate rising checkout risk…"
+          className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] text-slate-700 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
+        />
+        <label className="sr-only" htmlFor="risk-decision-outcome">
+          Decision outcome
+        </label>
+        <select
+          id="risk-decision-outcome"
+          value={outcome}
+          onChange={(event) => setOutcome(event.target.value)}
+          className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-600 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
+        >
+          <option value="monitor">Monitor</option>
+          <option value="investigate">Investigate</option>
+          <option value="escalate">Escalate</option>
+          <option value="resolved">Resolved</option>
+        </select>
+        <button
+          type="button"
+          onClick={addDecision}
+          disabled={!draft.trim()}
+          className="inline-flex h-9 items-center justify-center gap-1 rounded-lg bg-violet-600 px-3 text-[9px] font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Check size={11} aria-hidden="true" />
+          Add
+        </button>
+      </div>
+      {decisions.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {decisions.map((decision) => (
+            <div
+              key={decision.id}
+              className="flex items-start gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-2"
+            >
+              <span className="mt-0.5 rounded-full bg-violet-100 px-1.5 py-0.5 text-[8px] font-semibold capitalize text-violet-700">
+                {decision.outcome}
+              </span>
+              <p className="min-w-0 flex-1 text-[9px] leading-4 text-slate-600">
+                {decision.note}
+                <span className="ml-1 text-slate-400">
+                  ({decision.delta > 0 ? "+" : ""}
+                  {formatNumber(decision.delta)} {getMetricLabel(metric).toLowerCase()})
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  setDecisions((items) =>
+                    items.filter((item) => item.id !== decision.id),
+                  )
+                }
+                aria-label="Remove decision"
+                className="grid h-5 w-5 shrink-0 place-items-center rounded text-slate-400 hover:bg-white hover:text-rose-600"
+              >
+                <Trash2 size={11} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function ReportRiskComparison({
   reports = [],
   range,
@@ -1117,6 +1268,11 @@ export default function ReportRiskComparison({
 
               <div className="space-y-3">
                 <ChangeSummary
+                  current={current}
+                  previous={previous}
+                  metric={metric}
+                />
+                <DecisionLog
                   current={current}
                   previous={previous}
                   metric={metric}
