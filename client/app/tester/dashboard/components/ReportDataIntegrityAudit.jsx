@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   BadgeCheck,
   CalendarX,
+  Check,
   CheckCircle2,
   ChevronDown,
   CircleHelp,
@@ -517,21 +518,47 @@ function LevelBadge({ level }) {
   );
 }
 
-function AuditIssueRow({ issue }) {
+function AuditIssueRow({ issue, resolved, onToggle }) {
   return (
     <li className="flex flex-col gap-1.5 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2.5 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold text-slate-700">{issue.label}</p>
+        <p
+          className={`text-[10px] font-semibold ${
+            resolved ? "text-emerald-700 line-through" : "text-slate-700"
+          }`}
+        >
+          {issue.label}
+        </p>
         <p className="mt-0.5 text-[9px] leading-4 text-slate-500">
           {issue.message}
         </p>
       </div>
-      <LevelBadge level={issue.level} />
+      <div className="flex shrink-0 items-center gap-2">
+        <LevelBadge level={issue.level} />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-pressed={resolved}
+          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-semibold transition ${
+            resolved
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-white text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+          }`}
+        >
+          <Check size={11} aria-hidden="true" />
+          {resolved ? "Resolved" : "Mark resolved"}
+        </button>
+      </div>
     </li>
   );
 }
 
-function AuditReportCard({ entry, onOpenReport }) {
+function AuditReportCard({
+  entry,
+  onOpenReport,
+  resolvedFindings,
+  onToggleFinding,
+}) {
   const [expanded, setExpanded] = useState(false);
   const tone =
     entry.errorCount > 0
@@ -617,7 +644,14 @@ function AuditReportCard({ entry, onOpenReport }) {
           {entry.issues.length ? (
             <ul className="space-y-2">
               {entry.issues.map((issue, index) => (
-                <AuditIssueRow key={`${issue.code}-${index}`} issue={issue} />
+                <AuditIssueRow
+                  key={`${issue.code}-${index}`}
+                  issue={issue}
+                  resolved={Boolean(
+                    resolvedFindings?.[`${entry.id || entry.title}:${issue.code}`],
+                  )}
+                  onToggle={() => onToggleFinding(entry, issue)}
+                />
               ))}
             </ul>
           ) : (
@@ -744,6 +778,7 @@ export default function ReportDataIntegrityAudit({
   const [onlyFindings, setOnlyFindings] = useState(true);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [exportMessage, setExportMessage] = useState("");
+  const [resolvedFindings, setResolvedFindings] = useState({});
 
   const idCounts = useMemo(() => buildDuplicateIdCounts(reports), [reports]);
   const auditedEntries = useMemo(() => {
@@ -897,6 +932,7 @@ export default function ReportDataIntegrityAudit({
     ? Math.round((cleanCount / allSummary.reports) * 100)
     : 0;
   const hasMore = visibleCount < filteredEntries.length;
+  const resolvedCount = Object.values(resolvedFindings).filter(Boolean).length;
 
   const setFilter = (setter, value) => {
     setter(value);
@@ -935,6 +971,14 @@ export default function ReportDataIntegrityAudit({
         "Could not create the audit CSV. Check browser download permissions and try again.",
       );
     }
+  };
+
+  const toggleFindingResolution = (entry, issue) => {
+    const key = `${entry.id || entry.title}:${issue.code}`;
+    setResolvedFindings((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
   };
 
   return (
@@ -1019,6 +1063,13 @@ export default function ReportDataIntegrityAudit({
             caption="Potentially incomplete or malformed values"
             icon={AlertTriangle}
             tone="sky"
+          />
+          <MetricCard
+            label="Marked resolved"
+            value={resolvedCount}
+            caption="Personal remediation tracking"
+            icon={Check}
+            tone="emerald"
           />
         </div>
 
@@ -1249,6 +1300,8 @@ export default function ReportDataIntegrityAudit({
                 key={`${entry.id || "missing"}-${entry.title}`}
                 entry={{ ...entry, issues: entry.visibleIssues }}
                 onOpenReport={onOpenReport}
+                resolvedFindings={resolvedFindings}
+                onToggleFinding={toggleFindingResolution}
               />
             ))}
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
