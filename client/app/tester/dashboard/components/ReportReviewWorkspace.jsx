@@ -691,6 +691,7 @@ export default function ReportReviewWorkspace({
   const [search, setSearch] = useState("");
   const [reviewFilter, setReviewFilter] = useState("all");
   const [dueFilter, setDueFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortMode, setSortMode] = useState("updated");
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [newCheckLabel, setNewCheckLabel] = useState("");
@@ -753,6 +754,18 @@ export default function ReportReviewWorkspace({
   const activeTemplate = REVIEW_TEMPLATES.find(
     (template) => template.id === activeReview?.templateId,
   );
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all", label: "All categories" },
+      ...[
+        ...new Set(reviewRecords.map((review) => review.reportCategory)),
+      ]
+        .filter(Boolean)
+        .sort((left, right) => left.localeCompare(right))
+        .map((value) => ({ value, label: value })),
+    ],
+    [reviewRecords],
+  );
 
   const filteredReviews = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase();
@@ -763,6 +776,12 @@ export default function ReportReviewWorkspace({
         if (
           dueFilter !== "all" &&
           getDueBucket(review) !== dueFilter
+        ) {
+          return false;
+        }
+        if (
+          categoryFilter !== "all" &&
+          review.reportCategory !== categoryFilter
         ) {
           return false;
         }
@@ -792,7 +811,14 @@ export default function ReportReviewWorkspace({
           new Date(left.updatedAt || 0).getTime()
         );
       });
-  }, [dueFilter, reviewFilter, reviewRecords, search, sortMode]);
+  }, [
+    categoryFilter,
+    dueFilter,
+    reviewFilter,
+    reviewRecords,
+    search,
+    sortMode,
+  ]);
 
   const reviewMetrics = useMemo(() => {
     const counts = {
@@ -1336,7 +1362,7 @@ export default function ReportReviewWorkspace({
                   className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-2.5 text-[10px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
                 />
               </label>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-4">
                 <label className="relative block">
                   <span className="sr-only">Filter reviews by state</span>
                   <Filter
@@ -1404,6 +1430,31 @@ export default function ReportReviewWorkspace({
                         {filter.value === "overdue"
                           ? ` (${filterCounts.overdue})`
                           : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={11}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                </label>
+                <label className="relative block">
+                  <span className="sr-only">Filter reviews by category</span>
+                  <Filter
+                    size={12}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <select
+                    aria-label="Filter reviews by category"
+                    value={categoryFilter}
+                    onChange={(event) => setCategoryFilter(event.target.value)}
+                    className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-7 pr-6 text-[9px] text-slate-600 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
                       </option>
                     ))}
                   </select>
