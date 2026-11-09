@@ -793,6 +793,7 @@ export default function ReleasePlanningWorkspace({
   const [planOwner, setPlanOwner] = useState("");
   const [reportSearch, setReportSearch] = useState("");
   const [reportStatusFilter, setReportStatusFilter] = useState("all");
+  const [reportCategoryFilter, setReportCategoryFilter] = useState("all");
   const [reportSort, setReportSort] = useState("risk");
   const [planFilter, setPlanFilter] = useState("all");
   const [planSearch, setPlanSearch] = useState("");
@@ -817,6 +818,17 @@ export default function ReleasePlanningWorkspace({
       new Map(
         availableReports.map((report) => [getReportId(report), report]),
       ),
+    [availableReports],
+  );
+  const reportCategoryOptions = useMemo(
+    () => [
+      { value: "all", label: "All categories" },
+      ...[
+        ...new Set(availableReports.map((report) => getCategory(report))),
+      ]
+        .sort((left, right) => left.localeCompare(right))
+        .map((value) => ({ value, label: value })),
+    ],
     [availableReports],
   );
   const normalizedEmail = getText(email).toLocaleLowerCase();
@@ -909,6 +921,12 @@ export default function ReleasePlanningWorkspace({
         ) {
           return false;
         }
+        if (
+          reportCategoryFilter !== "all" &&
+          getCategory(report) !== reportCategoryFilter
+        ) {
+          return false;
+        }
         if (!needle) return true;
         return [
           getReportId(report),
@@ -936,7 +954,13 @@ export default function ReleasePlanningWorkspace({
           getReportTitle(left).localeCompare(getReportTitle(right))
         );
       });
-  }, [availableReports, reportSearch, reportSort, reportStatusFilter]);
+  }, [
+    availableReports,
+    reportCategoryFilter,
+    reportSearch,
+    reportSort,
+    reportStatusFilter,
+  ]);
 
   const planStats = useMemo(() => {
     const currentPlans = plans.filter((plan) => !plan.archived);
@@ -1940,7 +1964,7 @@ export default function ReleasePlanningWorkspace({
                       {activePlan.reportIds.length} selected
                     </span>
                   </div>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_150px]">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_150px_150px]">
                     <label className="relative block">
                       <span className="sr-only">Search reports for release scope</span>
                       <Search
@@ -1963,6 +1987,12 @@ export default function ReleasePlanningWorkspace({
                       value={reportStatusFilter}
                       options={statusOptions}
                       onChange={setReportStatusFilter}
+                    />
+                    <SmallSelect
+                      label="Filter scope reports by category"
+                      value={reportCategoryFilter}
+                      options={reportCategoryOptions}
+                      onChange={setReportCategoryFilter}
                     />
                     <SmallSelect
                       label="Sort scope reports"
