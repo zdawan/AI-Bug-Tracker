@@ -121,6 +121,13 @@ function getSeverity(report) {
   return severity || "Unspecified";
 }
 
+function getCategory(report) {
+  const category = typeof report?.category === "string"
+    ? report.category.trim()
+    : "";
+  return category || "Uncategorized";
+}
+
 function getStatus(report) {
   return report?.status === "Closed" ? "Closed" : "Open";
 }
@@ -219,7 +226,7 @@ function getStatusTone(status) {
       };
 }
 
-function matchesFilters(report, statusFilter, severityFilter, query) {
+function matchesFilters(report, statusFilter, severityFilter, categoryFilter, query) {
   if (statusFilter !== "All statuses" && getStatus(report) !== statusFilter) {
     return false;
   }
@@ -231,12 +238,16 @@ function matchesFilters(report, statusFilter, severityFilter, query) {
     return false;
   }
 
+  if (categoryFilter !== "All categories" && getCategory(report) !== categoryFilter) {
+    return false;
+  }
+
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) return true;
 
   return [
     getTitle(report),
-    report?.category,
+    getCategory(report),
     report?.description,
     report?.severity,
     report?.status,
@@ -914,6 +925,9 @@ function CalendarToolbar({
   onStatusChange,
   severityFilter,
   onSeverityChange,
+  categoryFilter,
+  categoryOptions,
+  onCategoryChange,
   query,
   onQueryChange,
   onClearFilters,
@@ -937,6 +951,12 @@ function CalendarToolbar({
           value={severityFilter}
           options={SEVERITY_OPTIONS}
           onChange={onSeverityChange}
+        />
+        <FilterSelect
+          label="Filter by report category"
+          value={categoryFilter}
+          options={categoryOptions}
+          onChange={onCategoryChange}
         />
       </div>
       <SearchBox value={query} onChange={onQueryChange} />
@@ -962,6 +982,7 @@ export default function ReportCalendarBoard({
   const [selectedKey, setSelectedKey] = useState(buildInitialSelection);
   const [statusFilter, setStatusFilter] = useState("All statuses");
   const [severityFilter, setSeverityFilter] = useState("All severity");
+  const [categoryFilter, setCategoryFilter] = useState("All categories");
   const [query, setQuery] = useState("");
   const [view, setView] = useState("calendar");
   const [showAllSelectedDay, setShowAllSelectedDay] = useState(false);
@@ -985,9 +1006,24 @@ export default function ReportCalendarBoard({
   const filteredReports = useMemo(
     () =>
       normalizedReports.filter(({ report }) =>
-        matchesFilters(report, statusFilter, severityFilter, query),
+        matchesFilters(
+          report,
+          statusFilter,
+          severityFilter,
+          categoryFilter,
+          query,
+        ),
       ),
-    [normalizedReports, statusFilter, severityFilter, query],
+    [normalizedReports, statusFilter, severityFilter, categoryFilter, query],
+  );
+  const categoryOptions = useMemo(
+    () => [
+      "All categories",
+      ...Array.from(
+        new Set(normalizedReports.map(({ report }) => getCategory(report))),
+      ).sort((left, right) => left.localeCompare(right)),
+    ],
+    [normalizedReports],
   );
 
   const monthStartKey = getLocalDateKey(startOfMonth(month));
@@ -1067,6 +1103,7 @@ export default function ReportCalendarBoard({
   const hasFilters =
     statusFilter !== "All statuses" ||
     severityFilter !== "All severity" ||
+    categoryFilter !== "All categories" ||
     Boolean(query.trim());
 
   const changeMonth = (amount) => {
@@ -1138,6 +1175,7 @@ export default function ReportCalendarBoard({
   const clearFilters = () => {
     setStatusFilter("All statuses");
     setSeverityFilter("All severity");
+    setCategoryFilter("All categories");
     setQuery("");
   };
 
@@ -1269,6 +1307,9 @@ export default function ReportCalendarBoard({
           onStatusChange={setStatusFilter}
           severityFilter={severityFilter}
           onSeverityChange={setSeverityFilter}
+          categoryFilter={categoryFilter}
+          categoryOptions={categoryOptions}
+          onCategoryChange={setCategoryFilter}
           query={query}
           onQueryChange={setQuery}
           onClearFilters={clearFilters}
