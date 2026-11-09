@@ -6,9 +6,11 @@ import {
   ArrowUpRight,
   BarChart3,
   CalendarDays,
+  Check,
   CheckCircle2,
   ChevronDown,
   Clock3,
+  Copy,
   Download,
   Flame,
   Layers3,
@@ -1114,6 +1116,7 @@ export default function ReportRiskMatrix({
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSeverity, setSelectedSeverity] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [copyMessage, setCopyMessage] = useState("");
   const allReports = useMemo(() => normalizeReports(reports), [reports]);
   const today = useMemo(() => {
     const now = new Date();
@@ -1341,6 +1344,33 @@ export default function ReportRiskMatrix({
       },
     );
 
+  const copySummary = async () => {
+    const lines = [
+      `Risk matrix summary · ${periodLabel}`,
+      `Reports: ${summary.count} · Open: ${summary.open} · Resolved: ${summary.closed}`,
+      `High / critical open: ${summary.highOpen} · Repeated: ${summary.repeated} · Submissions: ${summary.submissions}`,
+      `Filters: ${STATUS_OPTIONS.find((option) => option.value === status)?.label || status}; ${severityOptions.find((option) => option.value === severityFilter)?.label || severityFilter}; ${activeViewDefinition.label}`,
+      `Priority cluster: ${priorityCell ? `${priorityCell.category} · ${priorityCell.severity} (${priorityCell.openCount} open)` : "None"}`,
+      "Top open categories:",
+      ...[...aggregate.categories.values()]
+        .filter((category) => category.openCount > 0)
+        .sort((left, right) => right.openCount - left.openCount || left.category.localeCompare(right.category))
+        .slice(0, 5)
+        .map((category) => `- ${category.category}: ${category.openCount} open / ${category.count} reports`),
+      "",
+      "Advisory overview based on the currently loaded reports and selected filters.",
+    ];
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable in this browser.");
+      }
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopyMessage("Risk matrix summary copied.");
+    } catch (error) {
+      setCopyMessage(`Could not copy summary: ${error.message}`);
+    }
+  };
+
   const heatMetricOptions = [
     { value: "count", label: "Report count" },
     { value: "open", label: "Open issue count" },
@@ -1377,15 +1407,30 @@ export default function ReportRiskMatrix({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={exportCsv}
-            disabled={!filteredReports.length}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[9px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            <Download size={13} aria-hidden="true" />
-            Export matrix
-          </button>
+          <div className="flex shrink-0 flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={copySummary}
+              disabled={!filteredReports.length}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[9px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {copyMessage === "Risk matrix summary copied." ? (
+                <Check size={13} aria-hidden="true" />
+              ) : (
+                <Copy size={13} aria-hidden="true" />
+              )}
+              {copyMessage === "Risk matrix summary copied." ? "Copied" : "Copy summary"}
+            </button>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={!filteredReports.length}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[9px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <Download size={13} aria-hidden="true" />
+              Export matrix
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -1455,6 +1500,14 @@ export default function ReportRiskMatrix({
       </header>
 
       <div className="space-y-4 p-3 sm:p-4">
+        {copyMessage ? (
+          <div role="status" aria-live="polite" className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-[10px] ${copyMessage.startsWith("Could not") ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>
+            <span>{copyMessage}</span>
+            <button type="button" onClick={() => setCopyMessage("")} aria-label="Dismiss copy message" className="rounded p-0.5 hover:bg-white/70">
+              <X size={12} aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             icon={Layers3}
