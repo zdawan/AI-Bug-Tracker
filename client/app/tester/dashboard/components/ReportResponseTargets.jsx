@@ -321,40 +321,37 @@ function filterEntries(entries, filters) {
   });
 }
 
-function sortEntries(entries, sortBy) {
+function sortEntries(entries, sortBy, sortDirection = "desc") {
   const sorted = [...entries];
   sorted.sort((left, right) => {
+    let result;
     if (sortBy === "overdue") {
       const leftOverdue = left.state === "breached" ? left.age - left.target : 0;
       const rightOverdue = right.state === "breached" ? right.age - right.target : 0;
-      return rightOverdue - leftOverdue ||
+      result = rightOverdue - leftOverdue ||
         getPriority(right) - getPriority(left) ||
         left.title.localeCompare(right.title);
-    }
-    if (sortBy === "age") {
-      return (
+    } else if (sortBy === "age") {
+      result =
         (right.age ?? -1) - (left.age ?? -1) ||
-        getPriority(right) - getPriority(left)
-      );
-    }
-    if (sortBy === "severity") {
-      return (
+        getPriority(right) - getPriority(left);
+    } else if (sortBy === "severity") {
+      result =
         getPriority(right) - getPriority(left) ||
-        left.title.localeCompare(right.title)
-      );
-    }
-    if (sortBy === "target") {
-      return (
+        left.title.localeCompare(right.title);
+    } else if (sortBy === "target") {
+      result =
         left.target - right.target ||
-        getPriority(right) - getPriority(left)
-      );
+        getPriority(right) - getPriority(left);
+    } else if (sortBy === "title") {
+      result = left.title.localeCompare(right.title);
+    } else {
+      result =
+        getPriority(right) - getPriority(left) ||
+        (right.age ?? -1) - (left.age ?? -1) ||
+        left.title.localeCompare(right.title);
     }
-    if (sortBy === "title") return left.title.localeCompare(right.title);
-    return (
-      getPriority(right) - getPriority(left) ||
-      (right.age ?? -1) - (left.age ?? -1) ||
-      left.title.localeCompare(right.title)
-    );
+    return sortDirection === "asc" ? result * -1 : result;
   });
   return sorted;
 }
@@ -850,6 +847,7 @@ export default function ReportResponseTargets({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("urgency");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [showTargets, setShowTargets] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [copyFeedback, setCopyFeedback] = useState("");
@@ -892,8 +890,17 @@ export default function ReportResponseTargets({
           search,
         }),
         sortBy,
+        sortDirection,
       ),
-    [categoryFilter, openEntries, queue, search, severityFilter, sortBy],
+    [
+      categoryFilter,
+      openEntries,
+      queue,
+      search,
+      severityFilter,
+      sortBy,
+      sortDirection,
+    ],
   );
   const visibleEntries = filteredEntries.slice(0, visibleCount);
   const queueCounts = useMemo(
@@ -912,7 +919,8 @@ export default function ReportResponseTargets({
     severityFilter !== "all" ||
     categoryFilter !== "all" ||
     Boolean(search.trim()) ||
-    sortBy !== "urgency";
+    sortBy !== "urgency" ||
+    sortDirection !== "desc";
   const hasReports = Array.isArray(reports) && reports.length > 0;
 
   const resetFilters = () => {
@@ -921,6 +929,7 @@ export default function ReportResponseTargets({
     setCategoryFilter("all");
     setSearch("");
     setSortBy("urgency");
+    setSortDirection("desc");
     setVisibleCount(INITIAL_VISIBLE);
   };
 
@@ -1083,6 +1092,22 @@ export default function ReportResponseTargets({
               setVisibleCount(INITIAL_VISIBLE);
             }}
           />
+          <button
+            type="button"
+            onClick={() => {
+              setSortDirection((current) => (current === "desc" ? "asc" : "desc"));
+              setVisibleCount(INITIAL_VISIBLE);
+            }}
+            aria-label={`Sort ${sortDirection === "desc" ? "ascending" : "descending"}`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[9px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700"
+          >
+            {sortDirection === "desc" ? (
+              <ArrowDownWideNarrow size={13} aria-hidden="true" />
+            ) : (
+              <ArrowUpRight size={13} aria-hidden="true" />
+            )}
+            {sortDirection === "desc" ? "Descending" : "Ascending"}
+          </button>
           {hasFilters && (
             <button
               type="button"
