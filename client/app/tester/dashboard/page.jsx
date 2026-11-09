@@ -23,6 +23,7 @@ import TesterCoverageNotebook from "./components/TesterCoverageNotebook";
 import TesterSignoffWorkspace from "./components/TesterSignoffWorkspace";
 import TesterReleaseControlRoom from "./components/TesterReleaseControlRoom";
 import TesterLaunchChecklistWorkspace from "./components/TesterLaunchChecklistWorkspace";
+import TesterPostLaunchMonitorWorkspace from "./components/TesterPostLaunchMonitorWorkspace";
 import ReportWorkloadPlanner from "./components/ReportWorkloadPlanner";
 import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate";
 import ReportInvestigationWorkspace from "./components/ReportInvestigationWorkspace";
@@ -2408,6 +2409,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <TesterLaunchChecklistWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <TesterPostLaunchMonitorWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
