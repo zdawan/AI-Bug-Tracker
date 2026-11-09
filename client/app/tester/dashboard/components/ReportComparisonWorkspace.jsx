@@ -593,6 +593,7 @@ export default function ReportComparisonWorkspace({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [quickFilter, setQuickFilter] = useState("all");
   const [sortMode, setSortMode] = useState("recent");
   const [onlyDifferences, setOnlyDifferences] = useState(false);
@@ -632,6 +633,21 @@ export default function ReportComparisonWorkspace({
   const referenceCategory = selectedReports[0]
     ? getText(selectedReports[0]?.category, "Uncategorized")
     : "";
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all", label: "All categories" },
+      ...[
+        ...new Set(
+          availableReports.map((report) =>
+            getText(report?.category, "Uncategorized"),
+          ),
+        ),
+      ]
+        .sort((left, right) => left.localeCompare(right))
+        .map((value) => ({ value, label: value })),
+    ],
+    [availableReports],
+  );
 
   useEffect(() => {
     setSelectedIds((current) => current.filter((id) => reportById.has(id)));
@@ -689,6 +705,12 @@ export default function ReportComparisonWorkspace({
         ) {
           return false;
         }
+        if (
+          categoryFilter !== "all" &&
+          getText(report?.category, "Uncategorized") !== categoryFilter
+        ) {
+          return false;
+        }
         if (!needle) return true;
 
         return [
@@ -726,6 +748,7 @@ export default function ReportComparisonWorkspace({
       });
   }, [
     availableReports,
+    categoryFilter,
     quickFilter,
     referenceCategory,
     search,
@@ -950,6 +973,16 @@ export default function ReportComparisonWorkspace({
     }
 
     setQuickFilter((current) => (current === filter ? "all" : filter));
+    setFeedback("");
+  };
+
+  const resetReportFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setSeverityFilter("all");
+    setCategoryFilter("all");
+    setQuickFilter("all");
+    setSortMode("recent");
     setFeedback("");
   };
 
@@ -1223,7 +1256,7 @@ export default function ReportComparisonWorkspace({
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             <FilterSelect
               label="Filter reports by status"
               value={statusFilter}
@@ -1236,7 +1269,27 @@ export default function ReportComparisonWorkspace({
               options={SEVERITY_FILTERS}
               onChange={setSeverityFilter}
             />
+            <FilterSelect
+              label="Filter reports by category"
+              value={categoryFilter}
+              options={categoryOptions}
+              onChange={setCategoryFilter}
+            />
           </div>
+          {(search ||
+            statusFilter !== "all" ||
+            severityFilter !== "all" ||
+            categoryFilter !== "all" ||
+            quickFilter !== "all") && (
+            <button
+              type="button"
+              onClick={resetReportFilters}
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-[10px] font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-violet-700"
+            >
+              <X size={12} aria-hidden="true" />
+              Reset report filters
+            </button>
+          )}
 
           <div className="space-y-1.5">
             <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
