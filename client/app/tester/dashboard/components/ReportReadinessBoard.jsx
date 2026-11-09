@@ -279,7 +279,7 @@ function matchesCompleteness(item, filter) {
 
 function matchesReadinessRefinements(
   item,
-  { statusFilter, severityFilter, missingCriterion, search },
+  { statusFilter, severityFilter, categoryFilter, missingCriterion, search },
 ) {
   if (statusFilter !== "all" && item.status.toLowerCase() !== statusFilter) {
     return false;
@@ -288,6 +288,9 @@ function matchesReadinessRefinements(
     severityFilter !== "all" &&
     item.severity.toLowerCase() !== severityFilter
   ) {
+    return false;
+  }
+  if (categoryFilter !== "all" && item.category !== categoryFilter) {
     return false;
   }
   if (missingCriterion !== "any" && item.checks[missingCriterion] !== false) {
@@ -1004,6 +1007,7 @@ export default function ReportReadinessBoard({
   const [completenessFilter, setCompletenessFilter] = useState("needs-details");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [missingCriterion, setMissingCriterion] = useState("any");
   const [sortBy, setSortBy] = useState("lowest");
   const [showMethod, setShowMethod] = useState(false);
@@ -1035,6 +1039,7 @@ export default function ReportReadinessBoard({
         matchesReadinessRefinements(item, {
           statusFilter,
           severityFilter,
+          categoryFilter,
           missingCriterion,
           search,
         }),
@@ -1049,6 +1054,7 @@ export default function ReportReadinessBoard({
     severityFilter,
     sortBy,
     statusFilter,
+    categoryFilter,
   ]);
 
   const countByFilter = useMemo(
@@ -1057,6 +1063,7 @@ export default function ReportReadinessBoard({
         matchesReadinessRefinements(item, {
           statusFilter,
           severityFilter,
+          categoryFilter,
           missingCriterion,
           search,
         }),
@@ -1071,7 +1078,14 @@ export default function ReportReadinessBoard({
         ready: refined.filter((item) => item.score >= 80).length,
       };
     },
-    [assessments, missingCriterion, search, severityFilter, statusFilter],
+    [
+      assessments,
+      categoryFilter,
+      missingCriterion,
+      search,
+      severityFilter,
+      statusFilter,
+    ],
   );
 
   const severityOptions = useMemo(
@@ -1088,11 +1102,21 @@ export default function ReportReadinessBoard({
     ],
     [assessments],
   );
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all", label: "All categories" },
+      ...Array.from(new Set(assessments.map((item) => item.category)))
+        .sort((left, right) => left.localeCompare(right))
+        .map((value) => ({ value, label: value })),
+    ],
+    [assessments],
+  );
 
   const missingCriterionOptions = useMemo(() => {
     const refinements = {
       statusFilter,
       severityFilter,
+      categoryFilter,
       missingCriterion: "any",
       search,
     };
@@ -1121,6 +1145,7 @@ export default function ReportReadinessBoard({
     search,
     severityFilter,
     statusFilter,
+    categoryFilter,
   ]);
 
   const visibleAssessments = filteredAssessments.slice(0, visibleCount);
@@ -1128,6 +1153,7 @@ export default function ReportReadinessBoard({
     completenessFilter !== "needs-details" ||
     statusFilter !== "all" ||
     severityFilter !== "all" ||
+    categoryFilter !== "all" ||
     missingCriterion !== "any" ||
     Boolean(search.trim());
 
@@ -1135,6 +1161,7 @@ export default function ReportReadinessBoard({
     setCompletenessFilter("needs-details");
     setStatusFilter("all");
     setSeverityFilter("all");
+    setCategoryFilter("all");
     setMissingCriterion("any");
     setSearch("");
     setSortBy("lowest");
@@ -1153,6 +1180,11 @@ export default function ReportReadinessBoard({
 
   const applySeverityFilter = (value) => {
     setSeverityFilter(value);
+    setVisibleCount(8);
+  };
+
+  const applyCategoryFilter = (value) => {
+    setCategoryFilter(value);
     setVisibleCount(8);
   };
 
@@ -1267,6 +1299,12 @@ export default function ReportReadinessBoard({
                         value={severityFilter}
                         options={severityOptions}
                         onChange={applySeverityFilter}
+                      />
+                      <SelectControl
+                        label="Filter by category"
+                        value={categoryFilter}
+                        options={categoryOptions}
+                        onChange={applyCategoryFilter}
                       />
                       <SelectControl
                         label="Sort reports"
