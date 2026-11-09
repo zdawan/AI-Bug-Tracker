@@ -336,7 +336,7 @@ function normalizeReports(reports) {
 
 function filterReports(
   reports,
-  { range, status, severity, search },
+  { range, status, severity, category, search },
   today,
 ) {
   const normalizedSearch = search.trim().toLowerCase();
@@ -348,6 +348,7 @@ function filterReports(
     if (severity !== SEVERITY_FILTER_ALL && getSeverity(report) !== severity) {
       return false;
     }
+    if (category && getCategory(report) !== category) return false;
     if (rangeStart) {
       const reportDate = getReportDate(report);
       if (!reportDate) return false;
@@ -430,7 +431,15 @@ function getVisibleMatrixData(
   };
 }
 
-function getComparisonDeltas(reports, range, status, severity, search, today) {
+function getComparisonDeltas(
+  reports,
+  range,
+  status,
+  severity,
+  category,
+  search,
+  today,
+) {
   const days = Number(range);
   if (!Number.isFinite(days) || days <= 0) return new Map();
 
@@ -448,6 +457,7 @@ function getComparisonDeltas(reports, range, status, severity, search, today) {
     if (severity !== SEVERITY_FILTER_ALL && getSeverity(report) !== severity) {
       return false;
     }
+    if (category && getCategory(report) !== category) return false;
     if (search && !getSearchText(report).includes(search.trim().toLowerCase())) {
       return false;
     }
@@ -1109,6 +1119,7 @@ export default function ReportRiskMatrix({
   const [range, setRange] = useState("all");
   const [status, setStatus] = useState("all");
   const [severityFilter, setSeverityFilter] = useState(SEVERITY_FILTER_ALL);
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [metric, setMetric] = useState("count");
   const [activeView, setActiveView] = useState("all");
   const [sortBy, setSortBy] = useState("open");
@@ -1132,15 +1143,24 @@ export default function ReportRiskMatrix({
       ...values.map((value) => ({ value, label: value })),
     ];
   }, [allReports]);
+  const categoryOptions = useMemo(
+    () => [
+      { value: "", label: "All categories" },
+      ...Array.from(new Set(allReports.map((report) => getCategory(report))))
+        .sort((left, right) => left.localeCompare(right))
+        .map((value) => ({ value, label: value })),
+    ],
+    [allReports],
+  );
 
   const filteredReports = useMemo(
     () =>
       filterReports(
         allReports,
-        { range, status, severity: severityFilter, search },
+        { range, status, severity: severityFilter, category: categoryFilter, search },
         today,
       ),
-    [allReports, range, search, severityFilter, status, today],
+    [allReports, categoryFilter, range, search, severityFilter, status, today],
   );
   const aggregate = useMemo(
     () => aggregateReports(filteredReports, today),
@@ -1165,10 +1185,11 @@ export default function ReportRiskMatrix({
         range,
         status,
         severityFilter,
+        categoryFilter,
         search,
         today,
       ),
-    [allReports, range, search, severityFilter, status, today],
+    [allReports, categoryFilter, range, search, severityFilter, status, today],
   );
   const visibleMatrix = useMemo(
     () =>
@@ -1219,6 +1240,7 @@ export default function ReportRiskMatrix({
     range !== "all" ||
     status !== "all" ||
     severityFilter !== SEVERITY_FILTER_ALL ||
+    Boolean(categoryFilter) ||
     activeView !== "all" ||
     Boolean(search.trim());
   const activeViewDefinition =
@@ -1253,6 +1275,7 @@ export default function ReportRiskMatrix({
     setRange("all");
     setStatus("all");
     setSeverityFilter(SEVERITY_FILTER_ALL);
+    setCategoryFilter("");
     setActiveView("all");
     setSearch("");
     setSelectedCategory("");
@@ -1269,6 +1292,13 @@ export default function ReportRiskMatrix({
 
   const updateStatus = (value) => {
     setStatus(value);
+    setSelectedCategory("");
+    setSelectedSeverity("");
+    setVisibleCount(INITIAL_VISIBLE);
+  };
+
+  const updateCategory = (value) => {
+    setCategoryFilter(value);
     setSelectedCategory("");
     setSelectedSeverity("");
     setVisibleCount(INITIAL_VISIBLE);
@@ -1451,6 +1481,12 @@ export default function ReportRiskMatrix({
             value={severityFilter}
             options={severityOptions}
             onChange={updateSeverity}
+          />
+          <SelectControl
+            label="Focus risk matrix by category"
+            value={categoryFilter}
+            options={categoryOptions}
+            onChange={updateCategory}
           />
           <SelectControl
             label="Choose risk matrix heat value"
