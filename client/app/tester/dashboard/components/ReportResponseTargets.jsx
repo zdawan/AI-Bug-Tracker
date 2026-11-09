@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ChevronDown,
+  Copy,
   Clock3,
   Download,
   Flame,
@@ -465,6 +466,35 @@ function exportTargetsCsv(entries, targets, filters, today) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function buildEscalationBrief(entries, summary, targets, today) {
+  const topEntries = entries
+    .filter((entry) => entry.state === "breached" || entry.state === "due-today")
+    .slice(0, 5);
+  const lines = [
+    `Response-target review · ${formatDate(today)}`,
+    `${formatNumber(entries.length)} open reports in the current filtered queue.`,
+    `${formatNumber(summary.breached)} past target · ${formatNumber(
+      summary.dueToday,
+    )} due today · ${formatNumber(summary.dueSoon)} due soon.`,
+    `Configured targets: High ${targets.High}d, Medium ${targets.Medium}d, Low ${targets.Low}d.`,
+  ];
+
+  if (topEntries.length) {
+    lines.push("", "Priority follow-up:");
+    topEntries.forEach((entry, index) => {
+      lines.push(
+        `${index + 1}. ${entry.title} [${entry.severity}] · ${
+          entry.state === "breached"
+            ? `${entry.age - entry.target}d past target`
+            : "due today"
+        }`,
+      );
+    });
+  }
+
+  return lines.join("\n");
+}
+
 function SelectControl({ label, value, options, onChange }) {
   return (
     <label className="relative inline-flex items-center">
@@ -822,6 +852,7 @@ export default function ReportResponseTargets({
   const [sortBy, setSortBy] = useState("urgency");
   const [showTargets, setShowTargets] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [copyFeedback, setCopyFeedback] = useState("");
 
   const today = useMemo(() => startOfDay(new Date()), []);
   const openEntries = useMemo(
@@ -921,6 +952,17 @@ export default function ReportResponseTargets({
       today,
     );
 
+  const copyEscalationBrief = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        buildEscalationBrief(filteredEntries, summary, targets, today),
+      );
+      setCopyFeedback("Escalation brief copied.");
+    } catch {
+      setCopyFeedback("Could not copy the brief in this browser.");
+    }
+  };
+
   const targetPreset = POLICY_PRESETS.find((preset) =>
     Object.keys(DEFAULT_TARGETS).every(
       (severity) => targets[severity] === preset.targets[severity],
@@ -978,8 +1020,22 @@ export default function ReportResponseTargets({
               <Download size={12} aria-hidden="true" />
               Export CSV
             </button>
+            <button
+              type="button"
+              onClick={copyEscalationBrief}
+              disabled={!filteredEntries.length}
+              className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-[9px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <Copy size={12} aria-hidden="true" />
+              Copy brief
+            </button>
           </div>
         </div>
+        {copyFeedback && (
+          <p role="status" className="mt-2 text-[9px] font-medium text-emerald-700">
+            {copyFeedback}
+          </p>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <label className="relative min-w-[170px] flex-1 sm:max-w-xs">
