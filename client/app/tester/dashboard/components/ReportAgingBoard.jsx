@@ -7,6 +7,8 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  Copy,
+  Download,
   Flame,
   Search,
   ShieldAlert,
@@ -150,6 +152,39 @@ function formatReportDate(report) {
     month: "short",
     year: "numeric",
   });
+}
+
+function exportAgingQueue(reports, now) {
+  const escape = (value) => {
+    const raw = String(value ?? "");
+    const safe = /^[\s]*[=+\-@]/.test(raw) ? `'${raw}` : raw;
+    return `"${safe.replaceAll('"', '""')}"`;
+  };
+  const rows = [
+    ["Report", "Category", "Severity", "Age", "Submissions", "Priority score"],
+    ...reports.map((report) => [
+      getIssueTitle(report),
+      getCategoryLabel(report),
+      report?.severity || "Unspecified",
+      formatAge(report, now),
+      getSubmissionCount(report),
+      getTriagePriority(report, now),
+    ]),
+  ];
+  const blob = new Blob(
+    [`\uFEFF${rows.map((row) => row.map(escape).join(",")).join("\r\n")}`],
+    { type: "text/csv;charset=utf-8" },
+  );
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `open-issue-aging-queue-${new Date()
+    .toISOString()
+    .slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function getAgeInsight(reports, now = Date.now()) {
@@ -443,6 +478,7 @@ export default function ReportAgingBoard({
   const [sortBy, setSortBy] = useState("priority");
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_REPORTS);
+  const [queueFeedback, setQueueFeedback] = useState("");
   const now = Date.now();
   const insight = useMemo(() => getAgeInsight(reports, now), [reports, now]);
   const categoryOptions = useMemo(
@@ -489,6 +525,20 @@ export default function ReportAgingBoard({
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
     setVisibleCount(INITIAL_VISIBLE_REPORTS);
+  };
+
+  const copyQueueSummary = async () => {
+    const summary = `${openReports.length} matching open issues · ${openReports.filter(
+      (report) => report?.severity === "High",
+    ).length} high severity · ${openReports.filter(
+      (report) => getAgeInDays(report, now) >= 8,
+    ).length} aging 8+ days`;
+    try {
+      await navigator.clipboard.writeText(summary);
+      setQueueFeedback("Queue summary copied.");
+    } catch {
+      setQueueFeedback("Could not copy the queue summary in this browser.");
+    }
   };
 
   return (
@@ -606,6 +656,24 @@ export default function ReportAgingBoard({
               </p>
             </div>
             <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+              <button
+                type="button"
+                onClick={copyQueueSummary}
+                disabled={!openReports.length}
+                className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Copy size={12} aria-hidden="true" />
+                Copy summary
+              </button>
+              <button
+                type="button"
+                onClick={() => exportAgingQueue(openReports, now)}
+                disabled={!openReports.length}
+                className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Download size={12} aria-hidden="true" />
+                Export CSV
+              </button>
               <label className="relative min-w-[180px] flex-1 sm:flex-none">
                 <span className="sr-only">Search open issues</span>
                 <Search
@@ -679,6 +747,11 @@ export default function ReportAgingBoard({
                 ))}
               </select>
             </div>
+            {queueFeedback && (
+              <p role="status" className="mt-2 text-[10px] font-medium text-emerald-700">
+                {queueFeedback}
+              </p>
+            )}
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
