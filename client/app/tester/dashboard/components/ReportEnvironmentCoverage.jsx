@@ -452,7 +452,7 @@ function SelectControl({ label, value, options, onChange }) {
   );
 }
 
-function MetricCard({ label, value, detail, icon: Icon, tone }) {
+function MetricCard({ label, value, detail, icon: Icon, tone, onDetailClick }) {
   const tones = {
     violet: "bg-violet-50 text-violet-700",
     sky: "bg-sky-50 text-sky-700",
@@ -472,7 +472,17 @@ function MetricCard({ label, value, detail, icon: Icon, tone }) {
       <p className="mt-2 text-xl font-bold tabular-nums text-slate-900">
         {formatNumber(value)}
       </p>
-      <p className="mt-1 text-[8px] text-slate-400">{detail}</p>
+      {onDetailClick ? (
+        <button
+          type="button"
+          onClick={onDetailClick}
+          className="mt-1 text-left text-[8px] text-slate-500 underline decoration-slate-300 underline-offset-2 transition hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+        >
+          {detail}
+        </button>
+      ) : (
+        <p className="mt-1 text-[8px] text-slate-400">{detail}</p>
+      )}
     </article>
   );
 }
@@ -956,16 +966,30 @@ export default function ReportEnvironmentCoverage({
           <MetricCard
             label="Browser families"
             value={summary.browserFamilies.size}
-            detail={`${formatNumber(summary.missingBrowser)} unknown or unavailable`}
+            detail={`Focus ${formatNumber(summary.missingBrowser)} unknown or unavailable`}
             icon={Globe2}
             tone="violet"
+            onDetailClick={summary.missingBrowser
+              ? () => {
+                resetFilters();
+                setDimensionAndReset("browser");
+                setDimensionValue("Unknown browser");
+              }
+              : undefined}
           />
           <MetricCard
             label="Platforms"
             value={summary.platforms.size}
-            detail={`${formatNumber(summary.missingPlatform)} unknown or unavailable`}
+            detail={`Focus ${formatNumber(summary.missingPlatform)} unknown or unavailable`}
             icon={Monitor}
             tone="emerald"
+            onDetailClick={summary.missingPlatform
+              ? () => {
+                resetFilters();
+                setDimensionAndReset("platform");
+                setDimensionValue("Unknown platform");
+              }
+              : undefined}
           />
           <MetricCard
             label="Tagged open reports"
