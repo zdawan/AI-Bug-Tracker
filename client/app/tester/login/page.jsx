@@ -12,10 +12,13 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OtpForm from "./OtpForm";
 import { Mail } from "lucide-react";
-
-const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-).replace(/\/$/, "");
+import {
+  API_ENDPOINTS,
+  getApiErrorMessage,
+  normalizeEmail,
+  postJson,
+  saveTesterSession,
+} from "../../lib/apiClient";
 const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function TesterLoginPage() {
@@ -64,21 +67,9 @@ export default function TesterLoginPage() {
     setIsSending(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/testers/send-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ email: normalizedEmail }),
+      const data = await postJson(API_ENDPOINTS.testers.sendOtp, {
+        email: normalizedEmail,
       });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Could not send a verification code. Please try again.",
-        );
-      }
 
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
       toast.success(
@@ -86,10 +77,10 @@ export default function TesterLoginPage() {
       );
       return true;
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Could not send a verification code. Please try again.";
+      const message = getApiErrorMessage(
+        error,
+        "Could not send a verification code. Please try again.",
+      );
       setAuthError(message);
       toast.error(message);
       return false;
@@ -102,7 +93,7 @@ export default function TesterLoginPage() {
     event.preventDefault();
     if (isSending) return;
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     const validationError = validateEmail(normalizedEmail);
     if (validationError) {
       setEmailError(validationError);
@@ -133,40 +124,25 @@ export default function TesterLoginPage() {
     setAuthError("");
 
     try {
-      const response = await fetch(`${API_URL}/api/testers/verify-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          otp: enteredOtp.trim(),
-        }),
+      const data = await postJson(API_ENDPOINTS.testers.verifyOtp, {
+        email: normalizeEmail(email),
+        otp: enteredOtp.trim(),
       });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Invalid or expired verification code.",
-        );
-      }
 
       if (!data.token) {
         throw new Error("The server did not return an authentication token.");
       }
 
-      sessionStorage.setItem("testerToken", data.token);
-      sessionStorage.setItem("testerEmail", email.trim().toLowerCase());
+      saveTesterSession({ token: data.token, email });
 
       toast.success("Email verified successfully.");
 
       router.push("/tester/url");
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Verification failed. Please try again.";
+      const message = getApiErrorMessage(
+        error,
+        "Verification failed. Please try again.",
+      );
       setAuthError(message);
       toast.error(message);
     } finally {
@@ -176,7 +152,7 @@ export default function TesterLoginPage() {
 
   const resendOtp = async () => {
     if (isSending || resendCooldown > 0) return false;
-    return requestOtp(email.trim().toLowerCase());
+    return requestOtp(normalizeEmail(email));
   };
 
   const changeEmail = () => {
