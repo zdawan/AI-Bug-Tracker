@@ -15,6 +15,7 @@ import ReportBriefBuilder from "./components/ReportBriefBuilder";
 import ReportEnvironmentCoverage from "./components/ReportEnvironmentCoverage";
 import ReportVerificationWorkspace from "./components/ReportVerificationWorkspace";
 import ReportActionQueue from "./components/ReportActionQueue";
+import ReportEvidenceReadiness from "./components/ReportEvidenceReadiness";
 import ReportWorkloadPlanner from "./components/ReportWorkloadPlanner";
 import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate";
 import ReportInvestigationWorkspace from "./components/ReportInvestigationWorkspace";
@@ -2360,6 +2361,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <ReportActionQueue
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <ReportEvidenceReadiness
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
