@@ -112,6 +112,12 @@ const REVIEW_FILTERS = [
   { value: "ready", label: "Ready to sign off" },
   { value: "signed", label: "Signed off" },
 ];
+const DUE_FILTERS = [
+  { value: "all", label: "Any due date" },
+  { value: "overdue", label: "Overdue" },
+  { value: "upcoming", label: "Due in 7 days" },
+  { value: "none", label: "No due date" },
+];
 
 function getText(value, fallback = "", limit = 3000) {
   if (typeof value !== "string") return fallback;
@@ -323,6 +329,18 @@ function formatRelativeDate(value) {
   if (days === 1) return "Updated yesterday";
   if (days < 30) return `Updated ${days} days ago`;
   return `Updated ${formatDate(value)}`;
+}
+
+function getDueBucket(review, today = new Date()) {
+  if (!review.dueDate) return "none";
+  const due = new Date(`${review.dueDate}T00:00:00`);
+  if (!Number.isFinite(due.getTime())) return "none";
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  if (due < start) return "overdue";
+  if (due <= end) return "upcoming";
+  return "later";
 }
 
 function toCsvCell(value) {
@@ -672,6 +690,7 @@ export default function ReportReviewWorkspace({
   const [reviewerName, setReviewerName] = useState("");
   const [search, setSearch] = useState("");
   const [reviewFilter, setReviewFilter] = useState("all");
+  const [dueFilter, setDueFilter] = useState("all");
   const [sortMode, setSortMode] = useState("updated");
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [newCheckLabel, setNewCheckLabel] = useState("");
@@ -741,6 +760,12 @@ export default function ReportReviewWorkspace({
       .filter((review) => {
         const state = getReviewState(review);
         if (reviewFilter !== "all" && state !== reviewFilter) return false;
+        if (
+          dueFilter !== "all" &&
+          getDueBucket(review) !== dueFilter
+        ) {
+          return false;
+        }
         if (!needle) return true;
         return [
           review.reportTitle,
@@ -767,7 +792,7 @@ export default function ReportReviewWorkspace({
           new Date(left.updatedAt || 0).getTime()
         );
       });
-  }, [reviewFilter, reviewRecords, search, sortMode]);
+  }, [dueFilter, reviewFilter, reviewRecords, search, sortMode]);
 
   const reviewMetrics = useMemo(() => {
     const counts = {
@@ -776,9 +801,11 @@ export default function ReportReviewWorkspace({
       blocked: 0,
       ready: 0,
       signed: 0,
+      overdue: 0,
     };
     reviewRecords.forEach((review) => {
       counts[getReviewState(review)] += 1;
+      if (getDueBucket(review) === "overdue") counts.overdue += 1;
     });
     return counts;
   }, [reviewRecords]);
@@ -1110,9 +1137,11 @@ export default function ReportReviewWorkspace({
       blocked: 0,
       ready: 0,
       signed: 0,
+      overdue: 0,
     };
     reviewRecords.forEach((review) => {
       counts[getReviewState(review)] += 1;
+      if (getDueBucket(review) === "overdue") counts.overdue += 1;
     });
     return counts;
   }, [reviewRecords]);
@@ -1147,7 +1176,7 @@ export default function ReportReviewWorkspace({
       </header>
 
       <div className="space-y-4 p-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <ReviewMetric label="Total reviews" value={reviewMetrics.total} />
           <ReviewMetric
             label="In progress"
@@ -1168,6 +1197,11 @@ export default function ReportReviewWorkspace({
             label="Signed off"
             value={reviewMetrics.signed}
             tone="emerald"
+          />
+          <ReviewMetric
+            label="Overdue"
+            value={reviewMetrics.overdue}
+            tone="amber"
           />
         </div>
 
@@ -1302,7 +1336,7 @@ export default function ReportReviewWorkspace({
                   className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-2.5 text-[10px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
                 />
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <label className="relative block">
                   <span className="sr-only">Filter reviews by state</span>
                   <Filter
@@ -1344,6 +1378,34 @@ export default function ReportReviewWorkspace({
                     <option value="updated">Recently updated</option>
                     <option value="title">Report title A–Z</option>
                     <option value="state">Review state</option>
+                  </select>
+                  <ChevronDown
+                    size={11}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                </label>
+                <label className="relative block">
+                  <span className="sr-only">Filter reviews by due date</span>
+                  <CalendarDays
+                    size={12}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <select
+                    aria-label="Filter reviews by due date"
+                    value={dueFilter}
+                    onChange={(event) => setDueFilter(event.target.value)}
+                    className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-7 pr-6 text-[9px] text-slate-600 outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
+                  >
+                    {DUE_FILTERS.map((filter) => (
+                      <option key={filter.value} value={filter.value}>
+                        {filter.label}
+                        {filter.value === "overdue"
+                          ? ` (${filterCounts.overdue})`
+                          : ""}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown
                     size={11}
