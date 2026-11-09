@@ -15,6 +15,12 @@ import {
 const STORAGE_PREFIX = "tester-duplicate-review-v1";
 const MAX_CANDIDATES = 5000;
 const MAX_TOKEN_FREQUENCY = 30;
+const SIMILARITY_OPTIONS = [
+  { value: 0.25, label: "Broader · 25%" },
+  { value: 0.35, label: "Balanced · 35%" },
+  { value: 0.5, label: "Closer · 50%" },
+  { value: 0.65, label: "Strong · 65%" },
+];
 const REVIEW_STATES = ["possible-duplicate", "not-duplicate", "later"];
 const REVIEW_FILTERS = [
   { value: "all", label: "All candidates" },
@@ -103,7 +109,7 @@ function getPairKey(left, right) {
   return [left.id, right.id].sort().map(encodeURIComponent).join("::");
 }
 
-function buildDuplicateCandidates(reports) {
+function buildDuplicateCandidates(reports, minimumScore) {
   const records = reports.map((report, index) => {
     const safeReport =
       report && typeof report === "object" && !Array.isArray(report)
@@ -198,7 +204,7 @@ function buildDuplicateCandidates(reports) {
         sameCategory,
       };
     })
-    .filter((candidate) => candidate.score >= 0.35)
+    .filter((candidate) => candidate.score >= minimumScore)
     .sort(
       (left, right) =>
         right.score - left.score ||
@@ -434,13 +440,14 @@ export default function DuplicateReviewWorkspace({ bugs = [], email, onOpenRepor
   const [exportError, setExportError] = useState("");
   const [activeFilter, setActiveFilter] = useState("unreviewed");
   const [query, setQuery] = useState("");
+  const [minimumScore, setMinimumScore] = useState(0.35);
   const [expanded, setExpanded] = useState(false);
   const normalizedEmail = getText(email, 320).toLowerCase();
   const storageKey = normalizedEmail ? getStorageKey(normalizedEmail) : "";
 
   const candidateAnalysis = useMemo(
-    () => buildDuplicateCandidates(bugs),
-    [bugs],
+    () => buildDuplicateCandidates(bugs, minimumScore),
+    [bugs, minimumScore],
   );
   const candidates = candidateAnalysis.items;
 
@@ -668,6 +675,19 @@ export default function DuplicateReviewWorkspace({ bugs = [], email, onOpenRepor
                   className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                 />
               </label>
+              <label className="sr-only" htmlFor="duplicate-similarity-threshold">
+                Minimum duplicate similarity
+              </label>
+              <select
+                id="duplicate-similarity-threshold"
+                value={minimumScore}
+                onChange={(event) => setMinimumScore(Number(event.target.value))}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-slate-600 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              >
+                {SIMILARITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={handleExport}
@@ -681,7 +701,7 @@ export default function DuplicateReviewWorkspace({ bugs = [], email, onOpenRepor
           </div>
           <p className="mt-2 text-[10px] text-slate-500">
             Showing {displayedCandidates.length} of {visibleCandidates.length}{" "}
-            matches. Pair scores are heuristic, not definitive.
+            matches at a {Math.round(minimumScore * 100)}% minimum similarity. Pair scores are heuristic, not definitive.
           </p>
           {exportError && (
             <p role="alert" className="mt-2 text-xs text-rose-700">
