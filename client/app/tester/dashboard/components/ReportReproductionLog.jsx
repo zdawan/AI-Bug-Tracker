@@ -438,6 +438,7 @@ export default function ReportReproductionLog({ reports = [], email, onOpenRepor
   const [message, setMessage] = useState("");
   const [query, setQuery] = useState("");
   const [outcomeFilter, setOutcomeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState("");
   const [form, setForm] = useState(createEmptyForm);
@@ -453,11 +454,31 @@ export default function ReportReproductionLog({ reports = [], email, onOpenRepor
     });
     return map;
   }, [reports]);
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all", label: "All categories" },
+      ...[
+        ...new Set(
+          reports.map((report) => getText(report?.category, 120) || "Uncategorized"),
+        ),
+      ]
+        .sort((left, right) => left.localeCompare(right))
+        .map((value) => ({ value, label: value })),
+    ],
+    [reports],
+  );
 
   const filteredAttempts = useMemo(() => {
     const search = getText(query, 200).toLowerCase();
     return [...state.attempts]
       .filter((attempt) => outcomeFilter === "all" || attempt.outcome === outcomeFilter)
+      .filter((attempt) => {
+        if (categoryFilter === "all") return true;
+        const report = reportById.get(attempt.reportId);
+        return (
+          getText(report?.category, 120) || "Uncategorized"
+        ) === categoryFilter;
+      })
       .filter((attempt) => !search || [
         attempt.title,
         attempt.reportTitle,
@@ -471,7 +492,7 @@ export default function ReportReproductionLog({ reports = [], email, onOpenRepor
         attempt.notes,
       ].some((value) => value.toLowerCase().includes(search)))
       .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
-  }, [state.attempts, query, outcomeFilter]);
+  }, [categoryFilter, query, outcomeFilter, reportById, state.attempts]);
 
   const outcomeCounts = useMemo(
     () => OUTCOMES.reduce((counts, outcome) => ({
@@ -706,6 +727,7 @@ export default function ReportReproductionLog({ reports = [], email, onOpenRepor
       ["Generated", new Date().toLocaleString("en-IN")],
       ["Tester account", loadedEmail],
       ["Outcome filter", outcomeFilter],
+      ["Category filter", categoryFilter],
       ["Search", query || "None"],
       ["Exported attempts", filteredAttempts.length],
       [],
@@ -722,7 +744,7 @@ export default function ReportReproductionLog({ reports = [], email, onOpenRepor
       exportedAt: new Date().toISOString(),
       account: loadedEmail,
       scope: "Browser-local reproduction observations. This export does not modify server reports.",
-      filters: { query, outcome: outcomeFilter },
+      filters: { query, outcome: outcomeFilter, category: categoryFilter },
       attempts: filteredAttempts,
       activity: state.activity,
     };
@@ -835,8 +857,14 @@ export default function ReportReproductionLog({ reports = [], email, onOpenRepor
               <option key={outcome.id} value={outcome.id}>{outcome.label} ({outcomeCounts[outcome.id] || 0})</option>
             ))}
           </select>
-          {(query || outcomeFilter !== "all") ? (
-            <button type="button" onClick={() => { setQuery(""); setOutcomeFilter("all"); }} className="inline-flex h-9 items-center gap-1 rounded-lg px-2 text-[10px] font-semibold text-slate-500 hover:bg-white hover:text-sky-700">
+          <label className="sr-only" htmlFor="reproduction-category-filter">Filter attempts by category</label>
+          <select id="reproduction-category-filter" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-medium text-slate-600">
+            {categoryOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          {(query || outcomeFilter !== "all" || categoryFilter !== "all") ? (
+            <button type="button" onClick={() => { setQuery(""); setOutcomeFilter("all"); setCategoryFilter("all"); }} className="inline-flex h-9 items-center gap-1 rounded-lg px-2 text-[10px] font-semibold text-slate-500 hover:bg-white hover:text-sky-700">
               <FilterX className="h-3.5 w-3.5" aria-hidden="true" /> Reset
             </button>
           ) : null}
