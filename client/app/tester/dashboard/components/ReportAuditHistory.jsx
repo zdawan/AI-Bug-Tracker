@@ -15,6 +15,7 @@ import {
   Info,
   RotateCcw,
   Save,
+  Search,
   ShieldAlert,
   Trash2,
   TrendingDown,
@@ -24,6 +25,12 @@ import { createReportAuditSnapshot } from "./ReportDataIntegrityAudit";
 
 const STORAGE_PREFIX = "tester-report-audit-history-v1";
 const MAX_SNAPSHOTS = 20;
+const HISTORY_LEVELS = [
+  { value: "all", label: "All finding levels" },
+  { value: "error", label: "Errors" },
+  { value: "warning", label: "Warnings" },
+  { value: "info", label: "Info" },
+];
 
 function getText(value, limit = 320) {
   return typeof value === "string" ? value.trim().slice(0, limit) : "";
@@ -472,6 +479,32 @@ function compareCaptureTime(left, right) {
   return Date.parse(right.capturedAt) - Date.parse(left.capturedAt);
 }
 
+function snapshotMatches(snapshot, levelFilter, query) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (
+    levelFilter !== "all" &&
+    !snapshot.records.some((record) =>
+      record.issues.some((issue) => issue.level === levelFilter),
+    )
+  ) {
+    return false;
+  }
+  if (!normalizedQuery) return true;
+  return [
+    snapshot.id,
+    snapshot.capturedAt,
+    ...snapshot.records.flatMap((record) => [
+      record.key,
+      record.id,
+      ...record.issues.map((issue) => issue.code),
+    ]),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase()
+    .includes(normalizedQuery);
+}
+
 export default function ReportAuditHistory({ reports = [], email }) {
   const [snapshots, setSnapshots] = useState([]);
   const [loadedEmail, setLoadedEmail] = useState("");
@@ -481,6 +514,8 @@ export default function ReportAuditHistory({ reports = [], email }) {
   const [notice, setNotice] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const [sortDirection, setSortDirection] = useState("desc");
+  const [historyLevelFilter, setHistoryLevelFilter] = useState("all");
+  const [historySearch, setHistorySearch] = useState("");
   const normalizedEmail = getText(email, 320).toLowerCase();
   const storageKey = normalizedEmail ? getStorageKey(normalizedEmail) : "";
   const currentSnapshot = useMemo(
@@ -536,13 +571,20 @@ export default function ReportAuditHistory({ reports = [], email }) {
   const comparison = baseline
     ? compareSnapshots(currentSnapshot, baseline)
     : null;
+  const filteredSnapshots = useMemo(
+    () =>
+      snapshots.filter((snapshot) =>
+        snapshotMatches(snapshot, historyLevelFilter, historySearch),
+      ),
+    [historyLevelFilter, historySearch, snapshots],
+  );
   const recentTrend = useMemo(() => {
-    const ordered = [...snapshots].sort(compareCaptureTime);
+    const ordered = [...filteredSnapshots].sort(compareCaptureTime);
     return (sortDirection === "desc" ? ordered : [...ordered].reverse()).slice(
       0,
       8,
     );
-  }, [snapshots, sortDirection]);
+  }, [filteredSnapshots, sortDirection]);
   const newestSnapshot = snapshots[0];
   const currentHasFindings = currentSnapshot.findings > 0;
   const hasSavedBaseline = snapshots.length > 0;
@@ -694,6 +736,60 @@ export default function ReportAuditHistory({ reports = [], email }) {
             {notice}
           </p>
         )}
+
+        <div className="flex flex-col gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2.5 sm:flex-row sm:items-center">
+          <span className="inline-flex items-center gap-1.5 px-1 text-[10px] font-semibold text-slate-500">
+            <Search size={12} aria-hidden="true" />
+            Find snapshots
+          </span>
+          <label className="relative min-w-0 flex-1 sm:max-w-xs">
+            <span className="sr-only">Search snapshot IDs and finding codes</span>
+            <input
+              type="search"
+              value={historySearch}
+              onChange={(event) => setHistorySearch(event.target.value)}
+              placeholder="Search IDs or finding codes"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-[10px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+            />
+          </label>
+          <label className="relative inline-flex items-center">
+            <span className="sr-only">Filter snapshots by finding level</span>
+            <select
+              aria-label="Filter snapshots by finding level"
+              value={historyLevelFilter}
+              onChange={(event) => setHistoryLevelFilter(event.target.value)}
+              className="h-9 appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-8 text-[10px] font-semibold text-slate-600 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+            >
+              {HISTORY_LEVELS.map((level) => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={11}
+              aria-hidden="true"
+              className="pointer-events-none absolute right-2.5 text-slate-400"
+            />
+          </label>
+          {(historySearch || historyLevelFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setHistorySearch("");
+                setHistoryLevelFilter("all");
+              }}
+              className="inline-flex h-9 items-center justify-center gap-1 rounded-lg px-2 text-[9px] font-semibold text-slate-500 hover:bg-white hover:text-violet-700"
+            >
+              <RotateCcw size={11} aria-hidden="true" />
+              Reset
+            </button>
+          )}
+          <span className="text-[9px] text-slate-400">
+            {formatNumber(filteredSnapshots.length)} of{" "}
+            {formatNumber(snapshots.length)} snapshots
+          </span>
+        </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric
@@ -897,7 +993,7 @@ export default function ReportAuditHistory({ reports = [], email }) {
               </span>
             </div>
             <SnapshotTimeline
-              snapshots={snapshots}
+              snapshots={filteredSnapshots}
               selectedId={baselineId}
               onSelect={setBaselineId}
             />
