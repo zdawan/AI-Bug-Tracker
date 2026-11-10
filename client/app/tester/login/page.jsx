@@ -271,6 +271,8 @@ export default function TesterLoginPage() {
                   enterKeyHint="send"
                   autoComplete="email"
                   autoFocus
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   spellCheck={false}
                   minLength={3}
                   maxLength={254}
