@@ -1,8 +1,11 @@
 "use client";
 
 import { CheckCircle2, Clock3, Loader2, MailCheck, ShieldAlert } from "lucide-react";
+import { getTesterLoginViewState } from "./testerLoginViewState";
 
 function getStatusContent({ step, isSending, isVerifying, resendCooldown, error }) {
+  const viewState = getTesterLoginViewState({ step, isSending, isVerifying, resendCooldown, error });
+
   if (error) {
     return {
       tone: "border-rose-100 bg-rose-50 text-rose-800",
@@ -32,7 +35,7 @@ function getStatusContent({ step, isSending, isVerifying, resendCooldown, error 
     };
   }
 
-  if (step === "otp" && resendCooldown > 0) {
+  if (viewState.phase === "cooldown") {
     return {
       tone: "border-amber-100 bg-amber-50 text-amber-800",
       icon: Clock3,
@@ -41,7 +44,7 @@ function getStatusContent({ step, isSending, isVerifying, resendCooldown, error 
     };
   }
 
-  if (step === "otp") {
+  if (viewState.step === "otp") {
     return {
       tone: "border-emerald-100 bg-emerald-50 text-emerald-800",
       icon: MailCheck,
