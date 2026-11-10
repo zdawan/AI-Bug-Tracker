@@ -11,6 +11,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OtpForm from "./OtpForm";
+import TesterLoginReadinessPanel from "./TesterLoginReadinessPanel";
 import { Mail } from "lucide-react";
 import {
   API_ENDPOINTS,
@@ -346,6 +347,8 @@ export default function TesterLoginPage() {
                 </p>
               )}
             </form>
+
+            <TesterLoginReadinessPanel />
 
             <div className="mt-7 flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
               <ShieldCheck
