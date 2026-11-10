@@ -250,6 +250,7 @@ export default function TesterLoginPage() {
             </header>
 
             <form
+              aria-label="Tester email sign-in"
               onSubmit={sendOtp}
               noValidate
               aria-busy={isSending}
