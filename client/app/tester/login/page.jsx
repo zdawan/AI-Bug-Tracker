@@ -43,7 +43,8 @@ export default function TesterLoginPage() {
       requestedPath &&
       requestedPath.startsWith("/") &&
       !requestedPath.startsWith("//") &&
-      !requestedPath.includes("/tester/login")
+      !requestedPath.includes("/tester/login") &&
+      (requestedPath === "/tester" || requestedPath.startsWith("/tester/"))
     ) {
       setReturnTo(requestedPath);
     }
