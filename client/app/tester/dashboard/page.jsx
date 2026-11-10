@@ -26,6 +26,7 @@ import TesterLaunchChecklistWorkspace from "./components/TesterLaunchChecklistWo
 import TesterPostLaunchMonitorWorkspace from "./components/TesterPostLaunchMonitorWorkspace";
 import TesterHandoffNotesWorkspace from "./components/TesterHandoffNotesWorkspace";
 import TesterDecisionJournalWorkspace from "./components/TesterDecisionJournalWorkspace";
+import TesterIncidentTimelineWorkspace from "./components/TesterIncidentTimelineWorkspace";
 import ReportWorkloadPlanner from "./components/ReportWorkloadPlanner";
 import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate";
 import ReportInvestigationWorkspace from "./components/ReportInvestigationWorkspace";
@@ -2426,6 +2427,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <TesterDecisionJournalWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <TesterIncidentTimelineWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
