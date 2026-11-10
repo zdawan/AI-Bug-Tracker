@@ -273,6 +273,7 @@ export default function TesterLoginPage() {
                   spellCheck={false}
                   minLength={3}
                   maxLength={254}
+                  required
                   placeholder="you@example.com"
                   value={email}
                   aria-invalid={Boolean(emailError)}
