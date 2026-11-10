@@ -221,7 +221,8 @@ export default function TesterLoginPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="mb-6 inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+              disabled={isSending}
+              className="mb-6 inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Go back to previous page"
             >
               <ArrowLeft size={18} />
