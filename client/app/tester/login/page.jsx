@@ -231,7 +231,12 @@ export default function TesterLoginPage() {
               </p>
             </header>
 
-            <form onSubmit={sendOtp} noValidate className="space-y-5">
+            <form
+              onSubmit={sendOtp}
+              noValidate
+              aria-busy={isSending}
+              className="space-y-5"
+            >
               <div className="space-y-2">
                 <label
                   htmlFor="tester-email"
@@ -243,11 +248,15 @@ export default function TesterLoginPage() {
                 <input
                   id="tester-email"
                   type="email"
+                  inputMode="email"
+                  enterKeyHint="send"
                   autoComplete="email"
                   autoFocus
+                  spellCheck={false}
                   placeholder="you@example.com"
                   value={email}
                   aria-invalid={Boolean(emailError)}
+                  aria-errormessage={emailError ? "tester-email-error" : undefined}
                   aria-describedby={
                     emailError ? "tester-email-error" : "tester-email-hint"
                   }
