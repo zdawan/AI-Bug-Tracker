@@ -396,6 +396,7 @@ export default function TesterLoginPage() {
       <ToastContainer
         position="top-right"
         autoClose={3000}
+        limit={3}
         newestOnTop
         pauseOnFocusLoss
         theme="light"
