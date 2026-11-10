@@ -17,12 +17,13 @@ import {
   getApiErrorMessage,
   normalizeEmail,
   postJson,
-  saveTesterSession,
 } from "../../lib/apiClient";
+import { useTesterAuth } from "../../lib/TesterAuthProvider";
 const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function TesterLoginPage() {
   const router = useRouter();
+  const { setSession } = useTesterAuth();
 
   const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
@@ -133,7 +134,15 @@ export default function TesterLoginPage() {
         throw new Error("The server did not return an authentication token.");
       }
 
-      saveTesterSession({ token: data.token, email });
+      const sessionResult = setSession({
+        token: data.token,
+        email,
+        data,
+      });
+
+      if (!sessionResult.ok) {
+        throw sessionResult.error;
+      }
 
       toast.success("Email verified successfully.");
 
