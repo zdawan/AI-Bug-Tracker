@@ -4,6 +4,11 @@ import { Delete, Eraser, Keyboard } from "lucide-react";
 
 export default function TesterLoginEmailActions({ value = "", disabled = false, onClear }) {
   const canClear = Boolean(value) && !disabled;
+  const actionDescription = disabled
+    ? "Email actions are unavailable while the request is running."
+    : value
+      ? "Clear the current email and enter a different address."
+      : "Enter an email address to enable quick clearing.";
 
   const handleClear = () => {
     if (!canClear) return;
@@ -18,7 +23,10 @@ export default function TesterLoginEmailActions({ value = "", disabled = false, 
   };
 
   return (
-    <div className="flex min-h-8 items-center justify-between gap-3">
+    <div
+      className="flex min-h-8 items-center justify-between gap-3"
+      aria-describedby="tester-email-action-help"
+    >
       <p className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
         <Keyboard size={13} aria-hidden="true" />
         Press <kbd className="rounded border border-slate-300 bg-white px-1 py-0.5 font-semibold text-slate-600">Esc</kbd> to clear
@@ -41,6 +49,9 @@ export default function TesterLoginEmailActions({ value = "", disabled = false, 
           Optional field action
         </span>
       )}
+      <span id="tester-email-action-help" className="sr-only">
+        {actionDescription}
+      </span>
     </div>
   );
 }
