@@ -256,6 +256,7 @@ export default function TesterLoginPage() {
                   placeholder="you@example.com"
                   value={email}
                   aria-invalid={Boolean(emailError)}
+                  aria-keyshortcuts="Escape"
                   aria-errormessage={emailError ? "tester-email-error" : undefined}
                   aria-describedby={
                     emailError ? "tester-email-error" : "tester-email-hint"
