@@ -286,6 +286,7 @@ export default function TesterLoginPage() {
                   aria-describedby={
                     emailError ? "tester-email-error" : "tester-email-hint"
                   }
+                  onFocus={() => setAuthError("")}
                   onChange={(event) => {
                     setEmail(event.target.value);
                     setAuthError("");
