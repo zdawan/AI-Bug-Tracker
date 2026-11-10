@@ -271,6 +271,8 @@ export default function TesterLoginPage() {
                   autoComplete="email"
                   autoFocus
                   spellCheck={false}
+                  minLength={3}
+                  maxLength={254}
                   placeholder="you@example.com"
                   value={email}
                   aria-invalid={Boolean(emailError)}
