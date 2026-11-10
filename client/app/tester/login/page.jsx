@@ -17,6 +17,7 @@ import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
 import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
 import TesterLoginDestinationNotice from "./TesterLoginDestinationNotice";
 import TesterLoginEmailGuidance from "./TesterLoginEmailGuidance";
+import TesterLoginFormMeta from "./TesterLoginFormMeta";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -350,6 +351,7 @@ export default function TesterLoginPage() {
               resendCooldown={resendCooldown}
               error={authError}
             />
+            <TesterLoginFormMeta />
             <TesterLoginTrustSummary />
             <TesterLoginDestinationNotice destination={returnTo} />
 
