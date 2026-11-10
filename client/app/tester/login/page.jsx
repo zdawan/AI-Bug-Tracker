@@ -397,6 +397,7 @@ export default function TesterLoginPage() {
         position="top-right"
         autoClose={3000}
         limit={3}
+        preventDuplicate
         newestOnTop
         pauseOnFocusLoss
         theme="light"
