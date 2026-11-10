@@ -13,6 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 import OtpForm from "./OtpForm";
 import TesterLoginReadinessPanel from "./TesterLoginReadinessPanel";
 import TesterLoginWorkflowPreview from "./TesterLoginWorkflowPreview";
+import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
 import { Mail } from "lucide-react";
 import {
   API_ENDPOINTS,
@@ -354,6 +355,14 @@ export default function TesterLoginPage() {
                 </p>
               )}
             </form>
+
+            <TesterLoginStatusNotice
+              step={step}
+              isSending={isSending}
+              isVerifying={isVerifying}
+              resendCooldown={resendCooldown}
+              error={authError}
+            />
 
             <TesterLoginReadinessPanel />
             <TesterLoginWorkflowPreview
