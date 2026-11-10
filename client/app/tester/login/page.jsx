@@ -275,6 +275,7 @@ export default function TesterLoginPage() {
                   minLength={3}
                   maxLength={254}
                   required
+                  disabled={isSending}
                   placeholder="you@example.com"
                   value={email}
                   aria-invalid={Boolean(emailError)}
@@ -301,7 +302,7 @@ export default function TesterLoginPage() {
                     setEmailError("");
                     setAuthError("");
                   }}
-                  className="h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
+                  className="h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 disabled:cursor-wait disabled:bg-slate-50 disabled:opacity-70"
                 />
                 {emailError ? (
                   <p
