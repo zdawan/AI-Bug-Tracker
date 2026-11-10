@@ -195,7 +195,10 @@ export default function TesterLoginPage() {
         className="pointer-events-none absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-blue-200/40 blur-3xl"
       />
 
-      <section className="relative z-10 w-full max-w-[480px] rounded-[28px] border border-white/80 bg-white/90 px-6 py-9 shadow-[0_28px_70px_-28px_rgba(38,25,55,0.30)] backdrop-blur-xl sm:px-10 sm:py-11">
+      <section
+        aria-labelledby="tester-login-title"
+        className="relative z-10 w-full max-w-[480px] rounded-[28px] border border-white/80 bg-white/90 px-6 py-9 shadow-[0_28px_70px_-28px_rgba(38,25,55,0.30)] backdrop-blur-xl sm:px-10 sm:py-11"
+      >
         {step === "email" ? (
           <>
             <button
@@ -213,7 +216,10 @@ export default function TesterLoginPage() {
               </div>
             </div>
             <header className="mb-8 text-center">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              <h1
+                id="tester-login-title"
+                className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl"
+              >
                 Tester{" "}
                 <span className="font-normal italic [font-family:Georgia,serif]">
                   login
@@ -275,6 +281,7 @@ export default function TesterLoginPage() {
               <button
                 type="submit"
                 disabled={isSending}
+                aria-busy={isSending}
                 className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 disabled:cursor-wait disabled:opacity-60"
               >
                 {isSending ? "Sending code..." : "Send verification code"}
@@ -316,7 +323,13 @@ export default function TesterLoginPage() {
         </footer>
       </section>
 
-      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        newestOnTop
+        pauseOnFocusLoss
+        theme="light"
+      />
     </main>
   );
 }
