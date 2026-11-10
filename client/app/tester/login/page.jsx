@@ -235,6 +235,7 @@ export default function TesterLoginPage() {
               onSubmit={sendOtp}
               noValidate
               aria-busy={isSending}
+              aria-describedby={authError ? "tester-auth-error" : undefined}
               className="space-y-5"
             >
               <div className="space-y-2">
@@ -305,7 +306,11 @@ export default function TesterLoginPage() {
                 {!isSending && <ArrowRight size={19} aria-hidden="true" />}
               </button>
               {authError && (
-                <p role="alert" className="text-center text-sm text-rose-700">
+                <p
+                  id="tester-auth-error"
+                  role="alert"
+                  className="text-center text-sm text-rose-700"
+                >
                   {authError}
                 </p>
               )}
