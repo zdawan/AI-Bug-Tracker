@@ -217,6 +217,7 @@ export default function TesterLoginPage() {
       <section
         aria-labelledby="tester-login-title"
         aria-label="Tester authentication"
+        aria-describedby="tester-login-subtitle"
         className="relative z-10 w-full max-w-[480px] rounded-[28px] border border-white/80 bg-white/90 px-6 py-9 shadow-[0_28px_70px_-28px_rgba(38,25,55,0.30)] backdrop-blur-xl sm:px-10 sm:py-11"
       >
         {step === "email" ? (
@@ -247,7 +248,10 @@ export default function TesterLoginPage() {
                 </span>
               </h1>
 
-              <p className="mx-auto mt-4 max-w-[340px] text-base leading-7 text-slate-600">
+              <p
+                id="tester-login-subtitle"
+                className="mx-auto mt-4 max-w-[340px] text-base leading-7 text-slate-600"
+              >
                 Sign in with your email to access the tester workspace.
               </p>
             </header>
