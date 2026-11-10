@@ -17,6 +17,10 @@ import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
 import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
 import TesterLoginDestinationNotice from "./TesterLoginDestinationNotice";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
+import {
+  normalizeTesterEmail,
+  validateTesterEmail,
+} from "./testerLoginValidation";
 import { Mail } from "lucide-react";
 import {
   API_ENDPOINTS,
@@ -54,26 +58,6 @@ export default function TesterLoginPage() {
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
-  const validateEmail = (value) => {
-    const normalizedEmail = value.trim();
-
-    if (!normalizedEmail) {
-      return "Please enter your email address.";
-    }
-
-    if (normalizedEmail.length > 254) {
-      return "Email address is too long.";
-    }
-
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailPattern.test(normalizedEmail)) {
-      return "Please enter a valid email address.";
-    }
-
-    return "";
-  };
-
   const requestOtp = async (normalizedEmail) => {
     setAuthError("");
     setIsSending(true);
@@ -105,8 +89,8 @@ export default function TesterLoginPage() {
     event.preventDefault();
     if (isSending) return;
 
-    const normalizedEmail = normalizeEmail(email);
-    const validationError = validateEmail(normalizedEmail);
+    const normalizedEmail = normalizeTesterEmail(email);
+    const validationError = validateTesterEmail(normalizedEmail);
     if (validationError) {
       setEmailError(validationError);
       return;
@@ -293,11 +277,11 @@ export default function TesterLoginPage() {
                     setEmail(event.target.value);
                     setAuthError("");
                     if (emailError) {
-                      setEmailError(validateEmail(event.target.value));
+                      setEmailError(validateTesterEmail(event.target.value));
                     }
                   }}
                   onBlur={() => {
-                    const validationError = validateEmail(email);
+                    const validationError = validateTesterEmail(email);
                     setEmailError(validationError);
                   }}
                   onKeyDown={(event) => {
