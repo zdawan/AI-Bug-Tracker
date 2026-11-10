@@ -32,6 +32,22 @@ export default function TesterLoginPage() {
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [returnTo, setReturnTo] = useState("/tester/url");
+
+  useEffect(() => {
+    const requestedPath = new URLSearchParams(window.location.search).get(
+      "returnTo",
+    );
+
+    if (
+      requestedPath &&
+      requestedPath.startsWith("/") &&
+      !requestedPath.startsWith("//") &&
+      !requestedPath.includes("/tester/login")
+    ) {
+      setReturnTo(requestedPath);
+    }
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -146,7 +162,7 @@ export default function TesterLoginPage() {
 
       toast.success("Email verified successfully.");
 
-      router.push("/tester/url");
+      router.push(returnTo);
     } catch (error) {
       const message = getApiErrorMessage(
         error,
