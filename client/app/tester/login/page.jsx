@@ -266,6 +266,7 @@ export default function TesterLoginPage() {
 
                 <input
                   id="tester-email"
+                  name="email"
                   type="email"
                   inputMode="email"
                   enterKeyHint="send"
