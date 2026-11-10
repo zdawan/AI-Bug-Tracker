@@ -18,6 +18,7 @@ import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
 import TesterLoginDestinationNotice from "./TesterLoginDestinationNotice";
 import TesterLoginEmailGuidance from "./TesterLoginEmailGuidance";
 import TesterLoginFormMeta from "./TesterLoginFormMeta";
+import TesterLoginSessionPrivacy from "./TesterLoginSessionPrivacy";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -352,6 +353,7 @@ export default function TesterLoginPage() {
               error={authError}
             />
             <TesterLoginFormMeta />
+            <TesterLoginSessionPrivacy />
             <TesterLoginTrustSummary />
             <TesterLoginDestinationNotice destination={returnTo} />
 
