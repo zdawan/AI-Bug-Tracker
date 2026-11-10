@@ -17,6 +17,7 @@ import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
 import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
 import TesterLoginDestinationNotice from "./TesterLoginDestinationNotice";
 import TesterLoginEmailGuidance from "./TesterLoginEmailGuidance";
+import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
   normalizeTesterEmail,
@@ -293,6 +294,15 @@ export default function TesterLoginPage() {
                     setAuthError("");
                   }}
                   className="h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 disabled:cursor-wait disabled:bg-slate-50 disabled:opacity-70"
+                />
+                <TesterLoginEmailActions
+                  value={email}
+                  disabled={isSending}
+                  onClear={() => {
+                    setEmail("");
+                    setEmailError("");
+                    setAuthError("");
+                  }}
                 />
                 {emailError ? (
                   <p
