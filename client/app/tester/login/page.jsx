@@ -16,6 +16,7 @@ import TesterLoginWorkflowPreview from "./TesterLoginWorkflowPreview";
 import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
 import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
 import TesterLoginDestinationNotice from "./TesterLoginDestinationNotice";
+import TesterLoginEmailGuidance from "./TesterLoginEmailGuidance";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
   normalizeTesterEmail,
@@ -309,6 +310,7 @@ export default function TesterLoginPage() {
                     We’ll send a one-time verification code to this address.
                   </p>
                 )}
+                <TesterLoginEmailGuidance value={email} touched={Boolean(emailError)} />
               </div>
 
               <button
