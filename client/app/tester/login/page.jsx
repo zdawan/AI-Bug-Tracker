@@ -267,6 +267,13 @@ export default function TesterLoginPage() {
                       setEmailError(validateEmail(event.target.value));
                     }
                   }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Escape" || !email) return;
+                    event.preventDefault();
+                    setEmail("");
+                    setEmailError("");
+                    setAuthError("");
+                  }}
                   className="h-14 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
                 />
                 {emailError ? (
