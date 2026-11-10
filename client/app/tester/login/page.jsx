@@ -14,6 +14,7 @@ import OtpForm from "./OtpForm";
 import TesterLoginReadinessPanel from "./TesterLoginReadinessPanel";
 import TesterLoginWorkflowPreview from "./TesterLoginWorkflowPreview";
 import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
+import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
 import { Mail } from "lucide-react";
 import {
   API_ENDPOINTS,
@@ -363,6 +364,7 @@ export default function TesterLoginPage() {
               resendCooldown={resendCooldown}
               error={authError}
             />
+            <TesterLoginTrustSummary />
 
             <TesterLoginReadinessPanel />
             <TesterLoginWorkflowPreview
