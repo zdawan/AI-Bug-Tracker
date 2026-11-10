@@ -15,6 +15,7 @@ import TesterLoginReadinessPanel from "./TesterLoginReadinessPanel";
 import TesterLoginWorkflowPreview from "./TesterLoginWorkflowPreview";
 import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
 import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
+import TesterLoginDestinationNotice from "./TesterLoginDestinationNotice";
 import { Mail } from "lucide-react";
 import {
   API_ENDPOINTS,
@@ -365,6 +366,7 @@ export default function TesterLoginPage() {
               error={authError}
             />
             <TesterLoginTrustSummary />
+            <TesterLoginDestinationNotice destination={returnTo} />
 
             <TesterLoginReadinessPanel />
             <TesterLoginWorkflowPreview
