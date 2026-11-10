@@ -16,6 +16,7 @@ import TesterLoginWorkflowPreview from "./TesterLoginWorkflowPreview";
 import TesterLoginStatusNotice from "./TesterLoginStatusNotice";
 import TesterLoginTrustSummary from "./TesterLoginTrustSummary";
 import TesterLoginDestinationNotice from "./TesterLoginDestinationNotice";
+import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import { Mail } from "lucide-react";
 import {
   API_ENDPOINTS,
@@ -40,19 +41,7 @@ export default function TesterLoginPage() {
   const [returnTo, setReturnTo] = useState("/tester/url");
 
   useEffect(() => {
-    const requestedPath = new URLSearchParams(window.location.search).get(
-      "returnTo",
-    );
-
-    if (
-      requestedPath &&
-      requestedPath.startsWith("/") &&
-      !requestedPath.startsWith("//") &&
-      !requestedPath.includes("/tester/login") &&
-      (requestedPath === "/tester" || requestedPath.startsWith("/tester/"))
-    ) {
-      setReturnTo(requestedPath);
-    }
+    setReturnTo(getTesterReturnToFromLocation(window.location));
   }, []);
 
   useEffect(() => {
