@@ -269,6 +269,10 @@ export default function TesterLoginPage() {
                       setEmailError(validateEmail(event.target.value));
                     }
                   }}
+                  onBlur={() => {
+                    const validationError = validateEmail(email);
+                    setEmailError(validationError);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key !== "Escape" || !email) return;
                     event.preventDefault();
