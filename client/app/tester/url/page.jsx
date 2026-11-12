@@ -12,6 +12,7 @@ import TesterUrlInputBehaviorNote from "./TesterUrlInputBehaviorNote";
 import TesterUrlLiveStatus from "./TesterUrlLiveStatus";
 import TesterUrlPrivacyDisclosure from "./TesterUrlPrivacyDisclosure";
 import TesterUrlPreviewExplanation from "./TesterUrlPreviewExplanation";
+import TesterUrlSubmitContext from "./TesterUrlSubmitContext";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -232,6 +233,8 @@ export default function TesterPage() {
               />
             )}
           </button>
+
+          <TesterUrlSubmitContext isSubmitting={isSubmitting} />
 
           <div className="mt-1 rounded-xl bg-slate-50 px-4 py-3">
             <p className="mb-1 text-sm font-semibold text-slate-700">
