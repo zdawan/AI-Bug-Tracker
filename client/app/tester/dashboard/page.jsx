@@ -37,6 +37,7 @@ import TesterTestDataReadinessWorkspace from "./components/TesterTestDataReadine
 import TesterDefectReproductionWorkspace from "./components/TesterDefectReproductionWorkspace";
 import TesterReleaseCommunicationWorkspace from "./components/TesterReleaseCommunicationWorkspace";
 import TesterBrowserCompatibilityWorkspace from "./components/TesterBrowserCompatibilityWorkspace";
+import TesterPostReleaseValidationWorkspace from "./components/TesterPostReleaseValidationWorkspace";
 import TesterIncidentResponseWorkspace from "./components/TesterIncidentResponseWorkspace";
 import TesterQualityGovernanceWorkspace from "./components/TesterQualityGovernanceWorkspace";
 import TesterReleaseEvidenceWorkspace from "./components/TesterReleaseEvidenceWorkspace";
@@ -2495,6 +2496,10 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <TesterBrowserCompatibilityWorkspace
+        reports={bugs}
+        onOpenReport={onOpenBug}
+      />
+      <TesterPostReleaseValidationWorkspace
         reports={bugs}
         onOpenReport={onOpenBug}
       />
