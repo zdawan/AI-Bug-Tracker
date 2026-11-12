@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink, Globe } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import TesterUrlNextStepNote from "./TesterUrlNextStepNote";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -250,6 +251,8 @@ export default function TesterPage() {
         </form>
 
         <UrlReadinessGuide url={url} onUseExample={setUrl} />
+
+        <TesterUrlNextStepNote />
 
         <footer className="mt-10 border-t border-slate-100 pt-6 text-center text-base text-[#596579] sm:mt-12">
           Already reported a bug?{" "}
