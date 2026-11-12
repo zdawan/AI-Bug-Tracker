@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, ExternalLink, Globe } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import TesterUrlNextStepNote from "./TesterUrlNextStepNote";
+import TesterUrlValidationTip from "./TesterUrlValidationTip";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -206,6 +207,7 @@ export default function TesterPage() {
               clear it.
             </p>
             <UrlLengthIndicator value={url} />
+            <TesterUrlValidationTip />
           </div>
 
           <button
