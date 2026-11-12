@@ -23,6 +23,7 @@ import TesterLoginBrowserNotice from "./TesterLoginBrowserNotice";
 import TesterLoginRecoveryHint from "./TesterLoginRecoveryHint";
 import TesterLoginEmailSecurity from "./TesterLoginEmailSecurity";
 import TesterLoginKeyboardGuide from "./TesterLoginKeyboardGuide";
+import TesterLoginFocusStatus from "./TesterLoginFocusStatus";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -362,6 +363,7 @@ export default function TesterLoginPage() {
             <TesterLoginRecoveryHint />
             <TesterLoginEmailSecurity />
             <TesterLoginKeyboardGuide />
+            <TesterLoginFocusStatus />
             <TesterLoginTrustSummary />
             <TesterLoginDestinationNotice destination={returnTo} />
 
