@@ -27,6 +27,7 @@ import TesterLoginFocusStatus from "./TesterLoginFocusStatus";
 import TesterLoginMobileHint from "./TesterLoginMobileHint";
 import TesterLoginErrorRecovery from "./TesterLoginErrorRecovery";
 import TesterLoginProgressHeader from "./TesterLoginProgressHeader";
+import TesterLoginInboxReadinessCard from "./TesterLoginInboxReadinessCard";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -210,6 +211,7 @@ export default function TesterLoginPage() {
         className="relative z-10 w-full max-w-[480px] rounded-[28px] border border-white/80 bg-white/90 px-6 py-9 shadow-[0_28px_70px_-28px_rgba(38,25,55,0.30)] backdrop-blur-xl sm:px-10 sm:py-11"
       >
         <TesterLoginProgressHeader step={step} />
+            <TesterLoginInboxReadinessCard />
         {step === "email" ? (
           <>
             <button
