@@ -35,6 +35,7 @@ import TesterLoginEmailDomainBadge from "./TesterLoginEmailDomainBadge";
 import TesterLoginEmailLengthMeter from "./TesterLoginEmailLengthMeter";
 import TesterLoginEmailInputState from "./TesterLoginEmailInputState";
 import TesterLoginEmailIntent from "./TesterLoginEmailIntent";
+import TesterLoginHelpCenter from "./TesterLoginHelpCenter";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -348,6 +349,7 @@ export default function TesterLoginPage() {
                 <TesterLoginEmailLengthMeter value={email} />
                 <TesterLoginEmailInputState email={email} hasError={Boolean(emailError)} />
                 <TesterLoginEmailIntent />
+            <TesterLoginHelpCenter />
               </div>
 
               <button
