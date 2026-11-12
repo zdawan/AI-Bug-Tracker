@@ -31,6 +31,8 @@ import TesterLoginInboxReadinessCard from "./TesterLoginInboxReadinessCard";
 import TesterLoginRequestPreview from "./TesterLoginRequestPreview";
 import TesterLoginContactHint from "./TesterLoginContactHint";
 import TesterLoginAddressBadge from "./TesterLoginAddressBadge";
+import TesterLoginEmailDomainBadge from "./TesterLoginEmailDomainBadge";
+import TesterLoginEmailLengthMeter from "./TesterLoginEmailLengthMeter";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -218,6 +220,7 @@ export default function TesterLoginPage() {
             <TesterLoginRequestPreview email={email} isSending={isSending} />
             <TesterLoginContactHint />
             <TesterLoginAddressBadge email={email} />
+            <TesterLoginEmailDomainBadge email={email} />
         {step === "email" ? (
           <>
             <button
@@ -340,6 +343,7 @@ export default function TesterLoginPage() {
                   </p>
                 )}
                 <TesterLoginEmailGuidance value={email} touched={Boolean(emailError)} />
+                <TesterLoginEmailLengthMeter value={email} />
               </div>
 
               <button
