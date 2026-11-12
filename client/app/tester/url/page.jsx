@@ -254,9 +254,11 @@ export default function TesterPage() {
               <button
                 type="button"
                 onClick={copyPreviewUrl}
+                aria-label={url.trim() ? "Copy entered URL" : "Copy example URL"}
+                title={url.trim() ? "Copy entered URL" : "Copy example URL"}
                 className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
               >
-                Copy URL
+                {url.trim() ? "Copy URL" : "Copy example"}
               </button>
             </div>
             <TesterUrlPreviewExplanation value={url} />
