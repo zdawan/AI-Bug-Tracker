@@ -176,6 +176,9 @@ export default function TesterPage() {
                 type="text"
                 inputMode="url"
                 autoComplete="url"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="go"
                 aria-describedby="test-url-hint"
                 placeholder="e.g. github.com"
                 value={url}
