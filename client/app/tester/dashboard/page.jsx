@@ -35,6 +35,7 @@ import TesterRiskAssessmentWorkspace from "./components/TesterRiskAssessmentWork
 import TesterRegressionCommandCenter from "./components/TesterRegressionCommandCenter";
 import TesterTestDataReadinessWorkspace from "./components/TesterTestDataReadinessWorkspace";
 import TesterDefectReproductionWorkspace from "./components/TesterDefectReproductionWorkspace";
+import TesterReleaseCommunicationWorkspace from "./components/TesterReleaseCommunicationWorkspace";
 import TesterReleaseEvidenceWorkspace from "./components/TesterReleaseEvidenceWorkspace";
 import ReportWorkloadPlanner from "./components/ReportWorkloadPlanner";
 import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate";
@@ -2481,6 +2482,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <TesterDefectReproductionWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <TesterReleaseCommunicationWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
