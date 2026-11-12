@@ -11,6 +11,7 @@ import TesterUrlValidationTip from "./TesterUrlValidationTip";
 import TesterUrlInputBehaviorNote from "./TesterUrlInputBehaviorNote";
 import TesterUrlLiveStatus from "./TesterUrlLiveStatus";
 import TesterUrlPrivacyDisclosure from "./TesterUrlPrivacyDisclosure";
+import TesterUrlPreviewExplanation from "./TesterUrlPreviewExplanation";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -254,6 +255,7 @@ export default function TesterPage() {
                 Copy URL
               </button>
             </div>
+            <TesterUrlPreviewExplanation value={url} />
           </div>
         </form>
 
