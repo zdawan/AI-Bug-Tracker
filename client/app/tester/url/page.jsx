@@ -196,7 +196,7 @@ export default function TesterPage() {
                   onClick={() => setUrl("")}
                   aria-label="Clear website name"
                   title="Clear website name"
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
                 >
                   <span aria-hidden="true" className="text-2xl leading-none">
                     ×
@@ -254,7 +254,7 @@ export default function TesterPage() {
               <button
                 type="button"
                 onClick={copyPreviewUrl}
-                className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700"
+                className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
               >
                 Copy URL
               </button>
