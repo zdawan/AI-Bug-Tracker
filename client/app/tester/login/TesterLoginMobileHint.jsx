@@ -31,14 +31,19 @@ export default function TesterLoginMobileHint({ defaultOpen = false }) {
       </button>
 
       {open ? (
-        <ul className="mt-4 space-y-2 border-t border-rose-100 pt-4">
+        <div className="mt-4 border-t border-rose-100 pt-4" aria-live="polite">
+          <p className="mb-3 text-[11px] leading-5 text-rose-900/75">
+            The mobile layout keeps the same validation and security behavior as desktop.
+          </p>
+          <ul className="space-y-2">
           {mobileTips.map((tip) => (
             <li key={tip} className="flex items-start gap-2 rounded-xl bg-white/75 p-3 text-[11px] leading-5 text-rose-900/80">
               <Check size={14} className="mt-0.5 shrink-0 text-rose-700" aria-hidden="true" />
               <span>{tip}</span>
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       ) : null}
     </aside>
   );

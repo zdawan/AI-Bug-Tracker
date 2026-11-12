@@ -25,6 +25,7 @@ import TesterLoginEmailSecurity from "./TesterLoginEmailSecurity";
 import TesterLoginKeyboardGuide from "./TesterLoginKeyboardGuide";
 import TesterLoginFocusStatus from "./TesterLoginFocusStatus";
 import TesterLoginMobileHint from "./TesterLoginMobileHint";
+import TesterLoginErrorRecovery from "./TesterLoginErrorRecovery";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -357,6 +358,17 @@ export default function TesterLoginPage() {
               isVerifying={isVerifying}
               resendCooldown={resendCooldown}
               error={authError}
+            />
+            <TesterLoginErrorRecovery
+              error={authError}
+              disabled={isSending || isVerifying}
+              onReset={() => {
+                setStep("email");
+                setEmail("");
+                setEmailError("");
+                setAuthError("");
+                setResendCooldown(0);
+              }}
             />
             <TesterLoginFormMeta />
             <TesterLoginSessionPrivacy />
