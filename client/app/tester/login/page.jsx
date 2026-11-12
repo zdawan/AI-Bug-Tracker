@@ -45,6 +45,7 @@ import TesterLoginEmailPasteNote from "./TesterLoginEmailPasteNote";
 import TesterLoginEmailCaseNote from "./TesterLoginEmailCaseNote";
 import TesterLoginEmailWhitespaceNote from "./TesterLoginEmailWhitespaceNote";
 import TesterLoginEmailRecoveryNote from "./TesterLoginEmailRecoveryNote";
+import TesterLoginEmailHelpLink from "./TesterLoginEmailHelpLink";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -368,6 +369,7 @@ export default function TesterLoginPage() {
             <TesterLoginEmailCaseNote />
             <TesterLoginEmailWhitespaceNote />
             <TesterLoginEmailRecoveryNote />
+            <TesterLoginEmailHelpLink />
               </div>
 
               <button
