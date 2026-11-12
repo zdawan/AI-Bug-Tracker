@@ -42,6 +42,7 @@ import TesterLoginPasswordlessNote from "./TesterLoginPasswordlessNote";
 import TesterLoginOneTimeCodeNote from "./TesterLoginOneTimeCodeNote";
 import TesterLoginInboxSwitchNote from "./TesterLoginInboxSwitchNote";
 import TesterLoginEmailPasteNote from "./TesterLoginEmailPasteNote";
+import TesterLoginEmailCaseNote from "./TesterLoginEmailCaseNote";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -362,6 +363,7 @@ export default function TesterLoginPage() {
             <TesterLoginOneTimeCodeNote />
             <TesterLoginInboxSwitchNote />
             <TesterLoginEmailPasteNote />
+            <TesterLoginEmailCaseNote />
               </div>
 
               <button
