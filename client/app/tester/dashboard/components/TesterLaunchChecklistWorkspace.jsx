@@ -692,6 +692,486 @@ function PlanHeader({ plan, onChange, onDelete, onDuplicate }) {
   );
 }
 
+function InsightBadge({ label, value, tone = "cyan" }) {
+  return (
+    <div className={`rounded-xl border px-3 py-2 ${toneClasses(tone, true)}`}>
+      <p className="text-[8px] font-semibold uppercase tracking-wide opacity-70">{label}</p>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function InsightRow({ title, detail, status, tone = "slate", action }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-white p-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex min-w-0 gap-3">
+        <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${toneClasses(tone, true)}`}>
+          <CheckCircle2 size={14} aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold text-slate-800">{title}</p>
+          <p className="mt-1 text-[9px] leading-4 text-slate-500">{detail}</p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className={`rounded-full border px-2 py-1 text-[8px] font-semibold ${toneClasses(tone, true)}`}>{status}</span>
+        {action}
+      </div>
+    </div>
+  );
+}
+
+function CoverageCell({ label, value, detail, tone = "slate" }) {
+  return (
+    <div className={`rounded-xl border p-3 ${toneClasses(tone, true)}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[9px] font-semibold">{label}</p>
+        <span className="text-sm font-bold tabular-nums">{value}</span>
+      </div>
+      <p className="mt-1 text-[8px] leading-4 opacity-75">{detail}</p>
+    </div>
+  );
+}
+
+function LaunchExecutionInsights({ plan, metrics, onChange, onAddItem, onAddScenario, onAddEvidence }) {
+  const items = plan.items || [];
+  const scenarios = plan.scenarios || [];
+  const evidence = plan.evidence || [];
+  const notes = plan.notes || [];
+  const doneItems = items.filter((item) => ["done", "not-applicable"].includes(item.state));
+  const activeItems = items.filter((item) => item.state === "in-progress");
+  const blockedItems = items.filter((item) => item.state === "blocked");
+  const criticalItems = items.filter((item) => ["critical", "high"].includes(item.priority));
+  const passedScenarios = scenarios.filter((scenario) => scenario.state === "pass");
+  const failedScenarios = scenarios.filter((scenario) => scenario.state === "fail");
+  const plannedScenarios = scenarios.filter((scenario) => scenario.state === "planned");
+  const ownerCount = new Set(
+    [...items, ...scenarios, ...evidence]
+      .map((item) => clean(item.owner || item.author))
+      .filter(Boolean),
+  ).size;
+  const evidenceWithReference = evidence.filter((item) => item.reference || item.note);
+  const openCritical = blockedItems.filter((item) => ["critical", "high"].includes(item.priority));
+  const coverageRows = [
+    {
+      label: "Checklist completion",
+      value: `${metrics?.itemsDone || 0}/${items.length}`,
+      detail: `${metrics?.itemProgress || 0}% of launch tasks are complete.`,
+      tone: metrics?.itemProgress >= 80 ? "emerald" : "cyan",
+    },
+    {
+      label: "Scenario execution",
+      value: `${passedScenarios.length}/${scenarios.length}`,
+      detail: failedScenarios.length ? `${failedScenarios.length} failed scenario(s) need a disposition.` : "No failed scenario is currently recorded.",
+      tone: failedScenarios.length ? "rose" : "violet",
+    },
+    {
+      label: "Evidence context",
+      value: `${evidenceWithReference.length}/${evidence.length}`,
+      detail: evidence.length ? "Evidence records include a reference or explanatory note." : "No local evidence records have been added.",
+      tone: evidence.length && evidenceWithReference.length === evidence.length ? "emerald" : "amber",
+    },
+    {
+      label: "Ownership coverage",
+      value: ownerCount,
+      detail: ownerCount ? "Distinct owners are visible across execution records." : "Assign owners before requesting a launch decision.",
+      tone: ownerCount ? "cyan" : "amber",
+    },
+    {
+      label: "High-risk work",
+      value: criticalItems.length,
+      detail: `${openCritical.length} critical or high item(s) remain blocked.`,
+      tone: openCritical.length ? "rose" : "emerald",
+    },
+    {
+      label: "Execution queue",
+      value: activeItems.length + plannedScenarios.length,
+      detail: "Items and scenarios still in an active or planned state.",
+      tone: activeItems.length + plannedScenarios.length ? "violet" : "emerald",
+    },
+  ];
+
+  const signals = [
+    {
+      title: "Scope signal",
+      detail: plan.release && plan.environment ? `Targeting ${plan.release} in ${plan.environment}.` : "Add a release and environment to make the scope actionable.",
+      status: plan.release && plan.environment ? "Defined" : "Needs context",
+      tone: plan.release && plan.environment ? "emerald" : "amber",
+    },
+    {
+      title: "Critical path signal",
+      detail: passedScenarios.length ? `${passedScenarios.length} scenario(s) have a passing result.` : "No passing scenario is recorded yet.",
+      status: passedScenarios.length ? "Started" : "Unverified",
+      tone: passedScenarios.length ? "cyan" : "rose",
+    },
+    {
+      title: "Failure signal",
+      detail: failedScenarios.length ? `${failedScenarios.length} failed scenario(s) should be named in the recommendation.` : "No failed scenario is currently listed.",
+      status: failedScenarios.length ? "Review" : "Clear",
+      tone: failedScenarios.length ? "rose" : "emerald",
+    },
+    {
+      title: "Blocker signal",
+      detail: blockedItems.length ? `${blockedItems.length} checklist item(s) are blocked.` : "No checklist item is marked blocked.",
+      status: blockedItems.length ? "Open" : "Clear",
+      tone: blockedItems.length ? "rose" : "emerald",
+    },
+    {
+      title: "Evidence signal",
+      detail: evidence.length ? `${evidenceWithReference.length} evidence record(s) include supporting context.` : "Attach a report, screenshot, log, or note.",
+      status: evidence.length && evidenceWithReference.length === evidence.length ? "Traceable" : "Incomplete",
+      tone: evidence.length && evidenceWithReference.length === evidence.length ? "emerald" : "amber",
+    },
+    {
+      title: "Handoff signal",
+      detail: plan.recipient ? `Recommendation is addressed to ${plan.recipient}.` : "Name the person or team receiving the launch recommendation.",
+      status: plan.recipient ? "Named" : "Missing",
+      tone: plan.recipient ? "cyan" : "amber",
+    },
+  ];
+
+  const prompts = [
+    ["Proceed condition", plan.recommendation || "What must be true before launch can proceed?"],
+    ["Containment path", plan.rollback || "What is the safest rollback or containment option?"],
+    ["Monitoring plan", plan.monitoring || "What should be watched after launch?"],
+    ["Decision owner", plan.recipient || "Who makes the final release decision?"],
+    ["Evidence gap", evidence.length ? `${evidence.length} artifact(s) are available for review.` : "Which artifact would most reduce uncertainty?"],
+    ["Open question", notes.length ? `${notes.length} note(s) capture context for the handoff.` : "What remains unknown or needs confirmation?"],
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Panel title="Execution insights" detail="A compact view of coverage, risk, ownership, and evidence quality." icon={Target}>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {coverageRows.map((row) => <CoverageCell key={row.label} {...row} />)}
+        </div>
+      </Panel>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+        <Panel title="Decision signals" detail="Signals derived from the current launch checklist." icon={ShieldAlert}>
+          <div className="space-y-2.5">
+            {signals.map((signal) => <InsightRow key={signal.title} {...signal} />)}
+          </div>
+        </Panel>
+        <Panel title="Quick additions" detail="Create the smallest useful record when a gap appears." icon={Plus}>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+            <Button icon={ListChecks} onClick={onAddItem}>Add checklist item</Button>
+            <Button icon={Target} onClick={onAddScenario}>Add scenario</Button>
+            <Button icon={FileCheck2} onClick={onAddEvidence}>Add evidence record</Button>
+            <Button icon={Clipboard} onClick={() => onChange({ recommendation: plan.recommendation || "Proceed only when the critical path is verified and open blockers have a clear disposition." })}>Draft recommendation</Button>
+          </div>
+          <div className="mt-4 rounded-xl border border-violet-100 bg-violet-50/50 p-3 text-[9px] leading-4 text-violet-900/80">
+            These actions update only the private checklist in this browser. They do not submit a launch decision or change backend report data.
+          </div>
+        </Panel>
+      </div>
+
+      <Panel title="Handoff prompts" detail="Use these prompts to make the launch recommendation concise and reviewable." icon={ClipboardCheck}>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {prompts.map(([label, value]) => <div key={label} className="rounded-xl border border-slate-200 p-3"><p className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-2 text-[10px] leading-5 text-slate-700">{value}</p></div>)}
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+function Badge({ children, tone = "slate" }) {
+  return (
+    <span className={`inline-flex rounded-full border px-2 py-1 text-[8px] font-semibold ${toneClasses(tone, true)}`}>
+      {children}
+    </span>
+  );
+}
+
+function ExecutionLegend() {
+  const rows = [
+    ["Green", "The signal is supported by a completed or clearly documented record.", "emerald"],
+    ["Cyan", "The workflow has started and needs normal follow-through.", "cyan"],
+    ["Violet", "The work is active or ready for a focused review.", "violet"],
+    ["Amber", "Context is incomplete and should be made explicit.", "amber"],
+    ["Rose", "A failure or blocker needs a decision, owner, or mitigation.", "rose"],
+  ];
+  return (
+    <Panel title="Execution legend" detail="A quick reference for the insight colors used above." icon={Sparkles}>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {rows.map(([label, detail, tone]) => <div key={label} className="rounded-xl border border-slate-200 p-3"><Badge tone={tone}>{label}</Badge><p className="mt-2 text-[9px] leading-4 text-slate-500">{detail}</p></div>)}
+      </div>
+    </Panel>
+  );
+}
+
+function ReviewCard({ title, value, detail, tone = "slate", icon: Icon }) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${toneClasses(tone, true)}`}>
+          <Icon size={15} aria-hidden="true" />
+        </div>
+        <span className={`rounded-full border px-2 py-1 text-[8px] font-semibold ${toneClasses(tone, true)}`}>
+          {value}
+        </span>
+      </div>
+      <h4 className="mt-3 text-[10px] font-semibold text-slate-800">{title}</h4>
+      <p className="mt-1 text-[9px] leading-4 text-slate-500">{detail}</p>
+    </article>
+  );
+}
+
+function ReviewList({ title, description, rows, emptyTitle, emptyDetail, icon: Icon }) {
+  return (
+    <Panel title={title} detail={description} icon={Icon}>
+      {rows.length ? (
+        <div className="space-y-2.5">
+          {rows.map((row) => (
+            <div key={row.id} className="rounded-xl border border-slate-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-[10px] font-semibold text-slate-800">{row.title}</p>
+                  <p className="mt-1 text-[9px] leading-4 text-slate-500">{row.detail}</p>
+                </div>
+                <span className={`shrink-0 rounded-full border px-2 py-1 text-[8px] font-semibold ${toneClasses(row.tone, true)}`}>
+                  {row.status}
+                </span>
+              </div>
+              {row.meta ? (
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[8px] text-slate-400">
+                  {row.meta.map((value) => <span key={value}>{value}</span>)}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState title={emptyTitle} detail={emptyDetail} icon={Icon} />
+      )}
+    </Panel>
+  );
+}
+
+function LaunchRiskReview({ plan, metrics, selectedReports, onChange }) {
+  const items = plan.items || [];
+  const scenarios = plan.scenarios || [];
+  const evidence = plan.evidence || [];
+  const failedItems = items.filter((item) => item.state === "blocked");
+  const failedScenarios = scenarios.filter((scenario) => scenario.state === "fail");
+  const skippedScenarios = scenarios.filter((scenario) => scenario.state === "skipped");
+  const highPriority = items.filter((item) => ["critical", "high"].includes(item.priority));
+  const unownedItems = items.filter((item) => !clean(item.owner));
+  const missingDates = items.filter((item) => !clean(item.dueDate) && !["done", "not-applicable"].includes(item.state));
+  const weakEvidence = evidence.filter((item) => !clean(item.reference) && !clean(item.note));
+  const risks = [
+    {
+      id: "blocked-items",
+      title: "Blocked checklist work",
+      detail: failedItems.length ? `${failedItems.length} item(s) are marked blocked.` : "No checklist item is marked blocked.",
+      status: failedItems.length ? "Open" : "Clear",
+      tone: failedItems.length ? "rose" : "emerald",
+      meta: [`${failedItems.filter((item) => item.priority === "critical").length} critical`, `${failedItems.filter((item) => item.priority === "high").length} high`],
+    },
+    {
+      id: "failed-scenarios",
+      title: "Failed scenarios",
+      detail: failedScenarios.length ? `${failedScenarios.length} scenario(s) failed and need a launch disposition.` : "No failed scenario is currently recorded.",
+      status: failedScenarios.length ? "Review" : "Clear",
+      tone: failedScenarios.length ? "rose" : "emerald",
+      meta: [`${skippedScenarios.length} skipped`, `${scenarios.length} total`],
+    },
+    {
+      id: "high-priority",
+      title: "High-priority surface",
+      detail: highPriority.length ? `${highPriority.length} critical or high priority task(s) require attention.` : "No critical or high priority task is listed.",
+      status: highPriority.length ? "Visible" : "Clear",
+      tone: highPriority.length ? "amber" : "emerald",
+      meta: [`${highPriority.filter((item) => item.state === "done").length} done`, `${highPriority.filter((item) => item.state === "todo").length} todo`],
+    },
+    {
+      id: "unowned",
+      title: "Unowned execution",
+      detail: unownedItems.length ? `${unownedItems.length} unfinished item(s) have no owner.` : "Every unfinished checklist item has an owner.",
+      status: unownedItems.length ? "Needs owner" : "Covered",
+      tone: unownedItems.length ? "amber" : "emerald",
+      meta: [`${unownedItems.length} unowned`, `${items.length} total`],
+    },
+    {
+      id: "dates",
+      title: "Missing due dates",
+      detail: missingDates.length ? `${missingDates.length} unfinished item(s) have no target date.` : "Unfinished checklist work has a target date.",
+      status: missingDates.length ? "Unscheduled" : "Scheduled",
+      tone: missingDates.length ? "amber" : "emerald",
+      meta: [`${missingDates.length} missing`, `${items.length} total`],
+    },
+    {
+      id: "evidence-context",
+      title: "Evidence context",
+      detail: weakEvidence.length ? `${weakEvidence.length} evidence record(s) lack a reference or explanatory note.` : "Every evidence record has context.",
+      status: weakEvidence.length ? "Thin" : "Traceable",
+      tone: weakEvidence.length ? "amber" : "emerald",
+      meta: [`${selectedReports.length} reports`, `${evidence.length} local records`],
+    },
+  ];
+
+  const recommendations = [
+    {
+      label: "If launch is blocked",
+      value: failedItems.length || failedScenarios.length ? "Name the failing path, owner, mitigation, and re-test condition." : "No blocked path is recorded; confirm the critical smoke path before proceeding.",
+    },
+    {
+      label: "If launch is conditional",
+      value: highPriority.length ? "List each high-priority item that is accepted, deferred, or monitored." : "Record the condition that would change the launch recommendation.",
+    },
+    {
+      label: "If launch proceeds",
+      value: plan.monitoring ? "Include the monitoring owner, signal, and observation window." : "Add a post-launch monitoring plan before communicating proceed.",
+    },
+    {
+      label: "For the handoff",
+      value: plan.recipient ? `Address the summary directly to ${plan.recipient}.` : "Name the recipient and the decision they need to make.",
+    },
+    {
+      label: "For evidence",
+      value: evidence.length ? "Explain what each artifact proves and where it can be re-opened." : "Attach at least one artifact for the primary journey.",
+    },
+    {
+      label: "For rollback",
+      value: plan.rollback ? "Confirm the rollback path is usable and identify its trigger." : "Document containment or rollback before the final recommendation.",
+    },
+  ];
+
+  const scoreCards = [
+    {
+      title: "Execution confidence",
+      value: `${metrics?.readiness || 0}%`,
+      detail: "Combined signal from checklist completion and readiness checks.",
+      tone: (metrics?.readiness || 0) >= 80 ? "emerald" : "amber",
+      icon: Target,
+    },
+    {
+      title: "Critical path",
+      value: `${scenarios.filter((scenario) => scenario.state === "pass").length}/${scenarios.length}`,
+      detail: "Scenarios with a passing result.",
+      tone: failedScenarios.length ? "rose" : "cyan",
+      icon: CheckCircle2,
+    },
+    {
+      title: "Evidence density",
+      value: selectedReports.length + evidence.length,
+      detail: "Reports and local evidence attached to this plan.",
+      tone: selectedReports.length + evidence.length ? "emerald" : "amber",
+      icon: FileCheck2,
+    },
+    {
+      title: "Decision risk",
+      value: failedItems.length + failedScenarios.length,
+      detail: "Blocked items and failed scenarios needing disposition.",
+      tone: failedItems.length + failedScenarios.length ? "rose" : "emerald",
+      icon: ShieldAlert,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {scoreCards.map((card) => <ReviewCard key={card.title} {...card} />)}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+        <ReviewList
+          title="Risk review"
+          description="Signals that should be visible before a launch recommendation is shared."
+          rows={risks}
+          emptyTitle="No risk signals"
+          emptyDetail="Execution records will appear here as the checklist grows."
+          icon={ShieldAlert}
+        />
+        <Panel title="Recommendation builder" detail="Use these prompts to sharpen the decision language." icon={ClipboardCheck}>
+          <div className="space-y-2.5">
+            {recommendations.map((recommendation) => (
+              <button
+                type="button"
+                key={recommendation.label}
+                onClick={() => onChange({ recommendation: `${recommendation.label}: ${recommendation.value}` })}
+                className="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-violet-300 hover:bg-violet-50/40"
+              >
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-violet-700">{recommendation.label}</p>
+                <p className="mt-1 text-[9px] leading-4 text-slate-600">{recommendation.value}</p>
+              </button>
+            ))}
+          </div>
+        </Panel>
+      </div>
+
+      <Panel title="Risk review notes" detail="Keep the rationale behind the recommendation close to the measurable signals." icon={Clipboard}>
+        <div className="grid gap-3 md:grid-cols-2">
+          <TextArea label="What is confidently covered?" value={plan.coveredSummary} onChange={(value) => onChange({ coveredSummary: value })} placeholder="Summarize the paths, environments, and evidence that are strong." rows={5} />
+          <TextArea label="What remains uncertain?" value={plan.uncertaintySummary} onChange={(value) => onChange({ uncertaintySummary: value })} placeholder="Name gaps, assumptions, deferred work, or monitoring needs." rows={5} />
+        </div>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <Field label="Decision label" value={plan.decisionLabel} onChange={(value) => onChange({ decisionLabel: value })} placeholder="Proceed / Conditional / Hold" />
+          <Field label="Decision owner" value={plan.decisionOwner} onChange={(value) => onChange({ decisionOwner: value })} placeholder="Release owner" />
+          <Field label="Review date" type="date" value={plan.reviewDate} onChange={(value) => onChange({ reviewDate: value })} />
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+function DecisionSnapshot({ plan, metrics, selectedReports }) {
+  const items = plan.items || [];
+  const scenarios = plan.scenarios || [];
+  const evidence = plan.evidence || [];
+  const blocked = items.filter((item) => item.state === "blocked").length;
+  const failed = scenarios.filter((scenario) => scenario.state === "fail").length;
+  const passed = scenarios.filter((scenario) => scenario.state === "pass").length;
+  const done = items.filter((item) => ["done", "not-applicable"].includes(item.state)).length;
+  const totalEvidence = evidence.length + selectedReports.length;
+  const rows = [
+    ["Recommendation", plan.decisionLabel || "Not selected", plan.recommendation || "No recommendation text yet."],
+    ["Coverage", `${done}/${items.length} items complete`, "Checklist completion should be paired with scenario and evidence context."],
+    ["Scenarios", `${passed}/${scenarios.length} pass`, failed ? `${failed} failed scenario(s) need an explicit disposition.` : "No failed scenario is currently recorded."],
+    ["Evidence", `${totalEvidence} attached`, totalEvidence ? "Open the attached records before sharing the decision." : "Attach at least one supporting artifact."],
+    ["Blockers", `${blocked} open`, blocked ? "Name the owner and next step for every blocked item." : "No checklist item is marked blocked."],
+    ["Recipient", plan.recipient || "Not named", "The recipient should know what decision is requested."],
+  ];
+
+  return (
+    <Panel title="Decision snapshot" detail="A compact view suitable for reviewing the plan before copying its summary." icon={ClipboardCheck}>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {rows.map(([label, value, detail]) => (
+          <div key={label} className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+            <p className="mt-1 text-[11px] font-semibold text-slate-800">{value}</p>
+            <p className="mt-1 text-[9px] leading-4 text-slate-500">{detail}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[9px] font-semibold text-slate-700">Readiness signal</p>
+          <p className="text-[10px] font-semibold text-slate-900">{metrics?.readiness || 0}%</p>
+        </div>
+        <ProgressBar value={metrics?.readiness || 0} tone="cyan" />
+      </div>
+      <p className="mt-3 text-[8px] leading-4 text-slate-400">
+        This snapshot is generated from the current browser-local checklist and may not represent server-side release state.
+      </p>
+    </Panel>
+  );
+}
+
+function ReviewFooter({ plan }) {
+  const audience = plan.recipient || "the release audience";
+  const owner = plan.owner || "the checklist owner";
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3 text-[9px] leading-4 text-slate-500">
+      <p className="font-semibold text-slate-700">Review footer</p>
+      <p className="mt-1">
+        When ready, {owner} can share the recommendation with {audience} using the
+        attached evidence, explicit blockers, and documented monitoring path.
+      </p>
+    </div>
+  );
+}
+
 export default function TesterLaunchChecklistWorkspace({ reports = [], email = "", onOpenReport }) {
   const [plans, setPlans] = useState([]);
   const [selectedId, setSelectedId] = useState("");
@@ -1099,6 +1579,32 @@ export default function TesterLaunchChecklistWorkspace({ reports = [], email = "
             <StatCard label="Blockers" value={formatNumber(metrics?.blockers || 0)} detail={`${highPriorityOpen} critical or high`} icon={ShieldAlert} tone="rose" />
             <StatCard label="Evidence" value={formatNumber(selectedPlan.evidence.length + selectedReports.length)} detail="Links and reports" icon={FileCheck2} tone="emerald" />
           </div>
+
+          <LaunchExecutionInsights
+            plan={selectedPlan}
+            metrics={metrics}
+            onChange={updatePlan}
+            onAddItem={addItem}
+            onAddScenario={addScenario}
+            onAddEvidence={addEvidence}
+          />
+
+          <ExecutionLegend />
+
+          <LaunchRiskReview
+            plan={selectedPlan}
+            metrics={metrics}
+            selectedReports={selectedReports}
+            onChange={updatePlan}
+          />
+
+          <DecisionSnapshot
+            plan={selectedPlan}
+            metrics={metrics}
+            selectedReports={selectedReports}
+          />
+
+          <ReviewFooter plan={selectedPlan} />
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
             <Panel title="Launch recommendation" detail="Write the concise context a release owner needs." icon={Clipboard}>
