@@ -32,7 +32,9 @@ export default function TesterLoginKeyboardGuide({ defaultOpen = false }) {
       </button>
 
       {open ? (
-        <ol className="mt-4 space-y-2 border-t border-cyan-100 pt-4">
+        <div className="mt-4 border-t border-cyan-100 pt-4" aria-live="polite">
+          <p className="mb-3 text-[11px] leading-5 text-cyan-900/75">The controls follow the same order visually and when reached with Tab.</p>
+          <ol className="space-y-2">
           {keyboardSteps.map((description, index) => (
             <li key={description} className="flex items-start gap-3 rounded-xl bg-white/75 p-3">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-700 text-[10px] font-bold text-white">{index + 1}</span>
@@ -40,7 +42,8 @@ export default function TesterLoginKeyboardGuide({ defaultOpen = false }) {
               {index === keyboardSteps.length - 1 ? <Check size={14} className="mt-0.5 shrink-0 text-cyan-700" aria-hidden="true" /> : <ArrowDown size={14} className="mt-0.5 shrink-0 text-cyan-600" aria-hidden="true" />}
             </li>
           ))}
-        </ol>
+          </ol>
+        </div>
       ) : null}
     </aside>
   );
