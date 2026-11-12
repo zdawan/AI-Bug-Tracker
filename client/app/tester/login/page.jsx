@@ -28,6 +28,7 @@ import TesterLoginMobileHint from "./TesterLoginMobileHint";
 import TesterLoginErrorRecovery from "./TesterLoginErrorRecovery";
 import TesterLoginProgressHeader from "./TesterLoginProgressHeader";
 import TesterLoginInboxReadinessCard from "./TesterLoginInboxReadinessCard";
+import TesterLoginRequestPreview from "./TesterLoginRequestPreview";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -212,6 +213,7 @@ export default function TesterLoginPage() {
       >
         <TesterLoginProgressHeader step={step} />
             <TesterLoginInboxReadinessCard />
+            <TesterLoginRequestPreview email={email} isSending={isSending} />
         {step === "email" ? (
           <>
             <button
