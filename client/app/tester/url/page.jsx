@@ -194,6 +194,7 @@ export default function TesterPage() {
                   type="button"
                   onClick={() => setUrl("")}
                   aria-label="Clear website name"
+                  title="Clear website name"
                   className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                 >
                   <span aria-hidden="true" className="text-2xl leading-none">
