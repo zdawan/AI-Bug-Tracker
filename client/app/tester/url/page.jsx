@@ -10,6 +10,7 @@ import TesterUrlNextStepNote from "./TesterUrlNextStepNote";
 import TesterUrlValidationTip from "./TesterUrlValidationTip";
 import TesterUrlInputBehaviorNote from "./TesterUrlInputBehaviorNote";
 import TesterUrlLiveStatus from "./TesterUrlLiveStatus";
+import TesterUrlPrivacyDisclosure from "./TesterUrlPrivacyDisclosure";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -259,6 +260,7 @@ export default function TesterPage() {
         <UrlReadinessGuide url={url} onUseExample={setUrl} />
 
         <TesterUrlNextStepNote />
+        <TesterUrlPrivacyDisclosure />
 
         <footer className="mt-10 border-t border-slate-100 pt-6 text-center text-base text-[#596579] sm:mt-12">
           Already reported a bug?{" "}
