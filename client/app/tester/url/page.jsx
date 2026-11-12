@@ -8,6 +8,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import TesterUrlNextStepNote from "./TesterUrlNextStepNote";
 import TesterUrlValidationTip from "./TesterUrlValidationTip";
+import TesterUrlInputBehaviorNote from "./TesterUrlInputBehaviorNote";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -208,6 +209,7 @@ export default function TesterPage() {
             </p>
             <UrlLengthIndicator value={url} />
             <TesterUrlValidationTip />
+            <TesterUrlInputBehaviorNote />
           </div>
 
           <button
