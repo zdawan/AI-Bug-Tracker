@@ -9,6 +9,11 @@ export default function TesterLoginErrorRecovery({
 }) {
   if (!error) return null;
 
+  const resetDescription = disabled
+    ? "Reset is unavailable while a request is running."
+    : "Reset the email step and enter the address again.";
+  const recoveryTitle = "The request needs attention";
+
   const handleReset = () => {
     if (disabled) return;
     onReset?.();
@@ -22,8 +27,12 @@ export default function TesterLoginErrorRecovery({
     >
       <AlertCircle size={18} className="mt-0.5 shrink-0 text-rose-700" aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-rose-900">The request needs attention</p>
+        <p className="text-xs font-semibold text-rose-900">{recoveryTitle}</p>
         <p className="mt-1 text-xs leading-5 text-rose-800/80">You can review the message above or clear the form and try again.</p>
+        <div className="mt-3 rounded-xl border border-rose-100 bg-white/70 px-3 py-2">
+          <p className="text-[11px] font-semibold text-rose-900">Current message</p>
+          <p className="mt-1 text-[11px] leading-5 text-rose-800/80">{error}</p>
+        </div>
         <button
           type="button"
           onClick={handleReset}
@@ -33,6 +42,8 @@ export default function TesterLoginErrorRecovery({
           <RotateCcw size={13} aria-hidden="true" />
           Reset email step
         </button>
+        <p className="mt-2 text-[10px] leading-4 text-rose-700/70">Resetting only clears this page&apos;s email state; it does not change your tester account.</p>
+        <p className="sr-only" aria-live="polite">{resetDescription}</p>
       </div>
     </div>
   );
