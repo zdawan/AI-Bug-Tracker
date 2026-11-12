@@ -38,6 +38,7 @@ import TesterLoginEmailIntent from "./TesterLoginEmailIntent";
 import TesterLoginHelpCenter from "./TesterLoginHelpCenter";
 import TesterLoginSupportScope from "./TesterLoginSupportScope";
 import TesterLoginConsentNote from "./TesterLoginConsentNote";
+import TesterLoginPasswordlessNote from "./TesterLoginPasswordlessNote";
 import TesterLoginEmailActions from "./TesterLoginEmailActions";
 import { getTesterReturnToFromLocation } from "./testerLoginRedirect";
 import {
@@ -354,6 +355,7 @@ export default function TesterLoginPage() {
             <TesterLoginHelpCenter />
             <TesterLoginSupportScope />
             <TesterLoginConsentNote />
+            <TesterLoginPasswordlessNote />
               </div>
 
               <button
