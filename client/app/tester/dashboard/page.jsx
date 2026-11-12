@@ -29,6 +29,7 @@ import TesterDecisionJournalWorkspace from "./components/TesterDecisionJournalWo
 import TesterIncidentTimelineWorkspace from "./components/TesterIncidentTimelineWorkspace";
 import TesterTestPlanWorkspace from "./components/TesterTestPlanWorkspace";
 import TesterEnvironmentMatrixWorkspace from "./components/TesterEnvironmentMatrixWorkspace";
+import TesterAccessibilityReviewWorkspace from "./components/TesterAccessibilityReviewWorkspace";
 import ReportWorkloadPlanner from "./components/ReportWorkloadPlanner";
 import ReportReleaseReadinessGate from "./components/ReportReleaseReadinessGate";
 import ReportInvestigationWorkspace from "./components/ReportInvestigationWorkspace";
@@ -2444,6 +2445,11 @@ function ReportSummaryPanel({ bugs, email, onOpenBug, onViewAllOpen }) {
         onOpenReport={onOpenBug}
       />
       <TesterEnvironmentMatrixWorkspace
+        reports={bugs}
+        email={email}
+        onOpenReport={onOpenBug}
+      />
+      <TesterAccessibilityReviewWorkspace
         reports={bugs}
         email={email}
         onOpenReport={onOpenBug}
