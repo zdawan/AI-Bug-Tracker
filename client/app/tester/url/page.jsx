@@ -186,6 +186,7 @@ export default function TesterPage() {
                 autoCapitalize="none"
                 spellCheck={false}
                 enterKeyHint="go"
+                maxLength={2048}
                 aria-describedby="test-url-hint"
                 aria-keyshortcuts="Escape"
                 placeholder="e.g. github.com"
