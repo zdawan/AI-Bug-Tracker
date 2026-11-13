@@ -38,6 +38,7 @@ import AssignedApplicationAttentionBadge from "./AssignedApplicationAttentionBad
 import AssignedSeverityIndicator from "./AssignedSeverityIndicator";
 import AssignedScreenshotStatus from "./AssignedScreenshotStatus";
 import AssignedReportVolume from "./AssignedReportVolume";
+import AssignedReportAgeBadge from "./AssignedReportAgeBadge";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -381,6 +382,7 @@ export default function AssignedTickets() {
                     </td>
                     <td className="p-4">
                       <AssignedReportDateCell value={bug.createdAt} />
+                      <AssignedReportAgeBadge createdAt={bug.createdAt} />
                     </td>
 
                     {/* ✅ New Resolved Section */}

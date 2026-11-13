@@ -27,6 +27,7 @@ export default function AssignedReportVolume({ reports }) {
       className={`inline-flex min-w-[92px] items-start gap-2 rounded-xl border px-2.5 py-2 ${tone}`}
       title={detail}
       aria-label={`${label}. ${detail}`}
+      aria-live="polite"
     >
       <Icon size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
       <span>
