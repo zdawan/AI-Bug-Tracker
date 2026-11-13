@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { CheckCircle, Pencil, Info } from "lucide-react"; // ✅ npm install lucide-react
+import { Pencil, Info } from "lucide-react"; // ✅ npm install lucide-react
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AssignedWorkloadOverview from "./AssignedWorkloadOverview";
@@ -12,6 +12,7 @@ import AssignedBugSortControl from "./AssignedBugSortControl";
 import AssignedSeverityLegend from "./AssignedSeverityLegend";
 import AssignedReportTextCell from "./AssignedReportTextCell";
 import AssignedReportDateCell from "./AssignedReportDateCell";
+import AssignedBugStatusCell from "./AssignedBugStatusCell";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -375,19 +376,10 @@ export default function AssignedTickets() {
 
                     {/* ✅ New Resolved Section */}
                     <td className="p-4 text-center">
-                      {bug.status === "Closed" ? (
-                        <CheckCircle
-                          className="text-green-600 mx-auto"
-                          size={20}
-                        />
-                      ) : (
-                        <button
-                          onClick={() => setResolveBug(bug)}
-                          className="text-blue-600 underline cursor-pointer"
-                        >
-                          Mark
-                        </button>
-                      )}
+                      <AssignedBugStatusCell
+                        bug={bug}
+                        onResolve={setResolveBug}
+                      />
                     </td>
                     {/* ✅ New Code Link Section */}
                     <td className="p-4">
