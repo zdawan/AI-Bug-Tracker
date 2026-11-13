@@ -14,6 +14,7 @@ import AssignedReportTextCell from "./AssignedReportTextCell";
 import AssignedReportDateCell from "./AssignedReportDateCell";
 import AssignedBugStatusCell from "./AssignedBugStatusCell";
 import AssignedBugCategoryBadge from "./AssignedBugCategoryBadge";
+import AssignedBugDetailsButton from "./AssignedBugDetailsButton";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -323,11 +324,11 @@ export default function AssignedTickets() {
                     <td className="p-4">
                       <AssignedReportTextCell value={bug.title} label="Title" />
                     </td>
-                    <td
-                      className="p-4 text-blue-600 font-medium cursor-pointer underline"
-                      onClick={() => setSelectedBug(bug)}
-                    >
-                      View
+                    <td className="p-4">
+                      <AssignedBugDetailsButton
+                        bug={bug}
+                        onSelect={setSelectedBug}
+                      />
                     </td>
                     <td className="p-4">
                       <AssignedBugCategoryBadge category={bug.category} />
