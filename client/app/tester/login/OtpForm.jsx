@@ -17,6 +17,7 @@ import OtpActivityPanel from "./OtpActivityPanel";
 import OtpRecoveryGuide from "./OtpRecoveryGuide";
 import OtpPrivacyPanel from "./OtpPrivacyPanel";
 import OtpDiagnosticsPanel from "./OtpDiagnosticsPanel";
+import OtpSecurityGuidance from "./OtpSecurityGuidance";
 
 const CODE_REVEAL_SECONDS = 15;
 const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
@@ -1045,6 +1046,7 @@ export default function OtpForm({
             Tip: press Ctrl+Backspace or ⌘+Backspace in a code box to clear all
             digits.
           </p>
+          <OtpSecurityGuidance />
         </div>
 
         <button
