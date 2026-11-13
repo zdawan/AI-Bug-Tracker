@@ -25,6 +25,7 @@ import AssignedLogoutConfirm from "./AssignedLogoutConfirm";
 import AssignedReportsEmptyState from "./AssignedReportsEmptyState";
 import AssignedPageLoadingState from "./AssignedPageLoadingState";
 import AssignedApplicationsHeader from "./AssignedApplicationsHeader";
+import AssignedApplicationMetrics from "./AssignedApplicationMetrics";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -180,26 +181,11 @@ export default function AssignedTickets() {
                       {url}
                     </a>
 
-                    <div className="text-sm text-gray-500 space-y-0.5 mt-2">
-                      <p>
-                        Total bugs:{" "}
-                        <span className="font-semibold text-gray-800">
-                          {getBugCountForUrl(url)}
-                        </span>
-                      </p>
-                      <p className="text-green-700">
-                        Resolved:{" "}
-                        <span className="font-semibold">
-                          {getResolvedBugCountForUrl(url)}
-                        </span>
-                      </p>
-                      <p className="text-yellow-700">
-                        Unresolved:{" "}
-                        <span className="font-semibold">
-                          {getUnresolvedBugCountForUrl(url)}
-                        </span>
-                      </p>
-                    </div>
+                    <AssignedApplicationMetrics
+                      total={getBugCountForUrl(url)}
+                      resolved={getResolvedBugCountForUrl(url)}
+                      pending={getUnresolvedBugCountForUrl(url)}
+                    />
                   </div>
 
                   {/* Actions */}
