@@ -12,6 +12,9 @@ export default function AssignedScreenshotStatus({ screenshots }) {
   const attachmentHint = hasScreenshots
     ? `Review ${items.length === 1 ? "the attached image" : "the attached images"} before resolving.`
     : "Request a screenshot if visual confirmation is needed.";
+  const countLabel = hasScreenshots
+    ? `${items.length} attachment${items.length === 1 ? "" : "s"}`
+    : "Attachment check";
   const Icon = hasScreenshots ? Camera : ImageOff;
   const tone = hasScreenshots
     ? "border-blue-200 bg-blue-50 text-blue-700"
@@ -26,6 +29,7 @@ export default function AssignedScreenshotStatus({ screenshots }) {
       <Icon size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
       <span className="min-w-0">
         <span className="block text-[10px] font-bold">{label}</span>
+        <span className="sr-only">{countLabel}</span>
         <span className="mt-0.5 block text-[10px] leading-4 opacity-80">
           {hasScreenshots ? "Visual evidence attached" : "No visual evidence"}
         </span>

@@ -37,6 +37,7 @@ import AssignedReportHealthPanel from "./AssignedReportHealthPanel";
 import AssignedApplicationAttentionBadge from "./AssignedApplicationAttentionBadge";
 import AssignedSeverityIndicator from "./AssignedSeverityIndicator";
 import AssignedScreenshotStatus from "./AssignedScreenshotStatus";
+import AssignedReportVolume from "./AssignedReportVolume";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -375,7 +376,9 @@ export default function AssignedTickets() {
                         }}
                       />
                     </td>
-                    <td className="p-4">{bug.reports}</td>
+                    <td className="p-4">
+                      <AssignedReportVolume reports={bug.reports} />
+                    </td>
                     <td className="p-4">
                       <AssignedReportDateCell value={bug.createdAt} />
                     </td>
