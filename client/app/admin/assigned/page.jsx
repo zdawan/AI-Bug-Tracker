@@ -34,6 +34,7 @@ import AssignedTableScrollHint from "./AssignedTableScrollHint";
 import AssignedReportsTableCaption from "./AssignedReportsTableCaption";
 import AssignedReportsKeyboardGuide from "./AssignedReportsKeyboardGuide";
 import AssignedReportHealthPanel from "./AssignedReportHealthPanel";
+import AssignedApplicationAttentionBadge from "./AssignedApplicationAttentionBadge";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -189,6 +190,10 @@ export default function AssignedTickets() {
                     <AssignedApplicationMetrics
                       total={getBugCountForUrl(url)}
                       resolved={getResolvedBugCountForUrl(url)}
+                      pending={getUnresolvedBugCountForUrl(url)}
+                    />
+                    <AssignedApplicationAttentionBadge
+                      total={getBugCountForUrl(url)}
                       pending={getUnresolvedBugCountForUrl(url)}
                     />
                   </div>
