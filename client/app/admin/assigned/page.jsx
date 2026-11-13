@@ -23,6 +23,7 @@ import AssignedCodePreviewModal from "./AssignedCodePreviewModal";
 import AssignedSeverityEditor from "./AssignedSeverityEditor";
 import AssignedLogoutConfirm from "./AssignedLogoutConfirm";
 import AssignedReportsEmptyState from "./AssignedReportsEmptyState";
+import AssignedPageLoadingState from "./AssignedPageLoadingState";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -139,7 +140,7 @@ export default function AssignedTickets() {
   });
 
   if (!developer)
-    return <p className="text-center mt-20">Please login first</p>;
+    return <AssignedPageLoadingState />;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col items-center py-6 px-4 md:py-12 md:px-6 font-sans relative">
