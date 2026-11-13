@@ -5,6 +5,7 @@ import axios from "axios";
 import { CheckCircle, Pencil, Info } from "lucide-react"; // ✅ npm install lucide-react
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AssignedWorkloadOverview from "./AssignedWorkloadOverview";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -115,6 +116,10 @@ export default function AssignedTickets() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
           Welcome, {developer.name}
         </h1>
+        <AssignedWorkloadOverview
+          urls={developer.assignedUrls}
+          bugs={bugs}
+        />
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-3">
             Assigned Application
