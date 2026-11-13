@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AssignedWorkloadOverview from "./AssignedWorkloadOverview";
 import AssignedBugFilterBar from "./AssignedBugFilterBar";
+import AssignedBugSearchBar from "./AssignedBugSearchBar";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -26,6 +27,7 @@ export default function AssignedTickets() {
   const [newSeverity, setNewSeverity] = useState("Medium");
   const [resolveBug, setResolveBug] = useState(null); // ✅ For resolving bugs
   const [bugFilter, setBugFilter] = useState("all");
+  const [bugSearch, setBugSearch] = useState("");
   const router = useRouter();
 
   const handleLogout = () => {
@@ -101,6 +103,11 @@ export default function AssignedTickets() {
     ).length;
 
   const visibleBugs = bugs.filter((bug) => {
+    const search = bugSearch.trim().toLowerCase();
+    const matchesSearch = !search || [bug.title, bug.category, bug.testUrl]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(search));
+    if (!matchesSearch) return false;
     if (bugFilter === "open") return bug.status !== "Closed";
     if (bugFilter === "closed") return bug.status === "Closed";
     return true;
@@ -254,6 +261,11 @@ export default function AssignedTickets() {
           </p>
         ) : (
           <div className="overflow-x-auto">
+            <AssignedBugSearchBar
+              value={bugSearch}
+              onChange={setBugSearch}
+              resultCount={visibleBugs.length}
+            />
             <AssignedBugFilterBar
               bugs={bugs}
               value={bugFilter}
