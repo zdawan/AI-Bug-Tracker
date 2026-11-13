@@ -31,6 +31,7 @@ import AssignedApplicationLink from "./AssignedApplicationLink";
 import AssignedApplicationsEmptyState from "./AssignedApplicationsEmptyState";
 import AssignedFilteredEmptyState from "./AssignedFilteredEmptyState";
 import AssignedTableScrollHint from "./AssignedTableScrollHint";
+import AssignedReportsTableCaption from "./AssignedReportsTableCaption";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -292,6 +293,12 @@ export default function AssignedTickets() {
             ) : (
             <>
             <AssignedTableScrollHint />
+            <AssignedReportsTableCaption
+              visibleCount={visibleBugs.length}
+              totalCount={bugs.length}
+              filter={bugFilter}
+              search={bugSearch}
+            />
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-left border-b">
