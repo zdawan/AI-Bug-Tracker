@@ -19,6 +19,7 @@ import TesterUrlLiveStatus from "./TesterUrlLiveStatus";
 import TesterUrlPrivacyDisclosure from "./TesterUrlPrivacyDisclosure";
 import TesterUrlPreviewExplanation from "./TesterUrlPreviewExplanation";
 import TesterUrlSubmitContext from "./TesterUrlSubmitContext";
+import TesterUrlQuickExamples from "./TesterUrlQuickExamples";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -228,6 +229,7 @@ export default function TesterPage() {
             <TesterUrlValidationTip />
             <TesterUrlInputBehaviorNote />
             <TesterUrlLiveStatus value={url} />
+            <TesterUrlQuickExamples onSelect={setUrl} />
           </div>
 
           <button
