@@ -28,6 +28,7 @@ import AssignedApplicationsHeader from "./AssignedApplicationsHeader";
 import AssignedApplicationMetrics from "./AssignedApplicationMetrics";
 import AssignedResolutionStatus from "./AssignedResolutionStatus";
 import AssignedApplicationLink from "./AssignedApplicationLink";
+import AssignedApplicationsEmptyState from "./AssignedApplicationsEmptyState";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -168,7 +169,10 @@ export default function AssignedTickets() {
         <div className="mb-6">
           <AssignedApplicationsHeader count={developer.assignedUrls.length} />
 
-          {developer.assignedUrls.map((url, index) => (
+          {developer.assignedUrls.length === 0 ? (
+            <AssignedApplicationsEmptyState />
+          ) : (
+            developer.assignedUrls.map((url, index) => (
             <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-6">
               {/* ================= LEFT CARD ================= */}
               <div className="col-span-1 md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 sm:px-6 sm:py-5">
@@ -237,7 +241,7 @@ export default function AssignedTickets() {
                 />
               </div>
             </div>
-          ))}
+          ))) }
         </div>
 
         <button
