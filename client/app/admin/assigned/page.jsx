@@ -10,6 +10,8 @@ import AssignedBugFilterBar from "./AssignedBugFilterBar";
 import AssignedBugSearchBar from "./AssignedBugSearchBar";
 import AssignedBugSortControl from "./AssignedBugSortControl";
 import AssignedSeverityLegend from "./AssignedSeverityLegend";
+import AssignedReportTextCell from "./AssignedReportTextCell";
+import AssignedReportDateCell from "./AssignedReportDateCell";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -316,7 +318,9 @@ export default function AssignedTickets() {
               <tbody>
                 {visibleBugs.map((bug) => (
                   <tr key={bug._id} className="border-b hover:bg-gray-50">
-                    <td className="p-4">{bug.title}</td>
+                    <td className="p-4">
+                      <AssignedReportTextCell value={bug.title} label="Title" />
+                    </td>
                     <td
                       className="p-4 text-blue-600 font-medium cursor-pointer underline"
                       onClick={() => setSelectedBug(bug)}
@@ -346,7 +350,13 @@ export default function AssignedTickets() {
                         {bug.category || "General Bug"}
                       </span>
                     </td>
-                    <td className="p-4">{bug.testUrl}</td>
+                    <td className="p-4">
+                      <AssignedReportTextCell
+                        value={bug.testUrl}
+                        label="Test URL"
+                        href={bug.testUrl}
+                      />
+                    </td>
                     <td className="p-4 flex items-center gap-2">
                       <span>{bug.severity}</span>
                       <Pencil
@@ -360,7 +370,7 @@ export default function AssignedTickets() {
                     </td>
                     <td className="p-4">{bug.reports}</td>
                     <td className="p-4">
-                      {new Date(bug.createdAt).toLocaleDateString()}
+                      <AssignedReportDateCell value={bug.createdAt} />
                     </td>
 
                     {/* ✅ New Resolved Section */}
