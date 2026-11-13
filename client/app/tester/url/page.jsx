@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, ExternalLink, Globe } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ExternalLink,
+  Globe,
+  LoaderCircle,
+} from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import TesterUrlNextStepNote from "./TesterUrlNextStepNote";
@@ -230,7 +236,18 @@ export default function TesterPage() {
             aria-live="polite"
             className="group flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white shadow-md transition duration-200 hover:-translate-y-0.5 hover:bg-[#202020] hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
           >
-            {isSubmitting ? "Continuing..." : "Continue"}
+            {isSubmitting ? (
+              <>
+                <LoaderCircle
+                  size={18}
+                  aria-hidden="true"
+                  className="animate-spin"
+                />
+                Continuing...
+              </>
+            ) : (
+              "Continue"
+            )}
 
             {!isSubmitting && (
               <ArrowRight
