@@ -17,6 +17,8 @@ import AssignedBugCategoryBadge from "./AssignedBugCategoryBadge";
 import AssignedBugDetailsButton from "./AssignedBugDetailsButton";
 import AssignedBugDetailsHeader from "./AssignedBugDetailsHeader";
 import AssignedBugMetadataGrid from "./AssignedBugMetadataGrid";
+import AssignedBugUrlActions from "./AssignedBugUrlActions";
+import AssignedResolveChecklist from "./AssignedResolveChecklist";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -395,6 +397,7 @@ export default function AssignedTickets() {
               onClose={() => setSelectedBug(null)}
             />
             <AssignedBugMetadataGrid bug={selectedBug} />
+            <AssignedBugUrlActions url={selectedBug.testUrl} />
             <p className="text-gray-700 whitespace-pre-line">
               {selectedBug.description}
             </p>
@@ -439,6 +442,8 @@ export default function AssignedTickets() {
             </div>
 
             {/* ✅ Checkbox to send email */}
+            <AssignedResolveChecklist bug={resolveBug} sendMail={sendMail} />
+
             <div className="flex items-center mb-6">
               <input
                 type="checkbox"
