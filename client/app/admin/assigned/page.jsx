@@ -13,6 +13,7 @@ import AssignedSeverityLegend from "./AssignedSeverityLegend";
 import AssignedReportTextCell from "./AssignedReportTextCell";
 import AssignedReportDateCell from "./AssignedReportDateCell";
 import AssignedBugStatusCell from "./AssignedBugStatusCell";
+import AssignedBugCategoryBadge from "./AssignedBugCategoryBadge";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -329,27 +330,7 @@ export default function AssignedTickets() {
                       View
                     </td>
                     <td className="p-4">
-                      <span
-                        className="px-3 py-1 rounded-full text-white text-xs font-semibold"
-                        style={{
-                          backgroundColor:
-                            bug.category === "UI Bug"
-                              ? "#3b82f6"
-                              : bug.category === "Backend Bug"
-                                ? "#6366f1"
-                                : bug.category === "Security Bug"
-                                  ? "#ef4444"
-                                  : bug.category === "Performance Bug"
-                                    ? "#f59e0b"
-                                    : bug.category === "Database Bug"
-                                      ? "#0d9488"
-                                      : bug.category === "Developer Error"
-                                        ? "#6b7280"
-                                        : "#9ca3af",
-                        }}
-                      >
-                        {bug.category || "General Bug"}
-                      </span>
+                      <AssignedBugCategoryBadge category={bug.category} />
                     </td>
                     <td className="p-4">
                       <AssignedReportTextCell
