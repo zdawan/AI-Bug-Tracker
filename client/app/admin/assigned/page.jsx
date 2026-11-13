@@ -16,6 +16,7 @@ import AssignedBugStatusCell from "./AssignedBugStatusCell";
 import AssignedBugCategoryBadge from "./AssignedBugCategoryBadge";
 import AssignedBugDetailsButton from "./AssignedBugDetailsButton";
 import AssignedBugDetailsHeader from "./AssignedBugDetailsHeader";
+import AssignedBugMetadataGrid from "./AssignedBugMetadataGrid";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -393,6 +394,7 @@ export default function AssignedTickets() {
               bug={selectedBug}
               onClose={() => setSelectedBug(null)}
             />
+            <AssignedBugMetadataGrid bug={selectedBug} />
             <p className="text-gray-700 whitespace-pre-line">
               {selectedBug.description}
             </p>
