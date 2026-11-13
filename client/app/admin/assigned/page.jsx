@@ -24,6 +24,7 @@ import AssignedSeverityEditor from "./AssignedSeverityEditor";
 import AssignedLogoutConfirm from "./AssignedLogoutConfirm";
 import AssignedReportsEmptyState from "./AssignedReportsEmptyState";
 import AssignedPageLoadingState from "./AssignedPageLoadingState";
+import AssignedApplicationsHeader from "./AssignedApplicationsHeader";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -162,9 +163,7 @@ export default function AssignedTickets() {
           bugs={bugs}
         />
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">
-            Assigned Application
-          </h2>
+          <AssignedApplicationsHeader count={developer.assignedUrls.length} />
 
           {developer.assignedUrls.map((url, index) => (
             <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-6">
