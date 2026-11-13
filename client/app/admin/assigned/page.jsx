@@ -9,6 +9,7 @@ import AssignedWorkloadOverview from "./AssignedWorkloadOverview";
 import AssignedBugFilterBar from "./AssignedBugFilterBar";
 import AssignedBugSearchBar from "./AssignedBugSearchBar";
 import AssignedBugSortControl from "./AssignedBugSortControl";
+import AssignedSeverityLegend from "./AssignedSeverityLegend";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -282,6 +283,7 @@ export default function AssignedTickets() {
               onChange={setBugFilter}
             />
             <AssignedBugSortControl value={bugSort} onChange={setBugSort} />
+            <AssignedSeverityLegend />
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-left border-b">
