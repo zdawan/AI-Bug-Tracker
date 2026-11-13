@@ -32,6 +32,7 @@ import AssignedApplicationsEmptyState from "./AssignedApplicationsEmptyState";
 import AssignedFilteredEmptyState from "./AssignedFilteredEmptyState";
 import AssignedTableScrollHint from "./AssignedTableScrollHint";
 import AssignedReportsTableCaption from "./AssignedReportsTableCaption";
+import AssignedReportsKeyboardGuide from "./AssignedReportsKeyboardGuide";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -281,6 +282,10 @@ export default function AssignedTickets() {
             />
             <AssignedBugSortControl value={bugSort} onChange={setBugSort} />
             <AssignedSeverityLegend />
+            <AssignedReportsKeyboardGuide
+              isFiltered={Boolean(bugSearch.trim()) || bugFilter !== "all" || bugSort !== "newest"}
+              resultCount={visibleBugs.length}
+            />
             {visibleBugs.length === 0 ? (
               <AssignedFilteredEmptyState
                 hasSearch={Boolean(bugSearch.trim())}
