@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import AssignedWorkloadOverview from "./AssignedWorkloadOverview";
 import AssignedBugFilterBar from "./AssignedBugFilterBar";
 import AssignedBugSearchBar from "./AssignedBugSearchBar";
+import AssignedBugSortControl from "./AssignedBugSortControl";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -28,6 +29,7 @@ export default function AssignedTickets() {
   const [resolveBug, setResolveBug] = useState(null); // ✅ For resolving bugs
   const [bugFilter, setBugFilter] = useState("all");
   const [bugSearch, setBugSearch] = useState("");
+  const [bugSort, setBugSort] = useState("newest");
   const router = useRouter();
 
   const handleLogout = () => {
@@ -111,6 +113,14 @@ export default function AssignedTickets() {
     if (bugFilter === "open") return bug.status !== "Closed";
     if (bugFilter === "closed") return bug.status === "Closed";
     return true;
+  }).sort((first, second) => {
+    if (bugSort === "severity") {
+      const rank = { Critical: 4, High: 3, Medium: 2, Low: 1 };
+      return (rank[second.severity] || 0) - (rank[first.severity] || 0);
+    }
+    const firstDate = new Date(first.createdAt).getTime();
+    const secondDate = new Date(second.createdAt).getTime();
+    return bugSort === "oldest" ? firstDate - secondDate : secondDate - firstDate;
   });
 
   if (!developer)
@@ -271,6 +281,7 @@ export default function AssignedTickets() {
               value={bugFilter}
               onChange={setBugFilter}
             />
+            <AssignedBugSortControl value={bugSort} onChange={setBugSort} />
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-left border-b">
