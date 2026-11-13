@@ -35,6 +35,7 @@ import AssignedReportsTableCaption from "./AssignedReportsTableCaption";
 import AssignedReportsKeyboardGuide from "./AssignedReportsKeyboardGuide";
 import AssignedReportHealthPanel from "./AssignedReportHealthPanel";
 import AssignedApplicationAttentionBadge from "./AssignedApplicationAttentionBadge";
+import AssignedSeverityIndicator from "./AssignedSeverityIndicator";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -363,7 +364,7 @@ export default function AssignedTickets() {
                       />
                     </td>
                     <td className="p-4 flex items-center gap-2">
-                      <span>{bug.severity}</span>
+                      <AssignedSeverityIndicator severity={bug.severity} />
                       <Pencil
                         size={16}
                         className="cursor-pointer text-gray-500 hover:text-black"

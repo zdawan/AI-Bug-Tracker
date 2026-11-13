@@ -11,6 +11,11 @@ export default function AssignedApplicationAttentionBadge({ total, pending }) {
     : isClear
       ? "Every report is resolved"
       : "Review pending reports";
+  const actionHint = isEmpty
+    ? "This application is waiting for its first test report."
+    : isClear
+      ? "No additional action is required for this application."
+      : `${pending} report${pending === 1 ? "" : "s"} still need${pending === 1 ? "s" : ""} attention.`;
   const tone = isEmpty
     ? "border-slate-200 bg-slate-50 text-slate-600"
     : isClear
@@ -28,6 +33,7 @@ export default function AssignedApplicationAttentionBadge({ total, pending }) {
       <div className="min-w-0">
         <p className="text-xs font-bold">{label}</p>
         <p className="text-[10px] leading-4 opacity-80">{description}</p>
+        <p className="mt-1 text-[10px] leading-4 opacity-70">{actionHint}</p>
       </div>
     </div>
   );
