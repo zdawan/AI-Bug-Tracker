@@ -21,6 +21,8 @@ import TesterUrlPreviewExplanation from "./TesterUrlPreviewExplanation";
 import TesterUrlSubmitContext from "./TesterUrlSubmitContext";
 import TesterUrlQuickExamples from "./TesterUrlQuickExamples";
 import TesterUrlPartsSummary from "./TesterUrlPartsSummary";
+import TesterUrlConnectionSummary from "./TesterUrlConnectionSummary";
+import TesterUrlQuerySummary from "./TesterUrlQuerySummary";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -291,6 +293,8 @@ export default function TesterPage() {
             </div>
             <TesterUrlPreviewExplanation value={url} />
             <TesterUrlPartsSummary value={url} />
+            <TesterUrlConnectionSummary value={url} />
+            <TesterUrlQuerySummary value={url} />
           </div>
         </form>
 
