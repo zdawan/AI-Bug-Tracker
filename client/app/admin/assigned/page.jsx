@@ -26,6 +26,7 @@ import AssignedReportsEmptyState from "./AssignedReportsEmptyState";
 import AssignedPageLoadingState from "./AssignedPageLoadingState";
 import AssignedApplicationsHeader from "./AssignedApplicationsHeader";
 import AssignedApplicationMetrics from "./AssignedApplicationMetrics";
+import AssignedResolutionStatus from "./AssignedResolutionStatus";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -236,20 +237,10 @@ export default function AssignedTickets() {
                   <span>{getUnresolvedBugCountForUrl(url)} Pending</span>
                 </div>
 
-                <span
-                  className={`text-xs font-medium ${getBugCountForUrl(url) === 0
-                    ? "text-gray-500"
-                    : getUnresolvedBugCountForUrl(url) === 0
-                      ? "text-green-700"
-                      : "text-yellow-700"
-                    }`}
-                >
-                  {getBugCountForUrl(url) === 0
-                    ? "No bugs reported"
-                    : getUnresolvedBugCountForUrl(url) === 0
-                      ? "All bugs resolved 🎉"
-                      : "Action required"}
-                </span>
+                <AssignedResolutionStatus
+                  total={getBugCountForUrl(url)}
+                  pending={getUnresolvedBugCountForUrl(url)}
+                />
               </div>
             </div>
           ))}
