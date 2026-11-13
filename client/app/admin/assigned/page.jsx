@@ -15,6 +15,7 @@ import AssignedReportDateCell from "./AssignedReportDateCell";
 import AssignedBugStatusCell from "./AssignedBugStatusCell";
 import AssignedBugCategoryBadge from "./AssignedBugCategoryBadge";
 import AssignedBugDetailsButton from "./AssignedBugDetailsButton";
+import AssignedBugDetailsHeader from "./AssignedBugDetailsHeader";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -388,7 +389,10 @@ export default function AssignedTickets() {
       {selectedBug && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg">
-            <h2 className="text-2xl font-bold mb-4">{selectedBug.title}</h2>
+            <AssignedBugDetailsHeader
+              bug={selectedBug}
+              onClose={() => setSelectedBug(null)}
+            />
             <p className="text-gray-700 whitespace-pre-line">
               {selectedBug.description}
             </p>
