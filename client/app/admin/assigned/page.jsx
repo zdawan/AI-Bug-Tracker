@@ -29,6 +29,7 @@ import AssignedApplicationMetrics from "./AssignedApplicationMetrics";
 import AssignedResolutionStatus from "./AssignedResolutionStatus";
 import AssignedApplicationLink from "./AssignedApplicationLink";
 import AssignedApplicationsEmptyState from "./AssignedApplicationsEmptyState";
+import AssignedFilteredEmptyState from "./AssignedFilteredEmptyState";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -278,6 +279,16 @@ export default function AssignedTickets() {
             />
             <AssignedBugSortControl value={bugSort} onChange={setBugSort} />
             <AssignedSeverityLegend />
+            {visibleBugs.length === 0 ? (
+              <AssignedFilteredEmptyState
+                hasSearch={Boolean(bugSearch.trim())}
+                onClearSearch={() => setBugSearch("")}
+                onShowAll={() => {
+                  setBugFilter("all");
+                  setBugSearch("");
+                }}
+              />
+            ) : (
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-left border-b">
@@ -369,6 +380,7 @@ export default function AssignedTickets() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         )}
       </div>
