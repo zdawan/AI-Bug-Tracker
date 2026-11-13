@@ -27,6 +27,7 @@ import AssignedPageLoadingState from "./AssignedPageLoadingState";
 import AssignedApplicationsHeader from "./AssignedApplicationsHeader";
 import AssignedApplicationMetrics from "./AssignedApplicationMetrics";
 import AssignedResolutionStatus from "./AssignedResolutionStatus";
+import AssignedApplicationLink from "./AssignedApplicationLink";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -173,14 +174,7 @@ export default function AssignedTickets() {
               <div className="col-span-1 md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 sm:px-6 sm:py-5">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <div className="min-w-0 flex-1">
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 font-medium hover:underline break-all block"
-                    >
-                      {url}
-                    </a>
+                    <AssignedApplicationLink url={url} />
 
                     <AssignedApplicationMetrics
                       total={getBugCountForUrl(url)}
