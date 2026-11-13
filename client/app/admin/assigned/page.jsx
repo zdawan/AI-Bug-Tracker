@@ -19,6 +19,7 @@ import AssignedBugDetailsHeader from "./AssignedBugDetailsHeader";
 import AssignedBugMetadataGrid from "./AssignedBugMetadataGrid";
 import AssignedBugUrlActions from "./AssignedBugUrlActions";
 import AssignedResolveChecklist from "./AssignedResolveChecklist";
+import AssignedCodePreviewModal from "./AssignedCodePreviewModal";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -479,25 +480,13 @@ export default function AssignedTickets() {
       )}
 
       {showCodeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-            <pre className="text-sm text-black whitespace-pre-wrap">
-              {selectedCode}
-            </pre>
-
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => {
-                  setShowCodeModal(false);
-                  setSelectedCode("");
-                }}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <AssignedCodePreviewModal
+          code={selectedCode}
+          onClose={() => {
+            setShowCodeModal(false);
+            setSelectedCode("");
+          }}
+        />
       )}
 
       {/* ✅ Severity Edit Modal */}
