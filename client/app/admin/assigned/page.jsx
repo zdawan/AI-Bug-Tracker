@@ -22,6 +22,7 @@ import AssignedResolveChecklist from "./AssignedResolveChecklist";
 import AssignedCodePreviewModal from "./AssignedCodePreviewModal";
 import AssignedSeverityEditor from "./AssignedSeverityEditor";
 import AssignedLogoutConfirm from "./AssignedLogoutConfirm";
+import AssignedReportsEmptyState from "./AssignedReportsEmptyState";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -283,9 +284,7 @@ export default function AssignedTickets() {
         )}
 
         {bugs.length === 0 ? (
-          <p className="text-gray-500 justify-center flex mt-10">
-            No bugs reported yet. If any, it will be visible here.
-          </p>
+          <AssignedReportsEmptyState />
         ) : bugs.every((b) => b.status === "Closed") ? (
           <p className="text-green-600 font-semibold text-center">
             All bugs resolved 🎉
