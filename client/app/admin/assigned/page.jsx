@@ -30,6 +30,7 @@ import AssignedResolutionStatus from "./AssignedResolutionStatus";
 import AssignedApplicationLink from "./AssignedApplicationLink";
 import AssignedApplicationsEmptyState from "./AssignedApplicationsEmptyState";
 import AssignedFilteredEmptyState from "./AssignedFilteredEmptyState";
+import AssignedTableScrollHint from "./AssignedTableScrollHint";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -289,6 +290,8 @@ export default function AssignedTickets() {
                 }}
               />
             ) : (
+            <>
+            <AssignedTableScrollHint />
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-left border-b">
@@ -380,6 +383,7 @@ export default function AssignedTickets() {
                 ))}
               </tbody>
             </table>
+            </>
             )}
           </div>
         )}
