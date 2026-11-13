@@ -24,6 +24,7 @@ import TesterUrlPartsSummary from "./TesterUrlPartsSummary";
 import TesterUrlConnectionSummary from "./TesterUrlConnectionSummary";
 import TesterUrlQuerySummary from "./TesterUrlQuerySummary";
 import TesterUrlFragmentSummary from "./TesterUrlFragmentSummary";
+import TesterUrlReadinessChecklist from "./TesterUrlReadinessChecklist";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -304,6 +305,7 @@ export default function TesterPage() {
 
         <TesterUrlNextStepNote />
         <TesterUrlPrivacyDisclosure />
+        <TesterUrlReadinessChecklist value={url} />
 
         <footer className="mt-10 border-t border-slate-100 pt-6 text-center text-base text-[#596579] sm:mt-12">
           Already reported a bug?{" "}
