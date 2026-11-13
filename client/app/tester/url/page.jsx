@@ -241,7 +241,7 @@ export default function TesterPage() {
                 <LoaderCircle
                   size={18}
                   aria-hidden="true"
-                  className="animate-spin"
+                  className="animate-spin motion-reduce:animate-none"
                 />
                 Continuing...
               </>
