@@ -33,6 +33,7 @@ import AssignedFilteredEmptyState from "./AssignedFilteredEmptyState";
 import AssignedTableScrollHint from "./AssignedTableScrollHint";
 import AssignedReportsTableCaption from "./AssignedReportsTableCaption";
 import AssignedReportsKeyboardGuide from "./AssignedReportsKeyboardGuide";
+import AssignedReportHealthPanel from "./AssignedReportHealthPanel";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -170,6 +171,7 @@ export default function AssignedTickets() {
           urls={developer.assignedUrls}
           bugs={bugs}
         />
+        <AssignedReportHealthPanel bugs={bugs} />
         <div className="mb-6">
           <AssignedApplicationsHeader count={developer.assignedUrls.length} />
 
