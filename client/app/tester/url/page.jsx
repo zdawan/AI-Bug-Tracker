@@ -173,6 +173,7 @@ export default function TesterPage() {
 
               <input
                 id="test-url"
+                name="testUrl"
                 type="text"
                 inputMode="url"
                 autoComplete="url"
@@ -180,6 +181,7 @@ export default function TesterPage() {
                 spellCheck={false}
                 enterKeyHint="go"
                 aria-describedby="test-url-hint"
+                aria-keyshortcuts="Escape"
                 placeholder="e.g. github.com"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
