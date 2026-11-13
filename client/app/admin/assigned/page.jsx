@@ -21,6 +21,7 @@ import AssignedBugUrlActions from "./AssignedBugUrlActions";
 import AssignedResolveChecklist from "./AssignedResolveChecklist";
 import AssignedCodePreviewModal from "./AssignedCodePreviewModal";
 import AssignedSeverityEditor from "./AssignedSeverityEditor";
+import AssignedLogoutConfirm from "./AssignedLogoutConfirm";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -42,6 +43,7 @@ export default function AssignedTickets() {
   const [bugFilter, setBugFilter] = useState("all");
   const [bugSearch, setBugSearch] = useState("");
   const [bugSort, setBugSort] = useState("newest");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const router = useRouter();
 
   const handleLogout = () => {
@@ -267,11 +269,18 @@ export default function AssignedTickets() {
         </div>
 
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutConfirm(true)}
           className="px-6 py-2.5 bg-red-400 text-white rounded-xl cursor-pointer w-fit hover:bg-red-600 transition-colors"
         >
           Logout
         </button>
+
+        {showLogoutConfirm && (
+          <AssignedLogoutConfirm
+            onConfirm={handleLogout}
+            onCancel={() => setShowLogoutConfirm(false)}
+          />
+        )}
 
         {bugs.length === 0 ? (
           <p className="text-gray-500 justify-center flex mt-10">
