@@ -20,6 +20,7 @@ import AssignedBugMetadataGrid from "./AssignedBugMetadataGrid";
 import AssignedBugUrlActions from "./AssignedBugUrlActions";
 import AssignedResolveChecklist from "./AssignedResolveChecklist";
 import AssignedCodePreviewModal from "./AssignedCodePreviewModal";
+import AssignedSeverityEditor from "./AssignedSeverityEditor";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -491,37 +492,13 @@ export default function AssignedTickets() {
 
       {/* ✅ Severity Edit Modal */}
       {editBug && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
-              Update for: <span className="font-medium">{editBug.title}</span>
-            </h2>
-            <select
-              value={newSeverity}
-              onChange={(e) => setNewSeverity(e.target.value)}
-              className="w-full border px-4 py-2 rounded-lg mb-4"
-            >
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-              <option value="Critical">Critical</option>
-            </select>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setEditBug(null)}
-                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSeverityUpdate}
-                className="px-4 py-2 bg-green-700 cursor-pointer text-white rounded-lg hover:bg-green-800"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
+        <AssignedSeverityEditor
+          bug={editBug}
+          value={newSeverity}
+          onChange={setNewSeverity}
+          onSave={handleSeverityUpdate}
+          onCancel={() => setEditBug(null)}
+        />
       )}
 
       {editUrl && (
