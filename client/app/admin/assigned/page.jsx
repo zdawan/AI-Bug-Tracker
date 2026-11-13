@@ -36,6 +36,7 @@ import AssignedReportsKeyboardGuide from "./AssignedReportsKeyboardGuide";
 import AssignedReportHealthPanel from "./AssignedReportHealthPanel";
 import AssignedApplicationAttentionBadge from "./AssignedApplicationAttentionBadge";
 import AssignedSeverityIndicator from "./AssignedSeverityIndicator";
+import AssignedScreenshotStatus from "./AssignedScreenshotStatus";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -398,7 +399,9 @@ export default function AssignedTickets() {
                         Open
                       </button>
                     </td>
-                    <td className="p-4">Not Included</td>
+                    <td className="p-4">
+                      <AssignedScreenshotStatus screenshots={bug.screenshots} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
