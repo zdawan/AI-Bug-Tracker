@@ -20,6 +20,7 @@ import TesterUrlPrivacyDisclosure from "./TesterUrlPrivacyDisclosure";
 import TesterUrlPreviewExplanation from "./TesterUrlPreviewExplanation";
 import TesterUrlSubmitContext from "./TesterUrlSubmitContext";
 import TesterUrlQuickExamples from "./TesterUrlQuickExamples";
+import TesterUrlPartsSummary from "./TesterUrlPartsSummary";
 
 export default function TesterPage() {
   const [url, setUrl] = useState("");
@@ -289,6 +290,7 @@ export default function TesterPage() {
               </button>
             </div>
             <TesterUrlPreviewExplanation value={url} />
+            <TesterUrlPartsSummary value={url} />
           </div>
         </form>
 
