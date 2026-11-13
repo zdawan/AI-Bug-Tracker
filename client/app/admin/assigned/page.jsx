@@ -11,6 +11,7 @@ import AssignedBugSearchBar from "./AssignedBugSearchBar";
 import AssignedBugSortControl from "./AssignedBugSortControl";
 import AssignedSeverityLegend from "./AssignedSeverityLegend";
 import AssignedReportTextCell from "./AssignedReportTextCell";
+import AssignedReportDateCell from "./AssignedReportDateCell";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -369,7 +370,7 @@ export default function AssignedTickets() {
                     </td>
                     <td className="p-4">{bug.reports}</td>
                     <td className="p-4">
-                      {new Date(bug.createdAt).toLocaleDateString()}
+                      <AssignedReportDateCell value={bug.createdAt} />
                     </td>
 
                     {/* ✅ New Resolved Section */}
