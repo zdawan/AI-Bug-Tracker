@@ -6,6 +6,7 @@ import { CheckCircle, Pencil, Info } from "lucide-react"; // ✅ npm install luc
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AssignedWorkloadOverview from "./AssignedWorkloadOverview";
+import AssignedBugFilterBar from "./AssignedBugFilterBar";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -24,6 +25,7 @@ export default function AssignedTickets() {
   const [editBug, setEditBug] = useState(null); // ✅ For editing severity
   const [newSeverity, setNewSeverity] = useState("Medium");
   const [resolveBug, setResolveBug] = useState(null); // ✅ For resolving bugs
+  const [bugFilter, setBugFilter] = useState("all");
   const router = useRouter();
 
   const handleLogout = () => {
@@ -97,6 +99,12 @@ export default function AssignedTickets() {
     bugs.filter(
       (bug) => bug.status !== "Closed" && bug.testUrl?.startsWith(baseUrl),
     ).length;
+
+  const visibleBugs = bugs.filter((bug) => {
+    if (bugFilter === "open") return bug.status !== "Closed";
+    if (bugFilter === "closed") return bug.status === "Closed";
+    return true;
+  });
 
   if (!developer)
     return <p className="text-center mt-20">Please login first</p>;
@@ -246,6 +254,11 @@ export default function AssignedTickets() {
           </p>
         ) : (
           <div className="overflow-x-auto">
+            <AssignedBugFilterBar
+              bugs={bugs}
+              value={bugFilter}
+              onChange={setBugFilter}
+            />
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-left border-b">
@@ -276,7 +289,7 @@ export default function AssignedTickets() {
                 </tr>
               </thead>
               <tbody>
-                {bugs.map((bug) => (
+                {visibleBugs.map((bug) => (
                   <tr key={bug._id} className="border-b hover:bg-gray-50">
                     <td className="p-4">{bug.title}</td>
                     <td
