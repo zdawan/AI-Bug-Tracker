@@ -1114,8 +1114,15 @@ export default function OtpForm({
             id="tester-otp-help"
             className="text-center text-xs text-slate-500"
           >
-            Paste the full code into any box, or enter each digit. Check your
-            spam folder if the message is missing.
+            <span className="block">
+              Paste the full code into any box, or enter each digit.
+            </span>
+            <span className="block">Use arrow keys to move between digits.</span>
+            <span className="block">Press Escape to hide the code immediately.</span>
+            <span className="block">
+              Backspace or Delete clears a digit; Backspace also moves backward.
+            </span>
+            <span className="block">Check your spam folder if the message is missing.</span>
           </p>
           <p className="text-center text-[10px] text-slate-400">
             Tip: press Ctrl+Backspace or ⌘+Backspace in a code box to clear all
