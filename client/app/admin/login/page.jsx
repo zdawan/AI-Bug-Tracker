@@ -167,6 +167,9 @@ export default function AdminLogin() {
             className="text-sm font-semibold text-gray-700"
           >
             Organization email
+            <span className="ml-1 text-red-600" aria-hidden="true">
+              *
+            </span>
           </label>
           <div className="relative">
             <input
@@ -196,7 +199,9 @@ export default function AdminLogin() {
               required
               disabled={isSubmitting}
               aria-describedby="admin-email-help"
-              className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
+              aria-invalid={Boolean(errorMessage)}
+              aria-required="true"
+              className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
             />
             {email && !isSubmitting && (
               <button
@@ -220,6 +225,10 @@ export default function AdminLogin() {
           )}
           <p id="admin-email-help" className="-mt-2 text-xs text-gray-500">
             Use the email assigned to your tester account.
+          </p>
+          <p className="-mt-1 text-[11px] leading-4 text-gray-500">
+            <span className="font-semibold text-gray-700">Required:</span>{" "}
+            organization email address
           </p>
           {email && !errorMessage && (
             <div className="-mt-2 space-y-1.5" role="status" aria-live="polite">
@@ -282,6 +291,20 @@ export default function AdminLogin() {
           >
             {isSubmitting ? "Checking access…" : "Login"}
           </button>
+          <ul className="-mt-1 grid gap-1 text-[10px] leading-4 text-gray-500" aria-label="Login keyboard instructions">
+            <li>
+              <span className="font-semibold text-gray-700">Enter:</span>{" "}
+              submit the login form
+            </li>
+            <li>
+              <span className="font-semibold text-gray-700">Escape:</span>{" "}
+              clear the organization email
+            </li>
+            <li>
+              <span className="font-semibold text-gray-700">Tab:</span>{" "}
+              move through login controls
+            </li>
+          </ul>
           <p
             id="admin-login-submit-status"
             className="sr-only"
@@ -331,6 +354,13 @@ export default function AdminLogin() {
           </p>
           <p className="mt-1 text-[10px] leading-4 text-slate-500">
             Uncheck Remember this email to remove the saved value.
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-slate-500">
+            On a shared device, clear the email after login or leave the
+            Remember option unchecked.
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-slate-500">
+            Logging out does not remove a remembered email automatically.
           </p>
         </div>
       </div>
