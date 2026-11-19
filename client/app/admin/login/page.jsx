@@ -764,6 +764,16 @@ export default function AdminLogin() {
             A closed tab is not a confirmed logout.
           </p>
         </div>
+        <p
+          className="mt-3 text-center text-[9px] leading-4 text-gray-400"
+          role="note"
+        >
+          Recheck the email and network before retrying. Do not repeat Login
+          while verification is active.
+        </p>
+        <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
+          Keep private account details out of support screenshots.
+        </p>
       </div>
 
       {/* Toastify */}
