@@ -12,6 +12,7 @@ export default function AdminLogin() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(false);
   const router = useRouter();
   const emailRef = useRef(null);
   const normalizedEmail = email.trim().toLowerCase();
@@ -22,7 +23,21 @@ export default function AdminLogin() {
     if (dev) {
       router.push("/admin/assigned");
     }
+
+    const savedEmail = localStorage.getItem("adminLoginEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberEmail(true);
+    }
   }, [router]);
+
+  useEffect(() => {
+    if (rememberEmail && normalizedEmail) {
+      localStorage.setItem("adminLoginEmail", normalizedEmail);
+    } else if (!rememberEmail) {
+      localStorage.removeItem("adminLoginEmail");
+    }
+  }, [normalizedEmail, rememberEmail]);
 
   useEffect(() => {
     if (!isSubmitting) {
@@ -231,6 +246,16 @@ export default function AdminLogin() {
               )}
             </div>
           )}
+          <label className="-mt-1 flex items-center gap-2 text-[11px] text-gray-600">
+            <input
+              type="checkbox"
+              checked={rememberEmail}
+              onChange={(event) => setRememberEmail(event.target.checked)}
+              disabled={isSubmitting}
+              className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600"
+            />
+            Remember this email on this browser
+          </label>
           {isSubmitting && (
             <div
               className="-mt-1 flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800"
