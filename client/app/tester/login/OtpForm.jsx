@@ -993,6 +993,13 @@ export default function OtpForm({
               onClick={() => {
                 const nextVisible = !isEmailVisible;
                 setIsEmailVisible(nextVisible);
+                recordActivity(
+                  nextVisible ? "email_shown" : "email_hidden",
+                  nextVisible
+                    ? "The destination email was revealed by user request."
+                    : "The destination email was hidden by user request.",
+                  "Privacy control",
+                );
                 setEmailVisibilityMessage(
                   nextVisible ? "Email address shown." : "Email address hidden.",
                 );
