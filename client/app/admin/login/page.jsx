@@ -796,6 +796,15 @@ export default function AdminLogin() {
         <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
           On a shared device, clear the email and use Logout after work.
         </p>
+        <div
+          className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2"
+          role="note"
+        >
+          <p className="text-center text-[9px] leading-4 text-emerald-700">
+            Successful verification opens the assigned reports workspace.
+            Keep the browser session private and close it with Logout.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
