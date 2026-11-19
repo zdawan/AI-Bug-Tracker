@@ -331,6 +331,28 @@ export default function AdminLogin() {
             </div>
           )}
           <div
+            className="-mt-1 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2"
+            role="note"
+          >
+            <p className="text-[10px] font-semibold text-sky-900">
+              Connection status
+            </p>
+            <p className="mt-1 text-[10px] leading-4 text-sky-800">
+              {isSubmitting
+                ? "Verification is active. Please wait before retrying."
+                : errorMessage
+                  ? "The last verification attempt needs attention."
+                  : "Ready to verify your organization account."}
+            </p>
+            {!isSubmitting && (
+              <ul className="mt-2 grid gap-1 text-[10px] leading-4 text-sky-800">
+                <li>• Check that the network connection is stable.</li>
+                <li>• Use the complete organization email address.</li>
+                <li>• Wait for a timeout message before retrying.</li>
+              </ul>
+            )}
+          </div>
+          <div
             className="-mt-1 grid grid-cols-2 gap-2 text-[10px] text-gray-500"
             aria-label="Login process summary"
           >
