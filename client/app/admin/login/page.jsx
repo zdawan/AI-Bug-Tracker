@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { MailQuestion, ShieldCheck } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { buildApiEndpoint } from "../../lib/apiClient";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -25,28 +24,53 @@ export default function AdminLogin() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!normalizedEmail) {
       setErrorMessage("Enter your organization email to continue.");
       toast.error("Enter email to login", { autoClose: 3000 });
       return;
     }
 
+    if (!emailLooksReady) {
+      setErrorMessage(
+        "Enter a complete organization email, including the domain.",
+      );
+      toast.error("Use a valid email address", { autoClose: 3000 });
+      return;
+    }
+
     setErrorMessage("");
     setIsSubmitting(true);
     try {
-      const res = await axios.get(
-        `https://ai-bug-tracker-1.onrender.com/api/developers/email/${encodeURIComponent(
-          normalizedEmail
-        )}`
+      const endpoint = buildApiEndpoint(
+        `/developers/email/${encodeURIComponent(normalizedEmail)}`,
       );
-      // Save developer in local storage for session
+      const res = await axios.get(endpoint, {
+        timeout: 15000,
+      });
+
+      if (!res.data?._id) {
+        throw new Error(
+          "The account response did not include a developer session.",
+        );
+      }
+
       localStorage.setItem("developer", JSON.stringify(res.data));
-      router.push("/admin/assigned");
+      toast.success("Access confirmed", { autoClose: 1500 });
+      router.replace("/admin/assigned");
     } catch (err) {
-      setErrorMessage(
-        "We could not verify this email. Check the address or contact an administrator.",
+      const notFound = err?.response?.status === 404;
+      const message = notFound
+        ? "This organization email is not registered. Confirm the address and try again."
+        : "We could not verify this email. Check your connection or contact an administrator.";
+      setErrorMessage(message);
+      toast.error(
+        notFound ? "Email not recognized" : "Unable to verify access",
+        {
+          autoClose: 3000,
+        },
       );
-      toast.error("Invalid email or server error", { autoClose: 3000 });
     } finally {
       setIsSubmitting(false);
     }
@@ -88,7 +112,11 @@ export default function AdminLogin() {
           className="mb-5 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-3 text-blue-900"
           role="note"
         >
-          <ShieldCheck size={17} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
+          <ShieldCheck
+            size={17}
+            aria-hidden="true"
+            className="mt-0.5 shrink-0 text-blue-600"
+          />
           <div>
             <p className="text-xs font-semibold">Restricted tester access</p>
             <p className="mt-1 text-[10px] leading-4 text-blue-800">
@@ -102,7 +130,10 @@ export default function AdminLogin() {
           className="flex flex-col gap-4"
           aria-busy={isSubmitting}
         >
-          <label htmlFor="admin-email" className="text-sm font-semibold text-gray-700">
+          <label
+            htmlFor="admin-email"
+            className="text-sm font-semibold text-gray-700"
+          >
             Organization email
           </label>
           <input
