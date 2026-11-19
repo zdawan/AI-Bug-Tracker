@@ -24,6 +24,10 @@ const CODE_REVEAL_SECONDS = 15;
 const AUTO_VERIFY_STORAGE_KEY = "testerOtpAutoVerify";
 const RESEND_COOLDOWN_SECONDS = 30;
 const MAX_ACTIVITY_EVENTS = 50;
+const OFFLINE_MESSAGE =
+  "You’re offline. Verification and resend are paused; your entered code will stay on this page.";
+const ONLINE_MESSAGE =
+  "Connection restored. Your entered code is still here; select Verify and continue to retry.";
 
 function extractOtpDigits(value) {
   const text = value.trim();
@@ -214,7 +218,7 @@ export default function OtpForm({
         "Browser network",
       );
       setNetworkMessage(
-        "Connection restored. Your entered code is still here; select Verify and continue to retry.",
+        ONLINE_MESSAGE,
       );
     };
     const handleOffline = () => {
@@ -225,15 +229,13 @@ export default function OtpForm({
         "Browser network",
       );
       setNetworkMessage(
-        "You’re offline. Verification and resend are paused; your entered code will stay on this page.",
+        OFFLINE_MESSAGE,
       );
     };
 
     setIsOnline(navigator.onLine);
     if (!navigator.onLine) {
-      setNetworkMessage(
-        "You’re offline. Verification and resend are paused; your entered code will stay on this page.",
-      );
+      setNetworkMessage(OFFLINE_MESSAGE);
     }
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -858,7 +860,7 @@ export default function OtpForm({
             )}
             <p className="text-xs leading-5">
               {networkMessage ||
-                "You’re offline. Verification and resend are paused; your entered code will stay on this page."}
+              OFFLINE_MESSAGE}
             </p>
           </div>
         )}
