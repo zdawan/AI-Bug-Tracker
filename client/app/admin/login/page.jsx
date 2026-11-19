@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { MailQuestion, ShieldCheck } from "lucide-react";
+import { MailQuestion, ShieldCheck, X } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { buildApiEndpoint } from "../../lib/apiClient";
@@ -11,6 +11,7 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
   const router = useRouter();
   const normalizedEmail = email.trim().toLowerCase();
   const emailLooksReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
@@ -76,6 +77,12 @@ export default function AdminLogin() {
     }
   };
 
+  const clearEmail = () => {
+    setEmail("");
+    setErrorMessage("");
+    setShowEmailPreview(false);
+  };
+
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center 
@@ -136,22 +143,37 @@ export default function AdminLogin() {
           >
             Organization email
           </label>
-          <input
-            id="admin-email"
-            type="email"
-            name="email"
-            placeholder="you@organization.com"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (errorMessage) setErrorMessage("");
-            }}
-            autoComplete="email"
-            required
-            disabled={isSubmitting}
-            aria-describedby="admin-email-help"
-            className="px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
-          />
+          <div className="relative">
+            <input
+              id="admin-email"
+              type="email"
+              name="email"
+              placeholder="you@organization.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setShowEmailPreview(false);
+                if (errorMessage) setErrorMessage("");
+              }}
+              autoComplete="email"
+              spellCheck="false"
+              required
+              disabled={isSubmitting}
+              aria-describedby="admin-email-help"
+              className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
+            />
+            {email && !isSubmitting && (
+              <button
+                type="button"
+                onClick={clearEmail}
+                aria-label="Clear organization email"
+                title="Clear email"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
           {errorMessage && (
             <p
               className="-mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700"
@@ -164,15 +186,29 @@ export default function AdminLogin() {
             Use the email assigned to your tester account.
           </p>
           {email && !errorMessage && (
-            <p
-              className={`-mt-2 text-xs ${emailLooksReady ? "text-emerald-700" : "text-amber-700"}`}
-              role="status"
-              aria-live="polite"
-            >
-              {emailLooksReady
-                ? "Email format looks ready to check."
-                : "Enter a complete email address, including @ and a domain."}
-            </p>
+            <div className="-mt-2 space-y-1.5" role="status" aria-live="polite">
+              <p
+                className={`text-xs ${emailLooksReady ? "text-emerald-700" : "text-amber-700"}`}
+              >
+                {emailLooksReady
+                  ? "Email format looks ready to check."
+                  : "Enter a complete email address, including @ and a domain."}
+              </p>
+              {emailLooksReady && (
+                <button
+                  type="button"
+                  onClick={() => setShowEmailPreview((current) => !current)}
+                  className="text-[11px] font-semibold text-purple-700 underline-offset-2 hover:underline"
+                >
+                  {showEmailPreview ? "Hide normalized email" : "Review normalized email"}
+                </button>
+              )}
+              {showEmailPreview && emailLooksReady && (
+                <p className="rounded-lg border border-purple-100 bg-purple-50 px-3 py-2 text-xs text-purple-800">
+                  Login value: <span className="font-semibold">{normalizedEmail}</span>
+                </p>
+              )}
+            </div>
           )}
           <button
             type="submit"
