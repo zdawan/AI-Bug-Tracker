@@ -93,6 +93,7 @@ export default function OtpForm({
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(0);
   const [idleSecondsRemaining, setIdleSecondsRemaining] = useState(0);
   const [resendReadyMessage, setResendReadyMessage] = useState("");
+  const [resendSuccessMessage, setResendSuccessMessage] = useState("");
   const [activityEvents, setActivityEvents] = useState([]);
   const activitySequence = useRef(0);
   const networkStatus = useRef(null);
@@ -715,8 +716,12 @@ export default function OtpForm({
       "Resend control",
     );
     setResendReadyMessage("");
+    setResendSuccessMessage("");
     const sent = await onResend();
     if (sent) {
+      setResendSuccessMessage(
+        "A new code was sent. Use the latest code to continue.",
+      );
       recordActivity(
         "resend_succeeded",
         "A new verification code was requested. The previous code may no longer be valid.",
@@ -1138,8 +1143,6 @@ export default function OtpForm({
           aria-atomic="true"
           disabled={isVerifying || isSending}
           aria-busy={isVerifying}
-          aria-live="polite"
-          aria-atomic="true"
           className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 disabled:cursor-wait disabled:opacity-60"
         >
           {isVerifying && (
@@ -1226,6 +1229,15 @@ export default function OtpForm({
                 ? "Resend code"
                 : "Reconnect to resend"}
           </button>
+        )}
+        {resendSuccessMessage && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-center text-[11px] font-medium text-emerald-700"
+          >
+            {resendSuccessMessage}
+          </p>
         )}
         {resendReadyMessage && (
           <p
