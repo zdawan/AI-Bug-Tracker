@@ -517,6 +517,20 @@ export default function OtpForm({
   };
 
   const handleKeyDown = (event, index) => {
+    if (event.key === "Escape" && isCodeVisible) {
+      event.preventDefault();
+      stopRevealTimer();
+      setRevealSeconds(0);
+      setIsCodeVisible(false);
+      setRevealNotice("The verification code is hidden.");
+      recordActivity(
+        "visibility_changed",
+        "The verification code was hidden with Escape.",
+        "Keyboard",
+      );
+      return;
+    }
+
     if (
       event.key === "Backspace" &&
       (event.ctrlKey || event.metaKey) &&
