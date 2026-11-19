@@ -13,6 +13,7 @@ export default function AdminLogin() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(false);
+  const [emailPreferenceLoaded, setEmailPreferenceLoaded] = useState(false);
   const router = useRouter();
   const emailRef = useRef(null);
   const normalizedEmail = email.trim().toLowerCase();
@@ -29,15 +30,17 @@ export default function AdminLogin() {
       setEmail(savedEmail);
       setRememberEmail(true);
     }
+    setEmailPreferenceLoaded(true);
   }, [router]);
 
   useEffect(() => {
+    if (!emailPreferenceLoaded) return;
     if (rememberEmail && normalizedEmail) {
       localStorage.setItem("adminLoginEmail", normalizedEmail);
     } else if (!rememberEmail) {
       localStorage.removeItem("adminLoginEmail");
     }
-  }, [normalizedEmail, rememberEmail]);
+  }, [emailPreferenceLoaded, normalizedEmail, rememberEmail]);
 
   useEffect(() => {
     if (!isSubmitting) {
@@ -103,6 +106,8 @@ export default function AdminLogin() {
     setEmail("");
     setErrorMessage("");
     setShowEmailPreview(false);
+    setRememberEmail(false);
+    localStorage.removeItem("adminLoginEmail");
   };
 
   return (
@@ -803,6 +808,9 @@ export default function AdminLogin() {
           <p className="text-center text-[9px] leading-4 text-emerald-700">
             Successful verification opens the assigned reports workspace.
             Keep the browser session private and close it with Logout.
+          </p>
+          <p className="mt-1 text-center text-[9px] leading-4 text-emerald-600">
+            Do not leave remembered account details on another person&apos;s device.
           </p>
         </div>
       </div>
