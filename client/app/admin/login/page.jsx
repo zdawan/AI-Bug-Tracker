@@ -141,6 +141,36 @@ export default function AdminLogin() {
           Verification usually completes in a few seconds.
         </p>
         <div
+          className="mb-5 grid grid-cols-2 gap-2"
+          role="note"
+          aria-label="Session reminder"
+        >
+          <div className="rounded-lg border border-gray-100 bg-white/70 px-3 py-2">
+            <p className="text-[10px] font-semibold text-gray-700">Session type</p>
+            <p className="mt-1 text-[10px] leading-4 text-gray-500">
+              Browser-local administrator session
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-white/70 px-3 py-2">
+            <p className="text-[10px] font-semibold text-gray-700">To end access</p>
+            <p className="mt-1 text-[10px] leading-4 text-gray-500">
+              Use Logout inside the admin workspace
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-white/70 px-3 py-2">
+            <p className="text-[10px] font-semibold text-gray-700">Shared device</p>
+            <p className="mt-1 text-[10px] leading-4 text-gray-500">
+              Clear saved email and log out after use
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-white/70 px-3 py-2">
+            <p className="text-[10px] font-semibold text-gray-700">Session scope</p>
+            <p className="mt-1 text-[10px] leading-4 text-gray-500">
+              Access remains browser-local until logout
+            </p>
+          </div>
+        </div>
+        <div
           className="mb-5 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-3 text-blue-900"
           role="note"
         >
