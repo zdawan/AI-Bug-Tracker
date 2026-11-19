@@ -207,12 +207,22 @@ export default function OtpForm({
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
+      recordActivity(
+        "network_online",
+        "The browser connection was restored during OTP entry.",
+        "Browser network",
+      );
       setNetworkMessage(
         "Connection restored. Your entered code is still here; select Verify and continue to retry.",
       );
     };
     const handleOffline = () => {
       setIsOnline(false);
+      recordActivity(
+        "network_offline",
+        "The browser lost its connection during OTP entry.",
+        "Browser network",
+      );
       setNetworkMessage(
         "You’re offline. Verification and resend are paused; your entered code will stay on this page.",
       );
