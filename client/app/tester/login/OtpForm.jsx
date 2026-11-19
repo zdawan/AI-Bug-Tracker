@@ -1049,6 +1049,8 @@ export default function OtpForm({
             <button
               type="button"
               onClick={() => {
+                if (isSending || isVerifying) return;
+
                 const nextVisible = !isEmailVisible;
                 if (nextVisible && enteredDigits > 0 && isCodeVisible) {
                   stopRevealTimer();
@@ -1077,11 +1079,18 @@ export default function OtpForm({
                     : "Email address hidden for privacy.",
                 );
               }}
+              disabled={isSending || isVerifying}
               aria-pressed={isEmailVisible}
               aria-describedby="email-visibility-hint"
               aria-keyshortcuts="Escape"
-              aria-label={isEmailVisible ? "Hide email address" : "Show email address"}
-              className="shrink-0 rounded px-1 text-[10px] font-semibold text-purple-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+              aria-label={
+                isSending || isVerifying
+                  ? "Email visibility unavailable during a request"
+                  : isEmailVisible
+                    ? "Hide email address"
+                    : "Show email address"
+              }
+              className="shrink-0 rounded px-1 text-[10px] font-semibold text-purple-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isEmailVisible ? "Hide" : "Show"}
             </button>
@@ -1092,6 +1101,8 @@ export default function OtpForm({
           focus, when verification or a new-code request begins, after
           inactivity, or when Escape is pressed anywhere in this form.
           Escape also hides a revealed verification code.
+          The address cannot be revealed while verification or a code request
+          is active.
         </span>
         <p role="status" className="sr-only" aria-live="polite" aria-atomic="true">
           {emailVisibilityMessage}
