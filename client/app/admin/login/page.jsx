@@ -752,6 +752,18 @@ export default function AdminLogin() {
             Logout and remember settings are separate.
           </p>
         </div>
+        <div
+          className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2"
+          role="note"
+        >
+          <p className="text-center text-[9px] leading-4 text-indigo-700">
+            Before closing: confirm account verification, end the active session,
+            and clear saved email details on any shared browser.
+          </p>
+          <p className="mt-1 text-center text-[9px] leading-4 text-indigo-600">
+            A closed tab is not a confirmed logout.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
