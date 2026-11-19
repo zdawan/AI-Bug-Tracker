@@ -478,6 +478,27 @@ export default function AdminLogin() {
             Logging out does not remove a remembered email automatically.
           </p>
         </div>
+        <div
+          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3"
+          role="note"
+        >
+          <p className="text-[11px] font-semibold text-amber-900">
+            Security reminder
+          </p>
+          <ul className="mt-2 grid gap-1.5 text-[10px] leading-4 text-amber-800">
+            <li>Only enter an organization email you are authorized to use.</li>
+            <li>Do not share or forward the verification request.</li>
+            <li>Verify the destination before logging in on a new browser.</li>
+            <li>Clear remembered details when the device is shared.</li>
+            <li>Log out after completing assigned report work.</li>
+          </ul>
+          <p className="mt-2 text-[10px] leading-4 text-amber-800">
+            Safe sequence: verify, review, work, save required records, then log out.
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-amber-800">
+            Report suspicious access attempts to the project administrator.
+          </p>
+        </div>
         <details className="mt-4 rounded-xl border border-gray-200 bg-white px-3 py-3 text-[11px] text-gray-600">
           <summary className="cursor-pointer font-semibold text-gray-800">
             Quick login help
