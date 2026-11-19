@@ -668,6 +668,18 @@ export default function AdminLogin() {
             if this device is shared.
           </p>
         </div>
+        <div
+          className="mt-4 rounded-xl border border-gray-200 bg-white px-3 py-3"
+          role="note"
+        >
+          <p className="text-[10px] font-semibold text-gray-700">
+            Final login check
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-gray-500">
+            Confirm the organization email, wait for verification, and do not
+            leave an account session open on a shared browser.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
