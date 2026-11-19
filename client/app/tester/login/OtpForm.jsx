@@ -741,12 +741,22 @@ export default function OtpForm({
       return;
     }
 
+    setNetworkMessage("");
+    setResendReadyMessage("");
+    if (isEmailVisible) {
+      setIsEmailVisible(false);
+      recordActivity(
+        "email_hidden",
+        "The destination email was hidden before requesting a new verification code.",
+        "Resend privacy safeguard",
+      );
+    }
+
     recordActivity(
       "resend_requested",
       "A request was made to send a new verification code.",
       "Resend control",
     );
-    setResendReadyMessage("");
     setResendSuccessMessage("");
     const sent = await onResend();
     if (sent) {
