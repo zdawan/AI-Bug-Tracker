@@ -31,9 +31,10 @@ export default function AssignedCodePreviewTrigger({ onOpen, hasCode = false }) 
       <span className="text-[10px] leading-4 text-slate-400">
         {hasCode ? "Captured snippet" : "Fallback response"}
       </span>
-      <span className="text-[10px] leading-4 text-slate-400" role="status">
+      <span className="text-[10px] leading-4 text-slate-400" role="status" aria-live="polite">
         {statusLabel} · {reviewHint}
       </span>
+      <span className="text-[9px] text-slate-400">Review state is current</span>
     </div>
   );
 }

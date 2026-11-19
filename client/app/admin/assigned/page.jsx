@@ -41,6 +41,7 @@ import AssignedReportVolume from "./AssignedReportVolume";
 import AssignedReportAgeBadge from "./AssignedReportAgeBadge";
 import AssignedReportUrlContext from "./AssignedReportUrlContext";
 import AssignedCodePreviewTrigger from "./AssignedCodePreviewTrigger";
+import AssignedReportDetailHint from "./AssignedReportDetailHint";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -357,6 +358,7 @@ export default function AssignedTickets() {
                         bug={bug}
                         onSelect={setSelectedBug}
                       />
+                      <AssignedReportDetailHint description={bug.description} />
                     </td>
                     <td className="p-4">
                       <AssignedBugCategoryBadge category={bug.category} />
