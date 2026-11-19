@@ -878,6 +878,17 @@ export default function OtpForm({
     setIsCodeVisible(true);
     setCodeError("");
     setClipboardMessage("");
+    if (isEmailVisible) {
+      setIsEmailVisible(false);
+      setEmailVisibilityMessage(
+        "The destination email was hidden when the code was cleared.",
+      );
+      recordActivity(
+        "email_hidden",
+        "The destination email was hidden when the verification code was cleared.",
+        "Clear control",
+      );
+    }
     onCodeChange?.();
     inputRefs.current[0]?.focus();
   };
@@ -1056,6 +1067,7 @@ export default function OtpForm({
           The full address is hidden after 15 seconds, when this page loses
           focus, when verification or a new-code request begins, after
           inactivity, or when Escape is pressed anywhere in this form.
+          Escape also hides a revealed verification code.
         </span>
         <p role="status" className="sr-only" aria-live="polite" aria-atomic="true">
           {emailVisibilityMessage}
