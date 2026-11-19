@@ -649,7 +649,24 @@ export default function AdminLogin() {
             <li>Review the destination before submitting credentials.</li>
             <li>Clear remembered details on shared devices.</li>
             <li>Log out after assigned administration work.</li>
+            <li>Report suspicious account activity immediately.</li>
+            <li>Keep administrator support messages private and controlled.</li>
           </ul>
+        </div>
+        <div
+          className="mt-4 flex items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-3"
+          role="note"
+        >
+          <ShieldCheck
+            size={15}
+            aria-hidden="true"
+            className="mt-0.5 shrink-0 text-indigo-600"
+          />
+          <p className="text-[10px] leading-4 text-indigo-800">
+            Before closing this page, confirm that no verification request is
+            still active and that all browser-local account details are cleared
+            if this device is shared.
+          </p>
         </div>
       </div>
 
