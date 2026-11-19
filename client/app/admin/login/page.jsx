@@ -729,6 +729,18 @@ export default function AdminLogin() {
             Use the controls independently based on your device and session needs.
           </p>
         </div>
+        <div
+          className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
+          role="note"
+        >
+          <p className="text-center text-[9px] leading-4 text-slate-500">
+            Verification is sent only when Login is submitted. Remembered email
+            remains browser-local and should be disabled on shared devices.
+          </p>
+          <p className="mt-1 text-center text-[9px] leading-4 text-slate-400">
+            Clearing the field does not change an active verified session.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
