@@ -473,6 +473,11 @@ export default function OtpForm({
       setNetworkMessage(
         "You’re offline, so automatic verification was paused. Your code is ready to submit when you reconnect.",
       );
+      recordActivity(
+        "auto_verify_paused_offline",
+        "Automatic verification was paused because the browser was offline.",
+        "Auto-verify",
+      );
       return;
     }
 
@@ -644,6 +649,11 @@ export default function OtpForm({
       setNetworkMessage(
         "You’re offline, so verification was not sent. Your code is still here; reconnect and try again.",
       );
+      recordActivity(
+        "verify_blocked_offline",
+        "Verification was not sent because the browser was offline; entered digits were retained.",
+        "Verify form",
+      );
       return;
     }
     setNetworkMessage("");
@@ -676,6 +686,11 @@ export default function OtpForm({
     if (!isOnline) {
       setNetworkMessage(
         "You’re offline, so a new code was not requested. Reconnect before trying again.",
+      );
+      recordActivity(
+        "resend_blocked_offline",
+        "A new code was not requested because the browser was offline.",
+        "Resend control",
       );
       return;
     }
