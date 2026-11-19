@@ -584,17 +584,30 @@ export default function OtpForm({
   };
 
   const handleKeyDown = (event, index) => {
-    if (event.key === "Escape" && isCodeVisible) {
+    if (event.key === "Escape" && (isCodeVisible || isEmailVisible)) {
       event.preventDefault();
-      stopRevealTimer();
-      setRevealSeconds(0);
-      setIsCodeVisible(false);
-      setRevealNotice("The verification code is hidden.");
-      recordActivity(
-        "visibility_changed",
-        "The verification code was hidden with Escape.",
-        "Keyboard",
-      );
+      if (isCodeVisible) {
+        stopRevealTimer();
+        setRevealSeconds(0);
+        setIsCodeVisible(false);
+        setRevealNotice("The verification code is hidden.");
+        recordActivity(
+          "visibility_changed",
+          "The verification code was hidden with Escape.",
+          "Keyboard",
+        );
+      }
+      if (isEmailVisible) {
+        setIsEmailVisible(false);
+        setEmailVisibilityMessage(
+          "The destination email was hidden with Escape.",
+        );
+        recordActivity(
+          "email_hidden",
+          "The destination email was hidden with Escape.",
+          "Keyboard",
+        );
+      }
       return;
     }
 
