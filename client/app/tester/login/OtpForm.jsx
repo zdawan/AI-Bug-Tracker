@@ -309,6 +309,21 @@ export default function OtpForm({
   );
 
   useEffect(() => {
+    if (!isEmailVisible) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsEmailVisible(false);
+      recordActivityRef.current(
+        "email_hidden",
+        "The destination email was hidden automatically after the reveal timer ended.",
+        "Privacy timer",
+      );
+    }, CODE_REVEAL_SECONDS * 1000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isEmailVisible]);
+
+  useEffect(() => {
     const hideSensitiveDetails = () => {
       if (isCodeVisible) {
         stopRevealTimer();
