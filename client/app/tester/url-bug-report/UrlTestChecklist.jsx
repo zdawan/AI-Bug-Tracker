@@ -240,6 +240,26 @@ function ChecklistMetric({ label, value, tone = "slate" }) {
   );
 }
 
+function ChecklistViewSummary({ total, visible, selected, filter, search }) {
+  const filterLabel =
+    FILTER_OPTIONS.find((option) => option.id === filter)?.label || "All pages";
+  const hasSearch = Boolean(search.trim());
+  const selectionLabel = selected === 0 ? "Nothing selected" : `${selected} selected`;
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-2 rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2 text-[10px] text-violet-900"
+      aria-label="Checklist view summary"
+    >
+      <span className="font-semibold">{visible} of {total} visible</span>
+      <span className="text-violet-300" aria-hidden="true">•</span>
+      <span>{filterLabel}</span>
+      {hasSearch && <span className="rounded-full bg-white px-2 py-0.5">Search active</span>}
+      <span className="ml-auto font-medium text-violet-700">{selectionLabel}</span>
+    </div>
+  );
+}
+
 function ScenarioStatusControls({ scenario, onChange }) {
   return (
     <fieldset className="min-w-0">
@@ -1104,6 +1124,16 @@ export default function UrlTestChecklist({
             Showing {filteredScenarios.length} of {scenarios.length} page
             {scenarios.length === 1 ? "" : "s"}
           </p>
+        )}
+
+        {scenarios.length > 0 && (
+          <ChecklistViewSummary
+            total={scenarios.length}
+            visible={filteredScenarios.length}
+            selected={selectedIds.size}
+            filter={statusFilter}
+            search={search}
+          />
         )}
 
         {scenarios.length > 0 && (
