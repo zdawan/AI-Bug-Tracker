@@ -321,6 +321,11 @@ export default function OtpForm({
       setEmailVisibilityMessage(
         "The destination email will be hidden in five seconds.",
       );
+      recordActivityRef.current(
+        "email_hide_warning",
+        "The destination email will be hidden in five seconds.",
+        "Privacy timer",
+      );
     }, (CODE_REVEAL_SECONDS - 5) * 1000);
     const timeoutId = window.setTimeout(() => {
       setIsEmailVisible(false);
@@ -1073,7 +1078,10 @@ export default function OtpForm({
 
         {email.trim() && (
           <div className="mt-2 flex items-center justify-center gap-2">
-            <p className="break-all text-sm font-semibold text-slate-900">
+            <p
+              id="tester-destination-email"
+              className="break-all text-sm font-semibold text-slate-900"
+            >
               {isEmailVisible ? email : maskEmailAddress(email.trim())}
             </p>
             <button
@@ -1110,7 +1118,8 @@ export default function OtpForm({
                 );
               }}
               disabled={isSending || isVerifying}
-              aria-pressed={isEmailVisible}
+              aria-controls="tester-destination-email"
+              aria-expanded={isEmailVisible}
               aria-describedby="email-visibility-hint"
               aria-keyshortcuts="Escape"
               aria-label={
