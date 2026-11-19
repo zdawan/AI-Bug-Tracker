@@ -774,6 +774,18 @@ export default function AdminLogin() {
         <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
           Keep private account details out of support screenshots.
         </p>
+        <div
+          className="mt-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+          role="note"
+        >
+          <p className="text-center text-[9px] leading-4 text-gray-500">
+            Need help? Contact the project administrator with the account
+            domain, not the private email address.
+          </p>
+          <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
+            Keep support conversations limited to necessary access details.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
