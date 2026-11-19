@@ -381,6 +381,24 @@ export default function AdminLogin() {
               organization before submitting again.
             </p>
           )}
+          {errorMessage && (
+            <div
+              className="-mt-1 rounded-lg border border-red-100 bg-red-50 px-3 py-3"
+              role="note"
+              aria-label="Retry checklist"
+            >
+              <p className="text-[10px] font-semibold text-red-800">
+                Before retrying
+              </p>
+              <ul className="mt-2 grid gap-1 text-[10px] leading-4 text-red-700">
+                <li>Check the email domain and spelling.</li>
+                <li>Confirm the account is registered as a developer.</li>
+                <li>Confirm the browser has stable network access.</li>
+                <li>Wait for the previous verification request to finish.</li>
+                <li>Contact an administrator if the account is still unrecognized.</li>
+              </ul>
+            </div>
+          )}
           <button
             type="submit"
             disabled={isSubmitting}
