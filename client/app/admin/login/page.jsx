@@ -10,6 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -23,10 +24,12 @@ export default function AdminLogin() {
     e.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
+      setErrorMessage("Enter your organization email to continue.");
       toast.error("Enter email to login", { autoClose: 3000 });
       return;
     }
 
+    setErrorMessage("");
     setIsSubmitting(true);
     try {
       const res = await axios.get(
@@ -38,6 +41,9 @@ export default function AdminLogin() {
       localStorage.setItem("developer", JSON.stringify(res.data));
       router.push("/admin/assigned");
     } catch (err) {
+      setErrorMessage(
+        "We could not verify this email. Check the address or contact an administrator.",
+      );
       toast.error("Invalid email or server error", { autoClose: 3000 });
     } finally {
       setIsSubmitting(false);
@@ -90,13 +96,24 @@ export default function AdminLogin() {
             name="email"
             placeholder="you@organization.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (errorMessage) setErrorMessage("");
+            }}
             autoComplete="email"
             required
             disabled={isSubmitting}
             aria-describedby="admin-email-help"
             className="px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
           />
+          {errorMessage && (
+            <p
+              className="-mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700"
+              role="alert"
+            >
+              {errorMessage}
+            </p>
+          )}
           <p id="admin-email-help" className="-mt-2 text-xs text-gray-500">
             Use the email assigned to your tester account.
           </p>
