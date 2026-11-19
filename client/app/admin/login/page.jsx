@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -82,6 +83,19 @@ export default function AdminLogin() {
           <br />
           access the assigned url's.
         </p>
+        <div
+          className="mb-5 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-3 text-blue-900"
+          role="note"
+        >
+          <ShieldCheck size={17} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-600" />
+          <div>
+            <p className="text-xs font-semibold">Restricted tester access</p>
+            <p className="mt-1 text-[10px] leading-4 text-blue-800">
+              Only registered organization emails can open assigned reports.
+              Your session stays in this browser until you log out.
+            </p>
+          </div>
+        </div>
         <form
           onSubmit={handleLogin}
           className="flex flex-col gap-4"
