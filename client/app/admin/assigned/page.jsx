@@ -39,6 +39,7 @@ import AssignedSeverityIndicator from "./AssignedSeverityIndicator";
 import AssignedScreenshotStatus from "./AssignedScreenshotStatus";
 import AssignedReportVolume from "./AssignedReportVolume";
 import AssignedReportAgeBadge from "./AssignedReportAgeBadge";
+import AssignedReportUrlContext from "./AssignedReportUrlContext";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -365,6 +366,7 @@ export default function AssignedTickets() {
                         label="Test URL"
                         href={bug.testUrl}
                       />
+                      <AssignedReportUrlContext url={bug.testUrl} />
                     </td>
                     <td className="p-4 flex items-center gap-2">
                       <AssignedSeverityIndicator severity={bug.severity} />
