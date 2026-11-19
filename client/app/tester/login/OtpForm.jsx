@@ -95,6 +95,7 @@ export default function OtpForm({
   const [resendReadyMessage, setResendReadyMessage] = useState("");
   const [activityEvents, setActivityEvents] = useState([]);
   const activitySequence = useRef(0);
+  const networkStatus = useRef(null);
   const previousRequestState = useRef(false);
   const previousVerifyState = useRef(false);
   const previousResendCooldown = useRef(resendCooldown);
@@ -211,6 +212,8 @@ export default function OtpForm({
 
   useEffect(() => {
     const handleOnline = () => {
+      if (networkStatus.current === true) return;
+      networkStatus.current = true;
       setIsOnline(true);
       recordActivity(
         "network_online",
@@ -222,6 +225,8 @@ export default function OtpForm({
       );
     };
     const handleOffline = () => {
+      if (networkStatus.current === false) return;
+      networkStatus.current = false;
       setIsOnline(false);
       recordActivity(
         "network_offline",
@@ -233,8 +238,10 @@ export default function OtpForm({
       );
     };
 
-    setIsOnline(navigator.onLine);
-    if (!navigator.onLine) {
+    const initiallyOnline = navigator.onLine;
+    networkStatus.current = initiallyOnline;
+    setIsOnline(initiallyOnline);
+    if (!initiallyOnline) {
       setNetworkMessage(OFFLINE_MESSAGE);
     }
     window.addEventListener("online", handleOnline);
