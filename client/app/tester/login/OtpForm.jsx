@@ -386,6 +386,17 @@ export default function OtpForm({
       idleExpiryHandled.current = true;
       setOtp(["", "", "", "", "", ""]);
       setIsCodeVisible(false);
+      if (isEmailVisible) {
+        setIsEmailVisible(false);
+        setEmailVisibilityMessage(
+          "The destination email was hidden after inactivity.",
+        );
+        recordActivityRef.current(
+          "email_hidden",
+          "The destination email was hidden when the entered code expired after inactivity.",
+          "Privacy timer",
+        );
+      }
       setRevealSeconds(0);
       setCodeError("");
       setClipboardMessage(
@@ -409,6 +420,7 @@ export default function OtpForm({
   }, [
     enteredDigits,
     idleTimeoutMinutes,
+    isEmailVisible,
     isSending,
     isVerifying,
   ]);
