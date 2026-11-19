@@ -42,6 +42,7 @@ import AssignedReportAgeBadge from "./AssignedReportAgeBadge";
 import AssignedReportUrlContext from "./AssignedReportUrlContext";
 import AssignedCodePreviewTrigger from "./AssignedCodePreviewTrigger";
 import AssignedReportDetailHint from "./AssignedReportDetailHint";
+import AssignedReportCategoryHint from "./AssignedReportCategoryHint";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -362,6 +363,7 @@ export default function AssignedTickets() {
                     </td>
                     <td className="p-4">
                       <AssignedBugCategoryBadge category={bug.category} />
+                      <AssignedReportCategoryHint category={bug.category} />
                     </td>
                     <td className="p-4">
                       <AssignedReportTextCell
