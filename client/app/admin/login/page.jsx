@@ -635,6 +635,22 @@ export default function AdminLogin() {
             and include the account domain rather than the full private address.
           </p>
         </div>
+        <div
+          className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-3"
+          role="note"
+          aria-label="Account safety reminder"
+        >
+          <p className="text-[11px] font-semibold text-rose-900">
+            Account safety
+          </p>
+          <ul className="mt-2 grid gap-1.5 text-[10px] leading-4 text-rose-800">
+            <li>Use only an account authorized for this workspace.</li>
+            <li>Never share the browser session or developer record.</li>
+            <li>Review the destination before submitting credentials.</li>
+            <li>Clear remembered details on shared devices.</li>
+            <li>Log out after assigned administration work.</li>
+          </ul>
+        </div>
       </div>
 
       {/* Toastify */}
