@@ -253,6 +253,31 @@ export default function AdminLogin() {
                   Login value: <span className="font-semibold">{normalizedEmail}</span>
                 </p>
               )}
+              {email && (
+                <div
+                  className="grid grid-cols-3 gap-2 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2 text-[10px]"
+                  aria-label="Email verification summary"
+                >
+                  <div>
+                    <span className="block font-semibold text-gray-700">Format</span>
+                    <span className={emailLooksReady ? "text-emerald-700" : "text-amber-700"}>
+                      {emailLooksReady ? "Valid" : "Incomplete"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-semibold text-gray-700">Spacing</span>
+                    <span className={email === normalizedEmail ? "text-emerald-700" : "text-amber-700"}>
+                      {email === normalizedEmail ? "Clean" : "Normalized"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-semibold text-gray-700">Memory</span>
+                    <span className={rememberEmail ? "text-purple-700" : "text-gray-500"}>
+                      {rememberEmail ? "Enabled" : "Not saved"}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <label className="-mt-1 flex items-center gap-2 text-[11px] text-gray-600">
