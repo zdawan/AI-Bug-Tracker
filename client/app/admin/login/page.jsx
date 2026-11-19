@@ -786,6 +786,16 @@ export default function AdminLogin() {
             Keep support conversations limited to necessary access details.
           </p>
         </div>
+        <p
+          className="mt-3 text-center text-[9px] leading-4 text-gray-400"
+          role="note"
+        >
+          Verification access is confirmed only for the organization account
+          returned by the service.
+        </p>
+        <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
+          On a shared device, clear the email and use Logout after work.
+        </p>
       </div>
 
       {/* Toastify */}
