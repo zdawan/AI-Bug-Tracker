@@ -91,6 +91,7 @@ export default function OtpForm({
   const [codeError, setCodeError] = useState("");
   const [clipboardMessage, setClipboardMessage] = useState("");
   const [isEmailVisible, setIsEmailVisible] = useState(false);
+  const [emailVisibilityMessage, setEmailVisibilityMessage] = useState("");
   const [isCodeVisible, setIsCodeVisible] = useState(true);
   const [autoVerify, setAutoVerify] = useState(false);
   const [autoVerifyPreferenceLoaded, setAutoVerifyPreferenceLoaded] =
@@ -313,6 +314,7 @@ export default function OtpForm({
 
     const timeoutId = window.setTimeout(() => {
       setIsEmailVisible(false);
+      setEmailVisibilityMessage("The destination email was hidden for privacy.");
       recordActivityRef.current(
         "email_hidden",
         "The destination email was hidden automatically after the reveal timer ended.",
@@ -946,7 +948,13 @@ export default function OtpForm({
             </p>
             <button
               type="button"
-              onClick={() => setIsEmailVisible((visible) => !visible)}
+              onClick={() => {
+                const nextVisible = !isEmailVisible;
+                setIsEmailVisible(nextVisible);
+                setEmailVisibilityMessage(
+                  nextVisible ? "Email address shown." : "Email address hidden.",
+                );
+              }}
               aria-pressed={isEmailVisible}
               aria-label={isEmailVisible ? "Hide email address" : "Show email address"}
               className="shrink-0 rounded px-1 text-[10px] font-semibold text-purple-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
@@ -955,6 +963,9 @@ export default function OtpForm({
             </button>
           </div>
         )}
+        <p className="sr-only" aria-live="polite" aria-atomic="true">
+          {emailVisibilityMessage}
+        </p>
       </header>
 
       <form
