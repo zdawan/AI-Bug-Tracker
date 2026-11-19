@@ -1193,6 +1193,9 @@ export default function OtpForm({
               className="block text-sm font-semibold text-slate-800"
             >
               Verification code
+              <span className="ml-1 font-normal text-slate-500">
+                (required)
+              </span>
             </span>
 
             <div className="flex items-center gap-2 sm:gap-3">
@@ -1278,11 +1281,13 @@ export default function OtpForm({
                 type={isCodeVisible ? "text" : "password"}
                 inputMode="numeric"
                 pattern="[0-9]*"
+                required
+                aria-required="true"
                 autoCapitalize="off"
                 spellCheck={false}
                 enterKeyHint={index === otp.length - 1 ? "go" : "next"}
                 autoComplete={index === 0 ? "one-time-code" : "off"}
-                aria-label={`OTP digit ${index + 1} of 6, ${
+                aria-label={`OTP digit ${index + 1} of 6, required, ${
                   digit ? "filled" : "empty"
                 }`}
                 aria-invalid={Boolean(visibleError)}
@@ -1413,6 +1418,9 @@ export default function OtpForm({
           >
             <span className="block">
               Paste the full code into any box, or enter each digit.
+            </span>
+            <span className="block">
+              All six digits are required before verification can continue.
             </span>
             <span className="block">Use arrow keys to move between digits.</span>
             <span className="block">Press Escape to hide the code immediately.</span>
