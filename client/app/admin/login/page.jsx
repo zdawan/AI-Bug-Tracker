@@ -511,43 +511,17 @@ export default function AdminLogin() {
                 aria-hidden="true"
               />
             </div>
-          <div
-            className="grid gap-2 rounded-lg border border-violet-100 bg-violet-50 px-3 py-3"
-            aria-label="Account checklist"
-          >
-            <p className="text-[10px] font-semibold text-violet-900">
-              Account checklist
-            </p>
-            <p className="text-[10px] leading-4 text-violet-800">
-              Your organization email must be complete, registered, and assigned
-              to an administrator or tester account.
-            </p>
-            <p className="text-[10px] leading-4 text-violet-800">
-              Verification is read-only until the account response is confirmed.
-              Do not repeat the request while it is in progress.
-            </p>
-            <p className="text-[10px] leading-4 text-violet-800">
-              After successful login, use the Logout action before leaving a
-              shared browser.
-            </p>
-          </div>
-          <div
-            className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3"
-            aria-label="Before login checklist"
-          >
-            <p className="text-[10px] font-semibold text-gray-700">
+          <details className="-mt-1 rounded-lg border border-violet-100 bg-violet-50 px-3 py-3 text-[10px] text-violet-800">
+            <summary className="cursor-pointer font-semibold text-violet-900">
               Before opening the workspace
-            </p>
-            <ul className="mt-2 grid gap-1.5 text-[10px] leading-4 text-gray-600">
-              <li>Confirm the email belongs to your organization.</li>
-              <li>Confirm the browser has a stable network connection.</li>
-              <li>Keep this tab open while verification is in progress.</li>
-              <li>Use Logout when you finish administering reports.</li>
-              <li>Clear remembered email on a shared or public device.</li>
-              <li>Do not submit from an account you do not recognize.</li>
-              <li>Wait for the timeout result before sending another request.</li>
+            </summary>
+            <ul className="mt-2 grid gap-1.5 leading-4">
+              <li>Use your registered organization email.</li>
+              <li>Keep this tab open while verification is running.</li>
+              <li>Wait for a timeout or error before retrying.</li>
+              <li>On shared devices, clear remembered email and log out.</li>
             </ul>
-          </div>
+          </details>
           <p
             className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-center text-[10px] leading-4 text-gray-500"
             role="note"
@@ -580,49 +554,19 @@ export default function AdminLogin() {
             </div>
           </div>
         </div>
-        <div
-          className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
-          role="note"
-        >
-          <p className="text-[11px] font-semibold text-slate-700">
-            Browser privacy
-          </p>
-          <p className="mt-1 text-[10px] leading-4 text-slate-500">
-            Remembered email is stored only in this browser. It is not sent until
-            you submit the login form.
-          </p>
-          <p className="mt-1 text-[10px] leading-4 text-slate-500">
-            Uncheck Remember this email to remove the saved value.
-          </p>
-          <p className="mt-1 text-[10px] leading-4 text-slate-500">
-            On a shared device, clear the email after login or leave the
-            Remember option unchecked.
-          </p>
-          <p className="mt-1 text-[10px] leading-4 text-slate-500">
-            Logging out does not remove a remembered email automatically.
-          </p>
-        </div>
-        <div
-          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3"
-          role="note"
-        >
-          <p className="text-[11px] font-semibold text-amber-900">
-            Security reminder
-          </p>
-          <ul className="mt-2 grid gap-1.5 text-[10px] leading-4 text-amber-800">
-            <li>Only enter an organization email you are authorized to use.</li>
-            <li>Do not share or forward the verification request.</li>
-            <li>Verify the destination before logging in on a new browser.</li>
-            <li>Clear remembered details when the device is shared.</li>
-            <li>Log out after completing assigned report work.</li>
+        <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-[10px] text-slate-600">
+          <summary className="cursor-pointer font-semibold text-slate-700">
+            Privacy and account safety
+          </summary>
+          <ul className="mt-2 grid gap-1.5 leading-4">
+            <li>Remembered email stays in this browser until removed.</li>
+            <li>Uncheck Remember this email to remove the saved value.</li>
+            <li>Only use an organization account authorized for this workspace.</li>
+            <li>Do not share the browser session or verification request.</li>
+            <li>On shared devices, clear remembered details and log out.</li>
+            <li>Report suspicious access attempts to the project administrator.</li>
           </ul>
-          <p className="mt-2 text-[10px] leading-4 text-amber-800">
-            Safe sequence: verify, review, work, save required records, then log out.
-          </p>
-          <p className="mt-1 text-[10px] leading-4 text-amber-800">
-            Report suspicious access attempts to the project administrator.
-          </p>
-        </div>
+        </details>
         <div
           className="mt-4 grid grid-cols-3 gap-2"
           role="note"
