@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { MailQuestion, ShieldCheck } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -142,6 +142,28 @@ export default function AdminLogin() {
             Example mail: githubtest@gmail.com
           </p>
         </form>
+        <div className="mt-6 border-t border-gray-200 pt-5" role="note">
+          <div className="flex items-start gap-2 text-gray-600">
+            <MailQuestion
+              size={15}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-purple-600"
+            />
+            <div>
+              <p className="text-xs font-semibold text-gray-800">
+                Email not recognized?
+              </p>
+              <p className="mt-1 text-[10px] leading-4">
+                Confirm that you are using the same organization email that was
+                assigned to the tester account.
+              </p>
+              <p className="mt-1 text-[10px] leading-4 text-gray-500">
+                If access still fails, contact your project administrator before
+                trying another account.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Toastify */}
