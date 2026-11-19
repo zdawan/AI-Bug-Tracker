@@ -679,6 +679,11 @@ export default function OtpForm({
     setResendReadyMessage("");
     const sent = await onResend();
     if (sent) {
+      recordActivity(
+        "resend_succeeded",
+        "A new verification code was requested. The previous code may no longer be valid.",
+        "Resend control",
+      );
       stopRevealTimer();
       setRevealSeconds(0);
       setRevealNotice("");
@@ -686,8 +691,15 @@ export default function OtpForm({
       setIsCodeVisible(true);
       setCodeError("");
       setClipboardMessage("");
+      setNetworkMessage("");
       onCodeChange?.();
       inputRefs.current[0]?.focus();
+    } else {
+      recordActivity(
+        "resend_failed",
+        "The resend request failed. The current code was kept on the form.",
+        "Resend control",
+      );
     }
   };
 
