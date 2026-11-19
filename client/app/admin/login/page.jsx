@@ -707,6 +707,16 @@ export default function AdminLogin() {
                 : "The login form is ready."}
           </p>
         </div>
+        <p
+          className="mt-4 text-center text-[10px] leading-4 text-gray-500"
+          role="note"
+        >
+          When finished, use Logout and clear remembered email if this browser
+          is shared.
+        </p>
+        <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
+          Closing the tab does not automatically remove browser-local email memory.
+        </p>
       </div>
 
       {/* Toastify */}
