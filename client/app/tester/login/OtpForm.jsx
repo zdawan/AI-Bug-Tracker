@@ -859,6 +859,27 @@ export default function OtpForm({
     inputRefs.current[0]?.focus();
   };
 
+  const handleBackToEmail = () => {
+    if (isSending || isVerifying) return;
+
+    stopRevealTimer();
+    setRevealSeconds(0);
+    setRevealNotice("");
+    setIsCodeVisible(false);
+    if (isEmailVisible) {
+      setIsEmailVisible(false);
+      setEmailVisibilityMessage(
+        "The destination email was hidden before returning to email entry.",
+      );
+      recordActivity(
+        "email_hidden",
+        "The destination email was hidden before returning to email entry.",
+        "Privacy safeguard",
+      );
+    }
+    onBack?.();
+  };
+
   const focusCodeForCorrection = () => {
     const firstEmptyIndex = otp.findIndex((digit) => !digit);
     const targetIndex = firstEmptyIndex < 0 ? 0 : firstEmptyIndex;
@@ -938,7 +959,7 @@ export default function OtpForm({
     >
       <button
         type="button"
-        onClick={onBack}
+        onClick={handleBackToEmail}
         className="mb-6 inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
         aria-label="Back to email entry"
       >
@@ -1390,7 +1411,7 @@ export default function OtpForm({
 
         <button
           type="button"
-          onClick={onBack}
+          onClick={handleBackToEmail}
           disabled={isSending || isVerifying}
           className="inline-flex cursor-pointer items-center gap-2 text-slate-600 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -1401,7 +1422,7 @@ export default function OtpForm({
       <OtpHelpPanel
         email={email}
         onResend={handleResendCode}
-        onBack={onBack}
+        onBack={handleBackToEmail}
         resendCooldown={resendCooldown}
         isSending={isSending}
         isVerifying={isVerifying}
