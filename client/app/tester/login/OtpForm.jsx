@@ -312,6 +312,11 @@ export default function OtpForm({
   useEffect(() => {
     if (!isEmailVisible) return undefined;
 
+    const warningTimeoutId = window.setTimeout(() => {
+      setEmailVisibilityMessage(
+        "The destination email will be hidden in five seconds.",
+      );
+    }, (CODE_REVEAL_SECONDS - 5) * 1000);
     const timeoutId = window.setTimeout(() => {
       setIsEmailVisible(false);
       setEmailVisibilityMessage("The destination email was hidden for privacy.");
@@ -322,7 +327,10 @@ export default function OtpForm({
       );
     }, CODE_REVEAL_SECONDS * 1000);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(warningTimeoutId);
+      window.clearTimeout(timeoutId);
+    };
   }, [isEmailVisible]);
 
   useEffect(() => {
