@@ -413,6 +413,23 @@ export default function AdminLogin() {
               ? "Login verification is in progress."
               : "Login verification is ready."}
           </p>
+          <div
+            className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3"
+            aria-label="Before login checklist"
+          >
+            <p className="text-[10px] font-semibold text-gray-700">
+              Before opening the workspace
+            </p>
+            <ul className="mt-2 grid gap-1.5 text-[10px] leading-4 text-gray-600">
+              <li>Confirm the email belongs to your organization.</li>
+              <li>Confirm the browser has a stable network connection.</li>
+              <li>Keep this tab open while verification is in progress.</li>
+              <li>Use Logout when you finish administering reports.</li>
+              <li>Clear remembered email on a shared or public device.</li>
+              <li>Do not submit from an account you do not recognize.</li>
+              <li>Wait for the timeout result before sending another request.</li>
+            </ul>
+          </div>
           <p className="flex items-center justify-center">
             Example mail: githubtest@gmail.com
           </p>
