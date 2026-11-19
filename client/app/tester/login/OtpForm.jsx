@@ -583,33 +583,39 @@ export default function OtpForm({
     }
   };
 
-  const handleKeyDown = (event, index) => {
-    if (event.key === "Escape" && (isCodeVisible || isEmailVisible)) {
-      event.preventDefault();
-      if (isCodeVisible) {
-        stopRevealTimer();
-        setRevealSeconds(0);
-        setIsCodeVisible(false);
-        setRevealNotice("The verification code is hidden.");
-        recordActivity(
-          "visibility_changed",
-          "The verification code was hidden with Escape.",
-          "Keyboard",
-        );
-      }
-      if (isEmailVisible) {
-        setIsEmailVisible(false);
-        setEmailVisibilityMessage(
-          "The destination email was hidden with Escape.",
-        );
-        recordActivity(
-          "email_hidden",
-          "The destination email was hidden with Escape.",
-          "Keyboard",
-        );
-      }
-      return;
+  const handleSensitiveEscape = (event) => {
+    if (event.key !== "Escape" || (!isCodeVisible && !isEmailVisible)) {
+      return false;
     }
+
+    event.preventDefault();
+    if (isCodeVisible) {
+      stopRevealTimer();
+      setRevealSeconds(0);
+      setIsCodeVisible(false);
+      setRevealNotice("The verification code is hidden.");
+      recordActivity(
+        "visibility_changed",
+        "The verification code was hidden with Escape.",
+        "Keyboard",
+      );
+    }
+    if (isEmailVisible) {
+      setIsEmailVisible(false);
+      setEmailVisibilityMessage(
+        "The destination email was hidden with Escape.",
+      );
+      recordActivity(
+        "email_hidden",
+        "The destination email was hidden with Escape.",
+        "Keyboard",
+      );
+    }
+    return true;
+  };
+
+  const handleKeyDown = (event, index) => {
+    if (handleSensitiveEscape(event)) return;
 
     if (
       event.key === "Backspace" &&
@@ -1032,8 +1038,10 @@ export default function OtpForm({
                     : "Email address hidden for privacy.",
                 );
               }}
+              onKeyDown={handleSensitiveEscape}
               aria-pressed={isEmailVisible}
               aria-describedby="email-visibility-hint"
+              aria-keyshortcuts="Escape"
               aria-label={isEmailVisible ? "Hide email address" : "Show email address"}
               className="shrink-0 rounded px-1 text-[10px] font-semibold text-purple-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
             >
@@ -1043,7 +1051,8 @@ export default function OtpForm({
         )}
         <span id="email-visibility-hint" className="sr-only">
           The full address is hidden after 15 seconds, when this page loses
-          focus, or when verification or a new-code request begins.
+          focus, when verification or a new-code request begins, or when Escape
+          is pressed.
         </span>
         <p role="status" className="sr-only" aria-live="polite" aria-atomic="true">
           {emailVisibilityMessage}
