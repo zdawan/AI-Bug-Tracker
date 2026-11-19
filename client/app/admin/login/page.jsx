@@ -275,12 +275,33 @@ export default function AdminLogin() {
               <span>Verifying the organization account and preparing secure access.</span>
             </div>
           )}
+          <div
+            className="-mt-1 grid grid-cols-2 gap-2 text-[10px] text-gray-500"
+            aria-label="Login process summary"
+          >
+            <div className="rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2">
+              <span className="block font-semibold text-gray-700">Step 1</span>
+              <span>Enter organization email</span>
+            </div>
+            <div className="rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2">
+              <span className="block font-semibold text-gray-700">
+                Step 2
+              </span>
+              <span>{isSubmitting ? "Confirm access" : "Review and login"}</span>
+            </div>
+          </div>
           <p className="-mt-1 text-[11px] leading-4 text-gray-500">
             Press Enter to check access. Press Escape to clear the email field.
           </p>
           {errorMessage && (
             <p className="-mt-1 text-[11px] leading-4 text-gray-500">
               After correcting the email, press Enter or select Login to retry.
+            </p>
+          )}
+          {errorMessage && (
+            <p className="-mt-1 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
+              Retry tip: confirm that the address is registered for the same
+              organization before submitting again.
             </p>
           )}
           <button
