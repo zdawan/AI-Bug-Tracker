@@ -490,10 +490,25 @@ export default function OtpForm({
     }, 1000);
   };
 
+  const hideEmailBeforeCodeEntry = () => {
+    if (!isEmailVisible) return;
+
+    setIsEmailVisible(false);
+    setEmailVisibilityMessage(
+      "The destination email was hidden when code entry began.",
+    );
+    recordActivity(
+      "email_hidden",
+      "The destination email was hidden before entering the verification code.",
+      "Privacy safeguard",
+    );
+  };
+
   const applyPastedCode = (value, currentIndex) => {
     const digits = extractOtpDigits(value);
     if (!digits) return false;
 
+    hideEmailBeforeCodeEntry();
     const isCompleteCode = digits.length >= otp.length;
     const startIndex = isCompleteCode ? 0 : currentIndex;
     const pastedDigits = digits
@@ -564,6 +579,7 @@ export default function OtpForm({
       return;
     }
 
+    if (digits) hideEmailBeforeCodeEntry();
     const updatedOtp = [...otp];
     updatedOtp[index] = digits;
     setOtp(updatedOtp);
