@@ -122,6 +122,9 @@ export default function AdminLogin() {
           <br />
           access the assigned url's.
         </p>
+        <p className="mb-4 text-center text-[11px] font-medium text-gray-500">
+          Verification usually completes in a few seconds.
+        </p>
         <div
           className="mb-5 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-3 text-blue-900"
           role="note"
@@ -228,13 +231,42 @@ export default function AdminLogin() {
               )}
             </div>
           )}
+          {isSubmitting && (
+            <div
+              className="-mt-1 flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800"
+              role="status"
+              aria-live="polite"
+            >
+              <ShieldCheck size={14} aria-hidden="true" />
+              <span>Verifying the organization account and preparing secure access.</span>
+            </div>
+          )}
+          <p className="-mt-1 text-[11px] leading-4 text-gray-500">
+            Press Enter to check access. Press Escape to clear the email field.
+          </p>
+          {errorMessage && (
+            <p className="-mt-1 text-[11px] leading-4 text-gray-500">
+              After correcting the email, press Enter or select Login to retry.
+            </p>
+          )}
           <button
             type="submit"
             disabled={isSubmitting}
+            aria-describedby="admin-login-submit-status"
             className="py-3 rounded-xl bg-black text-white font-semibold text-lg shadow-lg cursor-pointer hover:bg-blue-600 hover:opacity-90 transition disabled:cursor-wait disabled:bg-gray-500"
           >
             {isSubmitting ? "Checking access…" : "Login"}
           </button>
+          <p
+            id="admin-login-submit-status"
+            className="sr-only"
+            role="status"
+            aria-live="polite"
+          >
+            {isSubmitting
+              ? "Login verification is in progress."
+              : "Login verification is ready."}
+          </p>
           <p className="flex items-center justify-center">
             Example mail: githubtest@gmail.com
           </p>
