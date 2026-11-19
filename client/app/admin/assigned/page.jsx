@@ -40,6 +40,7 @@ import AssignedScreenshotStatus from "./AssignedScreenshotStatus";
 import AssignedReportVolume from "./AssignedReportVolume";
 import AssignedReportAgeBadge from "./AssignedReportAgeBadge";
 import AssignedReportUrlContext from "./AssignedReportUrlContext";
+import AssignedCodePreviewTrigger from "./AssignedCodePreviewTrigger";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -396,15 +397,13 @@ export default function AssignedTickets() {
                     </td>
                     {/* ✅ New Code Link Section */}
                     <td className="p-4">
-                      <button
-                        onClick={() => {
-                          setSelectedCode("Error in fetching the code"); // assuming ("Hi") is the code string
+                      <AssignedCodePreviewTrigger
+                        hasCode={false}
+                        onOpen={() => {
+                          setSelectedCode("Error in fetching the code");
                           setShowCodeModal(true);
                         }}
-                        className="text-blue-600 font-medium underline cursor-pointer"
-                      >
-                        Open
-                      </button>
+                      />
                     </td>
                     <td className="p-4">
                       <AssignedScreenshotStatus screenshots={bug.screenshots} />
