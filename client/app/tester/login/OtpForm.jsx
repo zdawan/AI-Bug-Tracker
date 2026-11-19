@@ -7,6 +7,7 @@ import {
   ClipboardPaste,
   Eye,
   EyeOff,
+  LoaderCircle,
   RefreshCw,
   Clock3,
   WifiOff,
@@ -1065,8 +1066,16 @@ export default function OtpForm({
           aria-live="polite"
           aria-atomic="true"
           disabled={isVerifying || isSending}
+          aria-busy={isVerifying}
           className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 disabled:cursor-wait disabled:opacity-60"
         >
+          {isVerifying && (
+            <LoaderCircle
+              size={18}
+              aria-hidden="true"
+              className="animate-spin motion-reduce:animate-none"
+            />
+          )}
           {isVerifying ? "Verifying..." : "Verify and continue"}
           {!isVerifying && <ArrowRight size={19} aria-hidden="true" />}
         </button>
