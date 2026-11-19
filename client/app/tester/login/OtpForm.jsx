@@ -309,25 +309,34 @@ export default function OtpForm({
   );
 
   useEffect(() => {
-    const hideCode = () => {
-      if (!isCodeVisible) return;
+    const hideSensitiveDetails = () => {
+      if (isCodeVisible) {
+        stopRevealTimer();
+        setRevealSeconds(0);
+        setIsCodeVisible(false);
+      }
 
-      stopRevealTimer();
-      setRevealSeconds(0);
-      setIsCodeVisible(false);
+      if (isEmailVisible) {
+        setIsEmailVisible(false);
+        recordActivityRef.current(
+          "email_hidden",
+          "The destination email was hidden after the page lost focus.",
+          "Privacy safeguard",
+        );
+      }
     };
-    const hideCodeWhenHidden = () => {
-      if (document.visibilityState === "hidden") hideCode();
+    const hideDetailsWhenHidden = () => {
+      if (document.visibilityState === "hidden") hideSensitiveDetails();
     };
 
-    window.addEventListener("blur", hideCode);
-    document.addEventListener("visibilitychange", hideCodeWhenHidden);
+    window.addEventListener("blur", hideSensitiveDetails);
+    document.addEventListener("visibilitychange", hideDetailsWhenHidden);
 
     return () => {
-      window.removeEventListener("blur", hideCode);
-      document.removeEventListener("visibilitychange", hideCodeWhenHidden);
+      window.removeEventListener("blur", hideSensitiveDetails);
+      document.removeEventListener("visibilitychange", hideDetailsWhenHidden);
     };
-  }, [isCodeVisible]);
+  }, [isCodeVisible, isEmailVisible]);
 
   useEffect(() => {
     if (
