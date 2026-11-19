@@ -691,6 +691,22 @@ export default function AdminLogin() {
             Success opens assigned reports.
           </p>
         </div>
+        <div
+          className="mt-4 rounded-xl border border-gray-200 bg-white px-3 py-3"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-[10px] font-semibold text-gray-700">
+            Current login state
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-gray-500">
+            {isSubmitting
+              ? "Verification is in progress."
+              : errorMessage
+                ? "Correct the email or network issue, then retry."
+                : "The login form is ready."}
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
