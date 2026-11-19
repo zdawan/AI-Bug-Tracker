@@ -91,6 +91,7 @@ export default function OtpForm({
   const [codeError, setCodeError] = useState("");
   const [clipboardMessage, setClipboardMessage] = useState("");
   const [isEmailVisible, setIsEmailVisible] = useState(false);
+  const [isEmailRevealWarning, setIsEmailRevealWarning] = useState(false);
   const [emailVisibilityMessage, setEmailVisibilityMessage] = useState("");
   const [isCodeVisible, setIsCodeVisible] = useState(true);
   const [autoVerify, setAutoVerify] = useState(false);
@@ -310,15 +311,20 @@ export default function OtpForm({
   );
 
   useEffect(() => {
-    if (!isEmailVisible) return undefined;
+    if (!isEmailVisible) {
+      setIsEmailRevealWarning(false);
+      return undefined;
+    }
 
     const warningTimeoutId = window.setTimeout(() => {
+      setIsEmailRevealWarning(true);
       setEmailVisibilityMessage(
         "The destination email will be hidden in five seconds.",
       );
     }, (CODE_REVEAL_SECONDS - 5) * 1000);
     const timeoutId = window.setTimeout(() => {
       setIsEmailVisible(false);
+      setIsEmailRevealWarning(false);
       setEmailVisibilityMessage("The destination email was hidden for privacy.");
       recordActivityRef.current(
         "email_hidden",
@@ -1119,6 +1125,14 @@ export default function OtpForm({
               {isEmailVisible ? "Hide" : "Show"}
             </button>
           </div>
+        )}
+        {isEmailVisible && isEmailRevealWarning && (
+          <p
+            aria-hidden="true"
+            className="mt-1 text-center text-xs font-medium text-amber-700"
+          >
+            Email address will be hidden in five seconds.
+          </p>
         )}
         <span id="email-visibility-hint" className="sr-only">
           The full address is hidden after 15 seconds, when this page loses
