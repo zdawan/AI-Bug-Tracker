@@ -433,6 +433,34 @@ export default function AdminLogin() {
               ? "Login verification is in progress."
               : "Login verification is ready."}
           </p>
+            <div
+              className="-mt-1 flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-white px-3 py-2"
+              role="status"
+              aria-live="polite"
+            >
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">
+                  Login status
+                </p>
+                <p className="mt-0.5 text-[11px] font-semibold text-gray-700">
+                  {isSubmitting
+                    ? "Verifying account"
+                    : errorMessage
+                      ? "Retry required"
+                      : "Ready to verify"}
+                </p>
+              </div>
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${
+                  isSubmitting
+                    ? "animate-pulse bg-blue-500"
+                    : errorMessage
+                      ? "bg-amber-500"
+                      : "bg-emerald-500"
+                }`}
+                aria-hidden="true"
+              />
+            </div>
           <div
             className="grid gap-2 rounded-lg border border-violet-100 bg-violet-50 px-3 py-3"
             aria-label="Account checklist"
