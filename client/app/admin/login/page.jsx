@@ -86,13 +86,25 @@ export default function AdminLogin() {
       toast.success("Access confirmed", { autoClose: 1500 });
       router.replace("/admin/assigned");
     } catch (err) {
-      const notFound = err?.response?.status === 404;
+      const status = err?.response?.status;
+      const notFound = status === 404;
+      const timedOut =
+        err?.code === "ECONNABORTED" || err?.code === "ETIMEDOUT";
+      const serviceUnavailable = status >= 500;
       const message = notFound
         ? "This organization email is not registered. Confirm the address and try again."
-        : "We could not verify this email. Check your connection or contact an administrator.";
+        : timedOut
+          ? "Email verification timed out. Check your connection and try again."
+          : serviceUnavailable
+            ? "The verification service is temporarily unavailable. Try again shortly."
+            : "We could not verify this email. Check your connection or contact an administrator.";
       setErrorMessage(message);
       toast.error(
-        notFound ? "Email not recognized" : "Unable to verify access",
+        notFound
+          ? "Email not recognized"
+          : timedOut
+            ? "Verification timed out"
+            : "Unable to verify access",
         {
           autoClose: 3000,
         },
@@ -518,6 +530,7 @@ export default function AdminLogin() {
             Use only the individual organization email assigned to your account.
             Shared example addresses are not login credentials.
             Contact your project administrator if you need your account details.
+            Do not use another person&apos;s address to test access.
           </p>
         </form>
         <div className="mt-6 border-t border-gray-200 pt-5" role="note">
