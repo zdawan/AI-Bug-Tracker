@@ -10,6 +10,7 @@ import { buildApiEndpoint } from "../../lib/apiClient";
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(false);
@@ -22,7 +23,8 @@ export default function AdminLogin() {
   useEffect(() => {
     const dev = localStorage.getItem("developer");
     if (dev) {
-      router.push("/admin/assigned");
+      setIsRedirecting(true);
+      router.replace("/admin/assigned");
     }
 
     const savedEmail = localStorage.getItem("adminLoginEmail");
@@ -207,8 +209,18 @@ export default function AdminLogin() {
         <form
           onSubmit={handleLogin}
           className="flex flex-col gap-4"
-          aria-busy={isSubmitting}
+          aria-busy={isSubmitting || isRedirecting}
         >
+          {isRedirecting && (
+            <p
+              className="flex items-center justify-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800"
+              role="status"
+              aria-live="polite"
+            >
+              <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />
+              Opening your assigned reports…
+            </p>
+          )}
           <label
             htmlFor="admin-email"
             className="text-sm font-semibold text-gray-700"
@@ -244,7 +256,7 @@ export default function AdminLogin() {
               autoComplete="email"
               spellCheck="false"
               required
-              disabled={isSubmitting}
+              disabled={isSubmitting || isRedirecting}
               aria-describedby="admin-email-help"
               aria-invalid={Boolean(errorMessage)}
               aria-required="true"
@@ -420,8 +432,8 @@ export default function AdminLogin() {
           )}
           <button
             type="submit"
-            disabled={isSubmitting}
-            aria-busy={isSubmitting}
+            disabled={isSubmitting || isRedirecting}
+            aria-busy={isSubmitting || isRedirecting}
             aria-describedby="admin-login-submit-status"
             className="flex items-center justify-center gap-2 py-3 rounded-xl bg-black text-white font-semibold text-lg shadow-lg cursor-pointer hover:bg-blue-600 hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:bg-gray-500"
           >
