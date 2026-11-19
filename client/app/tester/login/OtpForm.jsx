@@ -589,6 +589,7 @@ export default function OtpForm({
     }
 
     event.preventDefault();
+    event.stopPropagation();
     if (isCodeVisible) {
       stopRevealTimer();
       setRevealSeconds(0);
@@ -615,8 +616,6 @@ export default function OtpForm({
   };
 
   const handleKeyDown = (event, index) => {
-    if (handleSensitiveEscape(event)) return;
-
     if (
       event.key === "Backspace" &&
       (event.ctrlKey || event.metaKey) &&
@@ -680,6 +679,11 @@ export default function OtpForm({
       event.preventDefault();
       inputRefs.current[5]?.focus();
     }
+  };
+
+  const handleWorkspaceKeyDownCapture = (event) => {
+    noteFormActivity();
+    handleSensitiveEscape(event);
   };
 
   const handlePaste = (event, index) => {
@@ -985,7 +989,7 @@ export default function OtpForm({
   return (
     <div
       onPointerDownCapture={noteFormActivity}
-      onKeyDownCapture={noteFormActivity}
+      onKeyDownCapture={handleWorkspaceKeyDownCapture}
       onFocusCapture={noteFormActivity}
       onTouchStartCapture={noteFormActivity}
     >
@@ -1038,7 +1042,6 @@ export default function OtpForm({
                     : "Email address hidden for privacy.",
                 );
               }}
-              onKeyDown={handleSensitiveEscape}
               aria-pressed={isEmailVisible}
               aria-describedby="email-visibility-hint"
               aria-keyshortcuts="Escape"
@@ -1051,8 +1054,8 @@ export default function OtpForm({
         )}
         <span id="email-visibility-hint" className="sr-only">
           The full address is hidden after 15 seconds, when this page loses
-          focus, when verification or a new-code request begins, or when Escape
-          is pressed.
+          focus, when verification or a new-code request begins, after
+          inactivity, or when Escape is pressed anywhere in this form.
         </span>
         <p role="status" className="sr-only" aria-live="polite" aria-atomic="true">
           {emailVisibilityMessage}
