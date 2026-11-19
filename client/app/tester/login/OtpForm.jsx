@@ -402,18 +402,29 @@ export default function OtpForm({
   };
 
   useEffect(() => {
-    if (!isVerifying || !isCodeVisible) return;
+    if (!isVerifying) return;
 
-    stopRevealTimer();
-    setRevealSeconds(0);
-    setIsCodeVisible(false);
-    setRevealNotice("The code was hidden while verification is in progress.");
-    recordActivityRef.current(
-      "visibility_changed",
-      "The verification code was hidden when verification started.",
-      "Privacy safeguard",
-    );
-  }, [isCodeVisible, isVerifying]);
+    if (isCodeVisible) {
+      stopRevealTimer();
+      setRevealSeconds(0);
+      setIsCodeVisible(false);
+      setRevealNotice("The code was hidden while verification is in progress.");
+      recordActivityRef.current(
+        "visibility_changed",
+        "The verification code was hidden when verification started.",
+        "Privacy safeguard",
+      );
+    }
+
+    if (isEmailVisible) {
+      setIsEmailVisible(false);
+      recordActivityRef.current(
+        "email_hidden",
+        "The destination email was hidden when verification started.",
+        "Privacy safeguard",
+      );
+    }
+  }, [isCodeVisible, isEmailVisible, isVerifying]);
 
   const startRevealTimer = () => {
     if (!isCodeVisible) return;
