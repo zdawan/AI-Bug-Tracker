@@ -318,6 +318,21 @@ export default function AdminLogin() {
             </div>
           </div>
         </div>
+        <div
+          className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
+          role="note"
+        >
+          <p className="text-[11px] font-semibold text-slate-700">
+            Browser privacy
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-slate-500">
+            Remembered email is stored only in this browser. It is not sent until
+            you submit the login form.
+          </p>
+          <p className="mt-1 text-[10px] leading-4 text-slate-500">
+            Uncheck Remember this email to remove the saved value.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
