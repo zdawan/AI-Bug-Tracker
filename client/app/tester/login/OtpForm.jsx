@@ -999,12 +999,23 @@ export default function OtpForm({
                 pattern="[0-9]*"
                 autoCapitalize="off"
                 spellCheck={false}
+                enterKeyHint={index === otp.length - 1 ? "go" : "next"}
                 autoComplete={index === 0 ? "one-time-code" : "off"}
                 aria-label={`OTP digit ${index + 1} of 6, ${
                   digit ? "filled" : "empty"
                 }`}
                 aria-invalid={Boolean(visibleError)}
-                aria-describedby={`tester-otp-progress${visibleError ? " tester-otp-error" : ""}`}
+                aria-describedby={[
+                  "tester-otp-progress",
+                  "tester-otp-help",
+                  visibleError ? "tester-otp-error" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-errormessage={
+                  visibleError ? "tester-otp-error" : undefined
+                }
+                aria-keyshortcuts="ArrowLeft ArrowRight Home End Backspace Delete Escape"
                 maxLength={index === 0 ? 6 : 1}
                 disabled={isVerifying || isSending}
                 value={digit}
