@@ -651,6 +651,11 @@ export default function OtpForm({
         setClipboardMessage(
           "Clipboard access is unavailable. Paste into a code box instead.",
         );
+        recordActivity(
+          "clipboard_unavailable",
+          "Clipboard reading was unavailable; manual paste remains available.",
+          "Paste from clipboard",
+        );
         return;
       }
 
@@ -659,6 +664,11 @@ export default function OtpForm({
 
       if (!pastedCode) {
         setClipboardMessage(getOtpPasteFailureMessage(clipboardText));
+        recordActivity(
+          "clipboard_code_unrecognized",
+          "Clipboard text did not contain a usable verification code. Its contents were not recorded.",
+          "Paste from clipboard",
+        );
         return;
       }
 
@@ -667,6 +677,11 @@ export default function OtpForm({
     } catch {
       setClipboardMessage(
         "Clipboard access was blocked. Paste into a code box instead.",
+      );
+      recordActivity(
+        "clipboard_access_blocked",
+        "Clipboard read access failed. Clipboard contents were not recorded.",
+        "Paste from clipboard",
       );
     }
   };
@@ -741,12 +756,22 @@ export default function OtpForm({
       return;
     }
 
+    setNetworkMessage("");
+    setResendReadyMessage("");
+    if (isEmailVisible) {
+      setIsEmailVisible(false);
+      recordActivity(
+        "email_hidden",
+        "The destination email was hidden before requesting a new verification code.",
+        "Resend privacy safeguard",
+      );
+    }
+
     recordActivity(
       "resend_requested",
       "A request was made to send a new verification code.",
       "Resend control",
     );
-    setResendReadyMessage("");
     setResendSuccessMessage("");
     const sent = await onResend();
     if (sent) {
