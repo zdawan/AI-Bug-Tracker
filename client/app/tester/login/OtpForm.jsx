@@ -862,10 +862,23 @@ export default function OtpForm({
   const handleBackToEmail = () => {
     if (isSending || isVerifying) return;
 
+    if (enteredDigits > 0) {
+      recordActivity(
+        "code_cleared",
+        `${enteredDigits} entered digits were cleared before changing the email.`,
+        "Change email",
+      );
+    }
     stopRevealTimer();
     setRevealSeconds(0);
     setRevealNotice("");
+    setOtp(["", "", "", "", "", ""]);
     setIsCodeVisible(false);
+    setCodeError("");
+    setClipboardMessage("");
+    setNetworkMessage("");
+    setResendSuccessMessage("");
+    setResendReadyMessage("");
     if (isEmailVisible) {
       setIsEmailVisible(false);
       setEmailVisibilityMessage(
@@ -993,8 +1006,17 @@ export default function OtpForm({
               onClick={() => {
                 const nextVisible = !isEmailVisible;
                 setIsEmailVisible(nextVisible);
+                recordActivity(
+                  nextVisible ? "email_shown" : "email_hidden",
+                  nextVisible
+                    ? "The destination email was revealed by user request."
+                    : "The destination email was hidden by user request.",
+                  "Privacy control",
+                );
                 setEmailVisibilityMessage(
-                  nextVisible ? "Email address shown." : "Email address hidden.",
+                  nextVisible
+                    ? "Email address shown. It will be hidden automatically after 15 seconds."
+                    : "Email address hidden for privacy.",
                 );
               }}
               aria-pressed={isEmailVisible}
@@ -1010,7 +1032,7 @@ export default function OtpForm({
           The full address is hidden after 15 seconds, when this page loses
           focus, or when verification or a new-code request begins.
         </span>
-        <p className="sr-only" aria-live="polite" aria-atomic="true">
+        <p role="status" className="sr-only" aria-live="polite" aria-atomic="true">
           {emailVisibilityMessage}
         </p>
       </header>
