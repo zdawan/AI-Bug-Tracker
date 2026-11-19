@@ -396,6 +396,8 @@ export default function AdminLogin() {
                 <li>Confirm the browser has stable network access.</li>
                 <li>Wait for the previous verification request to finish.</li>
                 <li>Contact an administrator if the account is still unrecognized.</li>
+                <li>Keep your account email private in support conversations.</li>
+                <li>Retry only after all checklist items are verified.</li>
               </ul>
             </div>
           )}
@@ -584,6 +586,27 @@ export default function AdminLogin() {
             </p>
           </div>
         </details>
+        <div
+          className="mt-4 grid gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-3"
+          role="note"
+          aria-label="Login support information"
+        >
+          <p className="text-[11px] font-semibold text-blue-900">
+            Login support
+          </p>
+          <p className="text-[10px] leading-4 text-blue-800">
+            If the account is not registered, confirm the exact organization
+            email assigned to the developer or tester account.
+          </p>
+          <p className="text-[10px] leading-4 text-blue-800">
+            If verification fails for a connection reason, wait for the request
+            timeout before retrying from a stable network.
+          </p>
+          <p className="text-[10px] leading-4 text-blue-800">
+            If access remains unavailable, contact the project administrator
+            and include the account domain rather than the full private address.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
