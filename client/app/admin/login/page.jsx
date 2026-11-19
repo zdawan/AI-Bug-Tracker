@@ -21,10 +21,21 @@ export default function AdminLogin() {
   const emailLooksReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
 
   useEffect(() => {
-    const dev = localStorage.getItem("developer");
-    if (dev) {
+    const savedSession = localStorage.getItem("developer");
+    let developerSession = null;
+    if (savedSession) {
+      try {
+        developerSession = JSON.parse(savedSession);
+      } catch {
+        localStorage.removeItem("developer");
+      }
+    }
+
+    if (developerSession?._id) {
       setIsRedirecting(true);
       router.replace("/admin/assigned");
+    } else if (savedSession) {
+      localStorage.removeItem("developer");
     }
 
     const savedEmail = localStorage.getItem("adminLoginEmail");
@@ -262,7 +273,7 @@ export default function AdminLogin() {
               aria-required="true"
               className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
             />
-            {email && !isSubmitting && (
+            {email && !isSubmitting && !isRedirecting && (
               <button
                 type="button"
                 onClick={clearEmail}
@@ -344,7 +355,7 @@ export default function AdminLogin() {
               type="checkbox"
               checked={rememberEmail}
               onChange={(event) => setRememberEmail(event.target.checked)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isRedirecting}
               className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600"
             />
             Remember this email on this browser
@@ -367,7 +378,9 @@ export default function AdminLogin() {
               Connection status
             </p>
             <p className="mt-1 text-[10px] leading-4 text-sky-800">
-              {isSubmitting
+              {isRedirecting
+                ? "Opening your assigned reports."
+                : isSubmitting
                 ? "Verification is active. Please wait before retrying."
                 : errorMessage
                   ? "The last verification attempt needs attention."
