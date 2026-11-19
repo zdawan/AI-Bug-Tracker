@@ -439,6 +439,29 @@ export default function AdminLogin() {
             Logging out does not remove a remembered email automatically.
           </p>
         </div>
+        <details className="mt-4 rounded-xl border border-gray-200 bg-white px-3 py-3 text-[11px] text-gray-600">
+          <summary className="cursor-pointer font-semibold text-gray-800">
+            Quick login help
+          </summary>
+          <div className="mt-3 grid gap-2">
+            <p>
+              <span className="font-semibold text-gray-700">Email rejected:</span>{" "}
+              verify the organization spelling and account registration.
+            </p>
+            <p>
+              <span className="font-semibold text-gray-700">Verification slow:</span>{" "}
+              check the connection and wait until the current request finishes.
+            </p>
+            <p>
+              <span className="font-semibold text-gray-700">Shared browser:</span>{" "}
+              clear the email and use Logout when finished.
+            </p>
+            <p>
+              <span className="font-semibold text-gray-700">Need support:</span>{" "}
+              contact the project administrator with the account email domain.
+            </p>
+          </div>
+        </details>
       </div>
 
       {/* Toastify */}
