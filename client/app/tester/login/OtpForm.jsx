@@ -962,6 +962,17 @@ export default function OtpForm({
       setIsCodeVisible(false);
       setRevealNotice("The verification code is hidden.");
     } else {
+      if (isEmailVisible) {
+        setIsEmailVisible(false);
+        setEmailVisibilityMessage(
+          "The destination email was hidden before revealing the verification code.",
+        );
+        recordActivity(
+          "email_hidden",
+          "The destination email was hidden before revealing the verification code.",
+          "Privacy safeguard",
+        );
+      }
       setIsCodeVisible(true);
       startRevealTimer();
     }
@@ -1039,6 +1050,19 @@ export default function OtpForm({
               type="button"
               onClick={() => {
                 const nextVisible = !isEmailVisible;
+                if (nextVisible && enteredDigits > 0 && isCodeVisible) {
+                  stopRevealTimer();
+                  setRevealSeconds(0);
+                  setIsCodeVisible(false);
+                  setRevealNotice(
+                    "The verification code was hidden while the destination email is shown.",
+                  );
+                  recordActivity(
+                    "visibility_changed",
+                    "The verification code was hidden before revealing the destination email.",
+                    "Privacy safeguard",
+                  );
+                }
                 setIsEmailVisible(nextVisible);
                 recordActivity(
                   nextVisible ? "email_shown" : "email_hidden",
