@@ -741,6 +741,17 @@ export default function AdminLogin() {
             Clearing the field does not change an active verified session.
           </p>
         </div>
+        <div
+          className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-white px-3 py-2"
+          role="note"
+        >
+          <p className="text-[9px] leading-4 text-gray-500">
+            Login verifies account access.
+          </p>
+          <p className="text-[9px] leading-4 text-gray-500">
+            Logout and remember settings are separate.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
