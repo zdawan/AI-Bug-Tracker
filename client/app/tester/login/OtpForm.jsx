@@ -1342,7 +1342,14 @@ export default function OtpForm({
             </div>
             <div
               className="h-1.5 overflow-hidden rounded-full bg-slate-100"
-              aria-hidden="true"
+              role="progressbar"
+              aria-labelledby="tester-otp-label"
+              aria-orientation="horizontal"
+              aria-valuemin={0}
+              aria-valuemax={6}
+              aria-valuenow={enteredDigits}
+              aria-valuetext={`${enteredDigits} of 6 required digits entered`}
+              aria-live="off"
             >
               <div
                 className="h-full rounded-full bg-violet-600 transition-[width] duration-200"
