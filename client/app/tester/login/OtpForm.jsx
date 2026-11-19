@@ -335,6 +335,9 @@ export default function OtpForm({
 
       if (isEmailVisible) {
         setIsEmailVisible(false);
+        setEmailVisibilityMessage(
+          "The destination email was hidden after the page lost focus.",
+        );
         recordActivityRef.current(
           "email_hidden",
           "The destination email was hidden after the page lost focus.",
@@ -435,6 +438,9 @@ export default function OtpForm({
 
     if (isEmailVisible) {
       setIsEmailVisible(false);
+      setEmailVisibilityMessage(
+        "The destination email was hidden while verification is in progress.",
+      );
       recordActivityRef.current(
         "email_hidden",
         "The destination email was hidden when verification started.",
@@ -777,6 +783,9 @@ export default function OtpForm({
     setResendReadyMessage("");
     if (isEmailVisible) {
       setIsEmailVisible(false);
+      setEmailVisibilityMessage(
+        "The destination email was hidden before requesting a new code.",
+      );
       recordActivity(
         "email_hidden",
         "The destination email was hidden before requesting a new verification code.",
@@ -956,6 +965,7 @@ export default function OtpForm({
                 );
               }}
               aria-pressed={isEmailVisible}
+              aria-describedby="email-visibility-hint"
               aria-label={isEmailVisible ? "Hide email address" : "Show email address"}
               className="shrink-0 rounded px-1 text-[10px] font-semibold text-purple-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
             >
@@ -963,6 +973,10 @@ export default function OtpForm({
             </button>
           </div>
         )}
+        <span id="email-visibility-hint" className="sr-only">
+          The full address is hidden after 15 seconds, when this page loses
+          focus, or when verification or a new-code request begins.
+        </span>
         <p className="sr-only" aria-live="polite" aria-atomic="true">
           {emailVisibilityMessage}
         </p>
