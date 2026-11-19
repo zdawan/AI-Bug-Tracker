@@ -511,8 +511,13 @@ export default function AdminLogin() {
               <li>Wait for the timeout result before sending another request.</li>
             </ul>
           </div>
-          <p className="flex items-center justify-center">
-            Example mail: githubtest@gmail.com
+          <p
+            className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-center text-[10px] leading-4 text-gray-500"
+            role="note"
+          >
+            Use only the individual organization email assigned to your account.
+            Shared example addresses are not login credentials.
+            Contact your project administrator if you need your account details.
           </p>
         </form>
         <div className="mt-6 border-t border-gray-200 pt-5" role="note">
