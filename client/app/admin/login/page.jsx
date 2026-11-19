@@ -519,6 +519,30 @@ export default function AdminLogin() {
             Report suspicious access attempts to the project administrator.
           </p>
         </div>
+        <div
+          className="mt-4 grid grid-cols-3 gap-2"
+          role="note"
+          aria-label="Login completion summary"
+        >
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-2">
+            <p className="text-[10px] font-semibold text-emerald-800">Verify</p>
+            <p className="mt-1 text-[9px] leading-3 text-emerald-700">
+              Confirm registered email
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-2">
+            <p className="text-[10px] font-semibold text-emerald-800">Open</p>
+            <p className="mt-1 text-[9px] leading-3 text-emerald-700">
+              Enter assigned reports
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-2">
+            <p className="text-[10px] font-semibold text-emerald-800">Finish</p>
+            <p className="mt-1 text-[9px] leading-3 text-emerald-700">
+              Logout on completion
+            </p>
+          </div>
+        </div>
         <details className="mt-4 rounded-xl border border-gray-200 bg-white px-3 py-3 text-[11px] text-gray-600">
           <summary className="cursor-pointer font-semibold text-gray-800">
             Quick login help
