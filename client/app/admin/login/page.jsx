@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { MailQuestion, ShieldCheck, X } from "lucide-react";
+import { LoaderCircle, MailQuestion, ShieldCheck, X } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { buildApiEndpoint } from "../../lib/apiClient";
@@ -409,9 +409,17 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             aria-describedby="admin-login-submit-status"
-            className="py-3 rounded-xl bg-black text-white font-semibold text-lg shadow-lg cursor-pointer hover:bg-blue-600 hover:opacity-90 transition disabled:cursor-wait disabled:bg-gray-500"
+            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-black text-white font-semibold text-lg shadow-lg cursor-pointer hover:bg-blue-600 hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:bg-gray-500"
           >
+            {isSubmitting && (
+              <LoaderCircle
+                size={18}
+                aria-hidden="true"
+                className="animate-spin"
+              />
+            )}
             {isSubmitting ? "Checking access…" : "Login"}
           </button>
           <ul className="-mt-1 grid gap-1 text-[10px] leading-4 text-gray-500" aria-label="Login keyboard instructions">
