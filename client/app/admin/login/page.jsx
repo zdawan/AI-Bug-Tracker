@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { MailQuestion, ShieldCheck, X } from "lucide-react";
@@ -13,6 +13,7 @@ export default function AdminLogin() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const router = useRouter();
+  const emailRef = useRef(null);
   const normalizedEmail = email.trim().toLowerCase();
   const emailLooksReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
 
@@ -22,6 +23,12 @@ export default function AdminLogin() {
       router.push("/admin/assigned");
     }
   }, [router]);
+
+  useEffect(() => {
+    if (!isSubmitting) {
+      emailRef.current?.focus();
+    }
+  }, [isSubmitting]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -155,6 +162,17 @@ export default function AdminLogin() {
                 setShowEmailPreview(false);
                 if (errorMessage) setErrorMessage("");
               }}
+              onBlur={() => {
+                if (email) {
+                  setEmail(normalizedEmail);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && email) {
+                  clearEmail();
+                }
+              }}
+              ref={emailRef}
               autoComplete="email"
               spellCheck="false"
               required
