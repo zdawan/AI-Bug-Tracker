@@ -66,6 +66,16 @@ function getOtpPasteFailureMessage(value) {
   return "Could not identify exactly one six-digit code. Copy only one code and try again.";
 }
 
+function maskEmailAddress(value) {
+  const separator = value.lastIndexOf("@");
+  if (separator <= 0) return value;
+
+  const localPart = value.slice(0, separator);
+  const domain = value.slice(separator);
+  const hiddenCharacters = "*".repeat(Math.max(3, localPart.length - 1));
+  return `${localPart[0]}${hiddenCharacters}${domain}`;
+}
+
 export default function OtpForm({
   email,
   onBack,
@@ -80,6 +90,7 @@ export default function OtpForm({
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [codeError, setCodeError] = useState("");
   const [clipboardMessage, setClipboardMessage] = useState("");
+  const [isEmailVisible, setIsEmailVisible] = useState(false);
   const [isCodeVisible, setIsCodeVisible] = useState(true);
   const [autoVerify, setAutoVerify] = useState(false);
   const [autoVerifyPreferenceLoaded, setAutoVerifyPreferenceLoaded] =
@@ -869,9 +880,20 @@ export default function OtpForm({
         </p>
 
         {email.trim() && (
-          <p className="mt-2 break-all text-sm font-semibold text-slate-900">
-            {email}
-          </p>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            <p className="break-all text-sm font-semibold text-slate-900">
+              {isEmailVisible ? email : maskEmailAddress(email.trim())}
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsEmailVisible((visible) => !visible)}
+              aria-pressed={isEmailVisible}
+              aria-label={isEmailVisible ? "Hide email address" : "Show email address"}
+              className="shrink-0 rounded px-1 text-[10px] font-semibold text-purple-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+            >
+              {isEmailVisible ? "Hide" : "Show"}
+            </button>
+          </div>
         )}
       </header>
 
