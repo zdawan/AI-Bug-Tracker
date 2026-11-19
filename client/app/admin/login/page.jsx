@@ -717,6 +717,18 @@ export default function AdminLogin() {
         <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
           Closing the tab does not automatically remove browser-local email memory.
         </p>
+        <div
+          className="mt-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+          role="note"
+        >
+          <p className="text-center text-[9px] leading-4 text-gray-500">
+            Verification confirms account access; Logout ends the active browser
+            session; clearing Remembered Email removes local convenience memory.
+          </p>
+          <p className="mt-1 text-center text-[9px] leading-4 text-gray-400">
+            Use the controls independently based on your device and session needs.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
