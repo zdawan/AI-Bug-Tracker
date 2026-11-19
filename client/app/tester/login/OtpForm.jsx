@@ -371,6 +371,20 @@ export default function OtpForm({
     revealSecondsRemaining.current = 0;
   };
 
+  useEffect(() => {
+    if (!isVerifying || !isCodeVisible) return;
+
+    stopRevealTimer();
+    setRevealSeconds(0);
+    setIsCodeVisible(false);
+    setRevealNotice("The code was hidden while verification is in progress.");
+    recordActivityRef.current(
+      "visibility_changed",
+      "The verification code was hidden when verification started.",
+      "Privacy safeguard",
+    );
+  }, [isCodeVisible, isVerifying]);
+
   const startRevealTimer = () => {
     if (!isCodeVisible) return;
 
@@ -1067,6 +1081,8 @@ export default function OtpForm({
           aria-atomic="true"
           disabled={isVerifying || isSending}
           aria-busy={isVerifying}
+          aria-live="polite"
+          aria-atomic="true"
           className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-black px-5 text-base font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-200 disabled:cursor-wait disabled:opacity-60"
         >
           {isVerifying && (
