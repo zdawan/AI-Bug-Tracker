@@ -414,6 +414,26 @@ export default function AdminLogin() {
               : "Login verification is ready."}
           </p>
           <div
+            className="grid gap-2 rounded-lg border border-violet-100 bg-violet-50 px-3 py-3"
+            aria-label="Account checklist"
+          >
+            <p className="text-[10px] font-semibold text-violet-900">
+              Account checklist
+            </p>
+            <p className="text-[10px] leading-4 text-violet-800">
+              Your organization email must be complete, registered, and assigned
+              to an administrator or tester account.
+            </p>
+            <p className="text-[10px] leading-4 text-violet-800">
+              Verification is read-only until the account response is confirmed.
+              Do not repeat the request while it is in progress.
+            </p>
+            <p className="text-[10px] leading-4 text-violet-800">
+              After successful login, use the Logout action before leaving a
+              shared browser.
+            </p>
+          </div>
+          <div
             className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3"
             aria-label="Before login checklist"
           >
