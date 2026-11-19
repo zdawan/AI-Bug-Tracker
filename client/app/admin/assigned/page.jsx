@@ -43,6 +43,7 @@ import AssignedReportUrlContext from "./AssignedReportUrlContext";
 import AssignedCodePreviewTrigger from "./AssignedCodePreviewTrigger";
 import AssignedReportDetailHint from "./AssignedReportDetailHint";
 import AssignedReportCategoryHint from "./AssignedReportCategoryHint";
+import AssignedResolutionHint from "./AssignedResolutionHint";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
@@ -398,6 +399,7 @@ export default function AssignedTickets() {
                         bug={bug}
                         onResolve={setResolveBug}
                       />
+                      <AssignedResolutionHint status={bug.status} />
                     </td>
                     {/* ✅ New Code Link Section */}
                     <td className="p-4">
