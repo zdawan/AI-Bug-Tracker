@@ -680,6 +680,17 @@ export default function AdminLogin() {
             leave an account session open on a shared browser.
           </p>
         </div>
+        <div
+          className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3"
+          role="note"
+        >
+          <p className="text-[10px] leading-4 text-gray-600">
+            Enter submits access verification.
+          </p>
+          <p className="text-[10px] leading-4 text-gray-600">
+            Success opens assigned reports.
+          </p>
+        </div>
       </div>
 
       {/* Toastify */}
