@@ -13,6 +13,8 @@ export default function AdminLogin() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
+  const normalizedEmail = email.trim().toLowerCase();
+  const emailLooksReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
 
   useEffect(() => {
     const dev = localStorage.getItem("developer");
@@ -23,7 +25,6 @@ export default function AdminLogin() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
       setErrorMessage("Enter your organization email to continue.");
       toast.error("Enter email to login", { autoClose: 3000 });
@@ -131,6 +132,17 @@ export default function AdminLogin() {
           <p id="admin-email-help" className="-mt-2 text-xs text-gray-500">
             Use the email assigned to your tester account.
           </p>
+          {email && !errorMessage && (
+            <p
+              className={`-mt-2 text-xs ${emailLooksReady ? "text-emerald-700" : "text-amber-700"}`}
+              role="status"
+              aria-live="polite"
+            >
+              {emailLooksReady
+                ? "Email format looks ready to check."
+                : "Enter a complete email address, including @ and a domain."}
+            </p>
+          )}
           <button
             type="submit"
             disabled={isSubmitting}
