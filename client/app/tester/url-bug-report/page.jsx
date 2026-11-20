@@ -10,6 +10,10 @@ import "react-toastify/dist/ReactToastify.css";
 
 const REPORT_FORM_ID = "tester-bug-report-form";
 const REPORT_FORM_HASH = `#${REPORT_FORM_ID}`;
+const EMPTY_REPORT_FOCUS_STATUS = Object.freeze({
+  message: "",
+  isError: false,
+});
 
 function UserPageContent() {
   const searchParams = useSearchParams();
@@ -17,19 +21,18 @@ function UserPageContent() {
 
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
-  const [reportFocusStatus, setReportFocusStatus] = useState({
-    message: "",
-    isError: false,
-  });
+  const [reportFocusStatus, setReportFocusStatus] = useState(
+    EMPTY_REPORT_FOCUS_STATUS,
+  );
 
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
-    setReportFocusStatus({ message: "", isError: false });
+    setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
   };
 
   useEffect(() => {
     setFinalUrl(fullUrl);
-    setReportFocusStatus({ message: "", isError: false });
+    setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     setShouldFocusReportForm(false);
   }, [fullUrl]);
 
@@ -38,7 +41,7 @@ function UserPageContent() {
       const shouldFocus = window.location.hash === REPORT_FORM_HASH;
       setShouldFocusReportForm(shouldFocus);
       if (!shouldFocus) {
-        setReportFocusStatus({ message: "", isError: false });
+        setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
       }
     };
 
@@ -119,7 +122,7 @@ function UserPageContent() {
             onSelect={updateFinalUrl}
             onReportIssue={(url) => {
               setFinalUrl(url);
-              setReportFocusStatus({ message: "", isError: false });
+              setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
               setShouldFocusReportForm(true);
             }}
           />
