@@ -227,7 +227,21 @@ function UserPageContent() {
             onReportIssue={focusReportFormForUrl}
           />
         </section>
-        <div className="mt-4 flex justify-end">
+        <nav
+          aria-label="Checklist and URL context navigation"
+          className="mt-4 flex flex-wrap justify-end gap-2"
+        >
+          <a
+            href={URL_CHECKLIST_HASH}
+            aria-controls={URL_CHECKLIST_ID}
+            className="inline-flex min-h-10 items-center rounded-lg border
+            border-purple-200 bg-white px-3 py-2 text-sm font-medium
+            text-purple-800 transition hover:bg-purple-50
+            focus:outline focus:outline-2 focus:outline-offset-2
+            focus:outline-purple-700 focus:ring-2 focus:ring-purple-600"
+          >
+            Back to URL checklist
+          </a>
           <a
             href={URL_CONTEXT_HASH}
             aria-controls={URL_CONTEXT_ID}
@@ -239,7 +253,7 @@ function UserPageContent() {
           >
             Back to test URL context
           </a>
-        </div>
+        </nav>
         {navigationStatus.message && (
           <p
             role={navigationStatus.isError ? "alert" : "status"}
