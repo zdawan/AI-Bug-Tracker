@@ -505,6 +505,11 @@ export default function OtpForm({
       } else if (remaining === 5 && !revealWarningAnnounced.current) {
         revealWarningAnnounced.current = true;
         setRevealNotice("The verification code will be hidden in five seconds.");
+        recordActivity(
+          "code_hide_warning",
+          "The verification code will be hidden in five seconds.",
+          "Privacy timer",
+        );
       }
     }, 1000);
   };
@@ -1214,6 +1219,8 @@ export default function OtpForm({
                 onClick={toggleCodeVisibility}
                 disabled={isVerifying || isSending || enteredDigits === 0}
                 aria-controls="tester-otp-fields"
+                aria-pressed={isCodeVisible}
+                aria-describedby="tester-otp-visibility-hint"
                 aria-label={
                   isCodeVisible
                     ? "Hide verification code"
@@ -1239,6 +1246,10 @@ export default function OtpForm({
               </button>
             </div>
           </div>
+          <span id="tester-otp-visibility-hint" className="sr-only">
+            A revealed code is hidden automatically after 15 seconds or when
+            this page loses focus. Press Escape to hide it immediately.
+          </span>
           {isCodeVisible && revealSeconds > 0 && (
             <div className="text-right">
               <p className="text-[10px] text-slate-500">
