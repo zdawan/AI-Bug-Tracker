@@ -46,6 +46,11 @@ function UserPageContent() {
     setShouldFocusUrlContext(false);
   };
 
+  const focusReportFormForUrl = (url) => {
+    updateFinalUrl(url);
+    setShouldFocusReportForm(true);
+  };
+
   useEffect(() => {
     setFinalUrl(fullUrl);
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
@@ -226,12 +231,7 @@ function UserPageContent() {
           <UrlTestChecklist
             value={finalUrl}
             onSelect={updateFinalUrl}
-            onReportIssue={(url) => {
-              setFinalUrl(url);
-              setNavigationStatus(EMPTY_NAVIGATION_STATUS);
-              setShouldFocusChecklist(false);
-              setShouldFocusReportForm(true);
-            }}
+            onReportIssue={focusReportFormForUrl}
           />
         </section>
         <div className="mt-4 flex justify-end">
