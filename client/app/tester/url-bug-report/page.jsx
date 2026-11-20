@@ -15,6 +15,7 @@ const URL_CHECKLIST_HASH = `#${URL_CHECKLIST_ID}`;
 const URL_CHECKLIST_HELP_ID = "tester-url-checklist-help";
 const URL_CONTEXT_ID = "tester-url-context";
 const URL_CONTEXT_HASH = `#${URL_CONTEXT_ID}`;
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const EMPTY_NAVIGATION_STATUS = Object.freeze({
   message: "",
   isError: false,
@@ -47,9 +48,12 @@ const NAVIGATION_TARGETS = [
 ];
 
 function getScrollBehavior() {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "auto"
-    : "smooth";
+  if (typeof window.matchMedia !== "function") return "auto";
+
+  const prefersReducedMotion = window.matchMedia(
+    REDUCED_MOTION_QUERY,
+  ).matches;
+  return prefersReducedMotion ? "auto" : "smooth";
 }
 
 function UserPageContent() {
