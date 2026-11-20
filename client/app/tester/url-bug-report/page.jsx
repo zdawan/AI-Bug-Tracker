@@ -18,8 +18,13 @@ function UserPageContent() {
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
   const [reportFocusMessage, setReportFocusMessage] = useState("");
 
+  const updateFinalUrl = (url) => {
+    setFinalUrl(url);
+    setReportFocusMessage("");
+  };
+
   useEffect(() => {
-    setFinalUrl(fullUrl);
+    updateFinalUrl(fullUrl);
   }, [fullUrl]);
 
   useEffect(() => {
@@ -76,7 +81,7 @@ function UserPageContent() {
         <ReportUrlContext
           value={finalUrl}
           initialValue={fullUrl}
-          onChange={setFinalUrl}
+          onChange={updateFinalUrl}
         />
         <section
           aria-label="URL testing checklist"
@@ -84,7 +89,7 @@ function UserPageContent() {
         >
           <UrlTestChecklist
             value={finalUrl}
-            onSelect={setFinalUrl}
+            onSelect={updateFinalUrl}
             onReportIssue={(url) => {
               setFinalUrl(url);
               setReportFocusMessage("");
