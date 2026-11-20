@@ -17,19 +17,19 @@ function UserPageContent() {
 
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
-  const [reportFocusMessage, setReportFocusMessage] = useState("");
-  const [reportFocusError, setReportFocusError] = useState(false);
+  const [reportFocusStatus, setReportFocusStatus] = useState({
+    message: "",
+    isError: false,
+  });
 
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
-    setReportFocusMessage("");
-    setReportFocusError(false);
+    setReportFocusStatus({ message: "", isError: false });
   };
 
   useEffect(() => {
     setFinalUrl(fullUrl);
-    setReportFocusMessage("");
-    setReportFocusError(false);
+    setReportFocusStatus({ message: "", isError: false });
     setShouldFocusReportForm(false);
   }, [fullUrl]);
 
@@ -38,8 +38,7 @@ function UserPageContent() {
       const shouldFocus = window.location.hash === REPORT_FORM_HASH;
       setShouldFocusReportForm(shouldFocus);
       if (!shouldFocus) {
-        setReportFocusMessage("");
-        setReportFocusError(false);
+        setReportFocusStatus({ message: "", isError: false });
       }
     };
 
@@ -54,8 +53,10 @@ function UserPageContent() {
     const frame = window.requestAnimationFrame(() => {
       const reportForm = document.getElementById(REPORT_FORM_ID);
       if (!reportForm) {
-        setReportFocusMessage("Could not find the bug report form.");
-        setReportFocusError(true);
+        setReportFocusStatus({
+          message: "Could not find the bug report form.",
+          isError: true,
+        });
         setShouldFocusReportForm(false);
         return;
       }
@@ -67,8 +68,10 @@ function UserPageContent() {
         block: "start",
       });
       reportForm.focus({ preventScroll: true });
-      setReportFocusMessage("Bug report form focused for the selected test URL.");
-      setReportFocusError(false);
+      setReportFocusStatus({
+        message: "Bug report form focused for the selected test URL.",
+        isError: false,
+      });
       setShouldFocusReportForm(false);
     });
 
@@ -104,24 +107,23 @@ function UserPageContent() {
             onSelect={updateFinalUrl}
             onReportIssue={(url) => {
               setFinalUrl(url);
-              setReportFocusMessage("");
-              setReportFocusError(false);
+              setReportFocusStatus({ message: "", isError: false });
               setShouldFocusReportForm(true);
             }}
           />
         </section>
-        {reportFocusMessage && (
+        {reportFocusStatus.message && (
           <p
             role="status"
             aria-live="polite"
             aria-atomic="true"
             className={
-              reportFocusError
+              reportFocusStatus.isError
                 ? "mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
                 : "sr-only"
             }
           >
-            {reportFocusMessage}
+            {reportFocusStatus.message}
           </p>
         )}
         <div
