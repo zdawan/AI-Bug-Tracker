@@ -32,6 +32,13 @@ const SECTION_LINK_CLASS =
   "text-purple-800 transition hover:bg-purple-50 " +
   "focus:outline focus:outline-2 focus:outline-offset-2 " +
   "focus:outline-purple-700 focus:ring-2 focus:ring-purple-600";
+
+function getSectionLinkClass(isCurrent) {
+  return isCurrent
+    ? `${SECTION_LINK_CLASS} border-purple-500 bg-purple-50 text-purple-900`
+    : SECTION_LINK_CLASS;
+}
+
 const NAVIGATION_TARGETS = [
   {
     id: REPORT_FORM_ID,
@@ -256,7 +263,9 @@ function UserPageContent() {
             aria-current={
               currentSectionHash === URL_CHECKLIST_HASH ? "location" : undefined
             }
-            className={SECTION_LINK_CLASS}
+            className={getSectionLinkClass(
+              currentSectionHash === URL_CHECKLIST_HASH,
+            )}
           >
             Back to URL checklist
           </a>
@@ -266,7 +275,9 @@ function UserPageContent() {
             aria-current={
               currentSectionHash === URL_CONTEXT_HASH ? "location" : undefined
             }
-            className={SECTION_LINK_CLASS}
+            className={getSectionLinkClass(
+              currentSectionHash === URL_CONTEXT_HASH,
+            )}
           >
             Back to test URL context
           </a>
