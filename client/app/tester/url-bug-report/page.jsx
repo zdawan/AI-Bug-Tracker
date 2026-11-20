@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 const REPORT_FORM_ID = "tester-bug-report-form";
 const REPORT_FORM_HASH = `#${REPORT_FORM_ID}`;
+const PAGE_TITLE_ID = "tester-url-report-title";
 const URL_CHECKLIST_ID = "tester-url-checklist";
 const URL_CHECKLIST_HASH = `#${URL_CHECKLIST_ID}`;
 const URL_CHECKLIST_HELP_ID = "tester-url-checklist-help";
@@ -100,6 +101,15 @@ function UserPageContent() {
     setNavigationTarget(REPORT_FORM_ID);
   };
 
+  const dismissNavigationError = () => {
+    setNavigationStatus(EMPTY_NAVIGATION_STATUS);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(PAGE_TITLE_ID)
+        ?.focus({ preventScroll: true });
+    });
+  };
+
   useEffect(() => {
     setFinalUrl(fullUrl);
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
@@ -186,7 +196,13 @@ function UserPageContent() {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="relative z-10 max-w-3xl mx-auto">
         <header className="mb-8 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+          <h1
+            id={PAGE_TITLE_ID}
+            tabIndex={-1}
+            className="rounded-sm text-3xl font-semibold tracking-tight
+            text-slate-950 outline-none sm:text-4xl focus:outline
+            focus:outline-2 focus:outline-offset-4 focus:outline-purple-700"
+          >
             Test a URL and report bugs
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
@@ -321,7 +337,7 @@ function UserPageContent() {
             {navigationStatus.isError && (
               <button
                 type="button"
-                onClick={() => setNavigationStatus(EMPTY_NAVIGATION_STATUS)}
+                onClick={dismissNavigationError}
                 aria-label="Dismiss navigation error"
                 className="rounded p-1 text-amber-800 hover:bg-amber-100
                 focus:outline focus:outline-2 focus:outline-offset-2
