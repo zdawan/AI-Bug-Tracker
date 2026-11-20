@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import BugForm from "../components/BugForm";
 import ReportUrlContext from "./ReportUrlContext";
 import UrlTestChecklist from "./UrlTestChecklist";
@@ -300,23 +300,37 @@ function UserPageContent() {
           </a>
         </nav>
         {navigationStatus.message && (
-          <p
+          <div
             role={navigationStatus.isError ? "alert" : "status"}
             aria-live={navigationStatus.isError ? "assertive" : "polite"}
             aria-atomic="true"
             className={
               navigationStatus.isError
-                ? "mb-3 flex items-center justify-end gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                ? "mb-3 flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
                 : "mb-3 flex items-center justify-end gap-2 text-sm text-emerald-700"
             }
           >
-            {navigationStatus.isError ? (
-              <AlertCircle size={16} aria-hidden="true" />
-            ) : (
-              <CheckCircle2 size={16} aria-hidden="true" />
+            <div className="flex items-center gap-2">
+              {navigationStatus.isError ? (
+                <AlertCircle size={16} aria-hidden="true" />
+              ) : (
+                <CheckCircle2 size={16} aria-hidden="true" />
+              )}
+              <span>{navigationStatus.message}</span>
+            </div>
+            {navigationStatus.isError && (
+              <button
+                type="button"
+                onClick={() => setNavigationStatus(EMPTY_NAVIGATION_STATUS)}
+                aria-label="Dismiss navigation error"
+                className="rounded p-1 text-amber-800 hover:bg-amber-100
+                focus:outline focus:outline-2 focus:outline-offset-2
+                focus:outline-amber-800"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
             )}
-            <span>{navigationStatus.message}</span>
-          </p>
+          </div>
         )}
         <div
           id={REPORT_FORM_ID}
