@@ -15,7 +15,7 @@ const URL_CHECKLIST_HASH = `#${URL_CHECKLIST_ID}`;
 const URL_CHECKLIST_HELP_ID = "tester-url-checklist-help";
 const URL_CONTEXT_ID = "tester-url-context";
 const URL_CONTEXT_HASH = `#${URL_CONTEXT_ID}`;
-const EMPTY_REPORT_FOCUS_STATUS = Object.freeze({
+const EMPTY_NAVIGATION_STATUS = Object.freeze({
   message: "",
   isError: false,
 });
@@ -34,13 +34,13 @@ function UserPageContent() {
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
   const [shouldFocusChecklist, setShouldFocusChecklist] = useState(false);
   const [shouldFocusUrlContext, setShouldFocusUrlContext] = useState(false);
-  const [reportFocusStatus, setReportFocusStatus] = useState(
-    EMPTY_REPORT_FOCUS_STATUS,
+  const [navigationStatus, setNavigationStatus] = useState(
+    EMPTY_NAVIGATION_STATUS,
   );
 
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
-    setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
+    setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     setShouldFocusReportForm(false);
     setShouldFocusChecklist(false);
     setShouldFocusUrlContext(false);
@@ -48,7 +48,7 @@ function UserPageContent() {
 
   useEffect(() => {
     setFinalUrl(fullUrl);
-    setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
+    setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     setShouldFocusReportForm(false);
     setShouldFocusChecklist(false);
     setShouldFocusUrlContext(false);
@@ -59,7 +59,7 @@ function UserPageContent() {
       setShouldFocusReportForm(window.location.hash === REPORT_FORM_HASH);
       setShouldFocusChecklist(window.location.hash === URL_CHECKLIST_HASH);
       setShouldFocusUrlContext(window.location.hash === URL_CONTEXT_HASH);
-      setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
+      setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     };
 
     focusReportFormFromHash();
@@ -73,7 +73,7 @@ function UserPageContent() {
     const frame = window.requestAnimationFrame(() => {
       const reportForm = document.getElementById(REPORT_FORM_ID);
       if (!reportForm) {
-        setReportFocusStatus({
+        setNavigationStatus({
           message: "Could not find the bug report form. Reload and try again.",
           isError: true,
         });
@@ -86,7 +86,7 @@ function UserPageContent() {
         block: "start",
       });
       reportForm.focus({ preventScroll: true });
-      setReportFocusStatus({
+      setNavigationStatus({
         message: "Bug report form focused for the selected test URL.",
         isError: false,
       });
@@ -102,7 +102,7 @@ function UserPageContent() {
     const frame = window.requestAnimationFrame(() => {
       const checklist = document.getElementById(URL_CHECKLIST_ID);
       if (!checklist) {
-        setReportFocusStatus({
+        setNavigationStatus({
           message: "Could not find the URL checklist. Reload and try again.",
           isError: true,
         });
@@ -115,7 +115,7 @@ function UserPageContent() {
         block: "start",
       });
       checklist.focus({ preventScroll: true });
-      setReportFocusStatus({
+      setNavigationStatus({
         message: "URL testing checklist focused.",
         isError: false,
       });
@@ -131,7 +131,7 @@ function UserPageContent() {
     const frame = window.requestAnimationFrame(() => {
       const urlContext = document.getElementById(URL_CONTEXT_ID);
       if (!urlContext) {
-        setReportFocusStatus({
+        setNavigationStatus({
           message: "Could not find the test URL context. Reload and try again.",
           isError: true,
         });
@@ -144,7 +144,7 @@ function UserPageContent() {
         block: "start",
       });
       urlContext.focus({ preventScroll: true });
-      setReportFocusStatus({
+      setNavigationStatus({
         message: "Test URL context focused.",
         isError: false,
       });
@@ -228,7 +228,7 @@ function UserPageContent() {
             onSelect={updateFinalUrl}
             onReportIssue={(url) => {
               setFinalUrl(url);
-              setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
+              setNavigationStatus(EMPTY_NAVIGATION_STATUS);
               setShouldFocusChecklist(false);
               setShouldFocusReportForm(true);
             }}
@@ -247,18 +247,18 @@ function UserPageContent() {
             Back to test URL context
           </a>
         </div>
-        {reportFocusStatus.message && (
+        {navigationStatus.message && (
           <p
-            role={reportFocusStatus.isError ? "alert" : "status"}
-            aria-live={reportFocusStatus.isError ? "assertive" : "polite"}
+            role={navigationStatus.isError ? "alert" : "status"}
+            aria-live={navigationStatus.isError ? "assertive" : "polite"}
             aria-atomic="true"
             className={
-              reportFocusStatus.isError
+              navigationStatus.isError
                 ? "mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
                 : "sr-only"
             }
           >
-            {reportFocusStatus.message}
+            {navigationStatus.message}
           </p>
         )}
         <div
