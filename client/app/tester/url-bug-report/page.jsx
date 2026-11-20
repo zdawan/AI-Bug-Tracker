@@ -8,7 +8,8 @@ import UrlTestChecklist from "./UrlTestChecklist";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const REPORT_FORM_HASH = "#tester-bug-report-form";
+const REPORT_FORM_ID = "tester-bug-report-form";
+const REPORT_FORM_HASH = `#${REPORT_FORM_ID}`;
 
 function UserPageContent() {
   const searchParams = useSearchParams();
@@ -24,7 +25,8 @@ function UserPageContent() {
   };
 
   useEffect(() => {
-    updateFinalUrl(fullUrl);
+    setFinalUrl(fullUrl);
+    setReportFocusMessage("");
   }, [fullUrl]);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ function UserPageContent() {
     if (!shouldFocusReportForm) return undefined;
 
     const frame = window.requestAnimationFrame(() => {
-      const reportForm = document.getElementById("tester-bug-report-form");
+      const reportForm = document.getElementById(REPORT_FORM_ID);
       if (!reportForm) {
         setReportFocusMessage("Could not find the bug report form.");
         setShouldFocusReportForm(false);
@@ -70,6 +72,7 @@ function UserPageContent() {
       <div className="relative z-10 max-w-3xl mx-auto">
         <a
           href={REPORT_FORM_HASH}
+          aria-controls={REPORT_FORM_ID}
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
           focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
           focus:text-sm focus:font-semibold focus:text-purple-800
@@ -112,7 +115,7 @@ function UserPageContent() {
           </p>
         )}
         <div
-          id="tester-bug-report-form"
+          id={REPORT_FORM_ID}
           tabIndex={-1}
           role="region"
           aria-busy={shouldFocusReportForm}
