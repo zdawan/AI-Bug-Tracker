@@ -18,22 +18,29 @@ function UserPageContent() {
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
   const [reportFocusMessage, setReportFocusMessage] = useState("");
+  const [reportFocusError, setReportFocusError] = useState(false);
 
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
     setReportFocusMessage("");
+    setReportFocusError(false);
   };
 
   useEffect(() => {
     setFinalUrl(fullUrl);
     setReportFocusMessage("");
+    setReportFocusError(false);
+    setShouldFocusReportForm(false);
   }, [fullUrl]);
 
   useEffect(() => {
     const focusReportFormFromHash = () => {
       const shouldFocus = window.location.hash === REPORT_FORM_HASH;
       setShouldFocusReportForm(shouldFocus);
-      if (!shouldFocus) setReportFocusMessage("");
+      if (!shouldFocus) {
+        setReportFocusMessage("");
+        setReportFocusError(false);
+      }
     };
 
     focusReportFormFromHash();
@@ -48,11 +55,12 @@ function UserPageContent() {
       const reportForm = document.getElementById(REPORT_FORM_ID);
       if (!reportForm) {
         setReportFocusMessage("Could not find the bug report form.");
+        setReportFocusError(true);
         setShouldFocusReportForm(false);
         return;
       }
 
-      reportForm?.scrollIntoView({
+      reportForm.scrollIntoView({
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
           ? "auto"
           : "smooth",
@@ -60,6 +68,7 @@ function UserPageContent() {
       });
       reportForm.focus({ preventScroll: true });
       setReportFocusMessage("Bug report form focused for the selected test URL.");
+      setReportFocusError(false);
       setShouldFocusReportForm(false);
     });
 
@@ -96,6 +105,7 @@ function UserPageContent() {
             onReportIssue={(url) => {
               setFinalUrl(url);
               setReportFocusMessage("");
+              setReportFocusError(false);
               setShouldFocusReportForm(true);
             }}
           />
@@ -106,7 +116,7 @@ function UserPageContent() {
             aria-live="polite"
             aria-atomic="true"
             className={
-              reportFocusMessage.startsWith("Could not")
+              reportFocusError
                 ? "mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
                 : "sr-only"
             }
