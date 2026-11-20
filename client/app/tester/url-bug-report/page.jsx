@@ -12,6 +12,7 @@ const REPORT_FORM_ID = "tester-bug-report-form";
 const REPORT_FORM_HASH = `#${REPORT_FORM_ID}`;
 const URL_CHECKLIST_ID = "tester-url-checklist";
 const URL_CHECKLIST_HASH = `#${URL_CHECKLIST_ID}`;
+const URL_CHECKLIST_HELP_ID = "tester-url-checklist-help";
 const EMPTY_REPORT_FOCUS_STATUS = Object.freeze({
   message: "",
   isError: false,
@@ -127,9 +128,18 @@ function UserPageContent() {
         />
         <section
           id={URL_CHECKLIST_ID}
+          tabIndex={-1}
           aria-label="URL testing checklist"
-          className="scroll-mt-6"
+          aria-describedby={URL_CHECKLIST_HELP_ID}
+          className="scroll-mt-6 rounded-2xl outline-none
+          focus:outline focus:outline-2 focus:outline-offset-4
+          focus:outline-purple-700 focus:ring-2 focus:ring-purple-600
+          focus:ring-offset-4"
         >
+          <p id={URL_CHECKLIST_HELP_ID} className="sr-only">
+            Track test results and notes for the selected URL. Choose an issue
+            to continue to the report form.
+          </p>
           <UrlTestChecklist
             value={finalUrl}
             onSelect={updateFinalUrl}
