@@ -13,6 +13,8 @@ const REPORT_FORM_HASH = `#${REPORT_FORM_ID}`;
 const URL_CHECKLIST_ID = "tester-url-checklist";
 const URL_CHECKLIST_HASH = `#${URL_CHECKLIST_ID}`;
 const URL_CHECKLIST_HELP_ID = "tester-url-checklist-help";
+const URL_CONTEXT_ID = "tester-url-context";
+const URL_CONTEXT_HASH = `#${URL_CONTEXT_ID}`;
 const EMPTY_REPORT_FOCUS_STATUS = Object.freeze({
   message: "",
   isError: false,
@@ -157,11 +159,21 @@ function UserPageContent() {
         >
           Skip to bug report form
         </a>
-        <ReportUrlContext
-          value={finalUrl}
-          initialValue={fullUrl}
-          onChange={updateFinalUrl}
-        />
+        <div
+          id={URL_CONTEXT_ID}
+          tabIndex={-1}
+          role="region"
+          aria-label="Test URL context"
+          className="mb-6 rounded-2xl outline-none focus:outline
+          focus:outline-2 focus:outline-offset-4 focus:outline-purple-700
+          focus:ring-2 focus:ring-purple-600 focus:ring-offset-4"
+        >
+          <ReportUrlContext
+            value={finalUrl}
+            initialValue={fullUrl}
+            onChange={updateFinalUrl}
+          />
+        </div>
         <section
           id={URL_CHECKLIST_ID}
           tabIndex={-1}
@@ -188,6 +200,19 @@ function UserPageContent() {
             }}
           />
         </section>
+        <div className="mt-4 flex justify-end">
+          <a
+            href={URL_CONTEXT_HASH}
+            aria-controls={URL_CONTEXT_ID}
+            className="inline-flex min-h-10 items-center rounded-lg border
+            border-purple-200 bg-white px-3 py-2 text-sm font-medium
+            text-purple-800 transition hover:bg-purple-50
+            focus:outline focus:outline-2 focus:outline-offset-2
+            focus:outline-purple-700 focus:ring-2 focus:ring-purple-600"
+          >
+            Back to test URL context
+          </a>
+        </div>
         {reportFocusStatus.message && (
           <p
             role={reportFocusStatus.isError ? "alert" : "status"}
