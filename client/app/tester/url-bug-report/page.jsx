@@ -19,6 +19,26 @@ const EMPTY_NAVIGATION_STATUS = Object.freeze({
   message: "",
   isError: false,
 });
+const NAVIGATION_TARGETS = [
+  {
+    id: REPORT_FORM_ID,
+    hash: REPORT_FORM_HASH,
+    error: "Could not find the bug report form. Reload and try again.",
+    complete: "Bug report form focused for the selected test URL.",
+  },
+  {
+    id: URL_CHECKLIST_ID,
+    hash: URL_CHECKLIST_HASH,
+    error: "Could not find the URL checklist. Reload and try again.",
+    complete: "URL testing checklist focused.",
+  },
+  {
+    id: URL_CONTEXT_ID,
+    hash: URL_CONTEXT_HASH,
+    error: "Could not find the test URL context. Reload and try again.",
+    complete: "Test URL context focused.",
+  },
+];
 
 function getScrollBehavior() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -31,9 +51,7 @@ function UserPageContent() {
   const fullUrl = searchParams.get("url") || "";
 
   const [finalUrl, setFinalUrl] = useState(fullUrl);
-  const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
-  const [shouldFocusChecklist, setShouldFocusChecklist] = useState(false);
-  const [shouldFocusUrlContext, setShouldFocusUrlContext] = useState(false);
+  const [navigationTarget, setNavigationTarget] = useState(null);
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
@@ -41,29 +59,26 @@ function UserPageContent() {
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
-    setShouldFocusReportForm(false);
-    setShouldFocusChecklist(false);
-    setShouldFocusUrlContext(false);
+    setNavigationTarget(null);
   };
 
   const focusReportFormForUrl = (url) => {
     updateFinalUrl(url);
-    setShouldFocusReportForm(true);
+    setNavigationTarget(REPORT_FORM_ID);
   };
 
   useEffect(() => {
     setFinalUrl(fullUrl);
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
-    setShouldFocusReportForm(false);
-    setShouldFocusChecklist(false);
-    setShouldFocusUrlContext(false);
+    setNavigationTarget(null);
   }, [fullUrl]);
 
   useEffect(() => {
     const focusReportFormFromHash = () => {
-      setShouldFocusReportForm(window.location.hash === REPORT_FORM_HASH);
-      setShouldFocusChecklist(window.location.hash === URL_CHECKLIST_HASH);
-      setShouldFocusUrlContext(window.location.hash === URL_CONTEXT_HASH);
+      const target = NAVIGATION_TARGETS.find(
+        ({ hash }) => hash === window.location.hash,
+      );
+      setNavigationTarget(target ? target.id : null);
       setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     };
 
@@ -73,91 +88,38 @@ function UserPageContent() {
   }, []);
 
   useEffect(() => {
-    if (!shouldFocusReportForm) return undefined;
+    if (!navigationTarget) return undefined;
+
+    const targetConfig = NAVIGATION_TARGETS.find(
+      ({ id }) => id === navigationTarget,
+    );
+    if (!targetConfig) return undefined;
 
     const frame = window.requestAnimationFrame(() => {
-      const reportForm = document.getElementById(REPORT_FORM_ID);
-      if (!reportForm) {
+      const target = document.getElementById(navigationTarget);
+      if (!target) {
         setNavigationStatus({
-          message: "Could not find the bug report form. Reload and try again.",
+          message: targetConfig.error,
           isError: true,
         });
-        setShouldFocusReportForm(false);
+        setNavigationTarget(null);
         return;
       }
 
-      reportForm.scrollIntoView({
+      target.scrollIntoView({
         behavior: getScrollBehavior(),
         block: "start",
       });
-      reportForm.focus({ preventScroll: true });
+      target.focus({ preventScroll: true });
       setNavigationStatus({
-        message: "Bug report form focused for the selected test URL.",
+        message: targetConfig.complete,
         isError: false,
       });
-      setShouldFocusReportForm(false);
+      setNavigationTarget(null);
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [shouldFocusReportForm]);
-
-  useEffect(() => {
-    if (!shouldFocusChecklist) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      const checklist = document.getElementById(URL_CHECKLIST_ID);
-      if (!checklist) {
-        setNavigationStatus({
-          message: "Could not find the URL checklist. Reload and try again.",
-          isError: true,
-        });
-        setShouldFocusChecklist(false);
-        return;
-      }
-
-      checklist.scrollIntoView({
-        behavior: getScrollBehavior(),
-        block: "start",
-      });
-      checklist.focus({ preventScroll: true });
-      setNavigationStatus({
-        message: "URL testing checklist focused.",
-        isError: false,
-      });
-      setShouldFocusChecklist(false);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [shouldFocusChecklist]);
-
-  useEffect(() => {
-    if (!shouldFocusUrlContext) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      const urlContext = document.getElementById(URL_CONTEXT_ID);
-      if (!urlContext) {
-        setNavigationStatus({
-          message: "Could not find the test URL context. Reload and try again.",
-          isError: true,
-        });
-        setShouldFocusUrlContext(false);
-        return;
-      }
-
-      urlContext.scrollIntoView({
-        behavior: getScrollBehavior(),
-        block: "start",
-      });
-      urlContext.focus({ preventScroll: true });
-      setNavigationStatus({
-        message: "Test URL context focused.",
-        isError: false,
-      });
-      setShouldFocusUrlContext(false);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [shouldFocusUrlContext]);
+  }, [navigationTarget]);
 
   return (
     <>
@@ -201,7 +163,7 @@ function UserPageContent() {
           id={URL_CONTEXT_ID}
           tabIndex={-1}
           role="region"
-          aria-busy={shouldFocusUrlContext}
+          aria-busy={navigationTarget === URL_CONTEXT_ID}
           aria-label="Test URL context"
           className="mb-6 rounded-2xl outline-none focus:outline
           focus:outline-2 focus:outline-offset-4 focus:outline-purple-700
@@ -216,7 +178,7 @@ function UserPageContent() {
         <section
           id={URL_CHECKLIST_ID}
           tabIndex={-1}
-          aria-busy={shouldFocusChecklist}
+          aria-busy={navigationTarget === URL_CHECKLIST_ID}
           aria-label="URL testing checklist"
           aria-describedby={URL_CHECKLIST_HELP_ID}
           className="scroll-mt-6 rounded-2xl outline-none
@@ -265,7 +227,7 @@ function UserPageContent() {
           id={REPORT_FORM_ID}
           tabIndex={-1}
           role="region"
-          aria-busy={shouldFocusReportForm}
+          aria-busy={navigationTarget === REPORT_FORM_ID}
           aria-label="Bug report form"
           aria-describedby="tester-bug-report-form-help"
           className="scroll-mt-6 rounded-2xl outline-none
