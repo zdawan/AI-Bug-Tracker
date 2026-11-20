@@ -8,6 +8,8 @@ import UrlTestChecklist from "./UrlTestChecklist";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const REPORT_FORM_HASH = "#tester-bug-report-form";
+
 function UserPageContent() {
   const searchParams = useSearchParams();
   const fullUrl = searchParams.get("url") || "";
@@ -21,9 +23,15 @@ function UserPageContent() {
   }, [fullUrl]);
 
   useEffect(() => {
-    if (window.location.hash === "#tester-bug-report-form") {
-      setShouldFocusReportForm(true);
-    }
+    const focusReportFormFromHash = () => {
+      const shouldFocus = window.location.hash === REPORT_FORM_HASH;
+      setShouldFocusReportForm(shouldFocus);
+      if (!shouldFocus) setReportFocusMessage("");
+    };
+
+    focusReportFormFromHash();
+    window.addEventListener("hashchange", focusReportFormFromHash);
+    return () => window.removeEventListener("hashchange", focusReportFormFromHash);
   }, []);
 
   useEffect(() => {
@@ -55,7 +63,7 @@ function UserPageContent() {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="relative z-10 max-w-3xl mx-auto">
         <a
-          href="#tester-bug-report-form"
+          href={REPORT_FORM_HASH}
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
           focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
           focus:text-sm focus:font-semibold focus:text-purple-800
