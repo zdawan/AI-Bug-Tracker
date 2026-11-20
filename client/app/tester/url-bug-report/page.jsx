@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import BugForm from "../components/BugForm";
 import ReportUrlContext from "./ReportUrlContext";
 import UrlTestChecklist from "./UrlTestChecklist";
@@ -293,11 +294,16 @@ function UserPageContent() {
             aria-atomic="true"
             className={
               navigationStatus.isError
-                ? "mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
-                : "sr-only"
+                ? "mb-3 flex items-center justify-end gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                : "mb-3 flex items-center justify-end gap-2 text-sm text-emerald-700"
             }
           >
-            {navigationStatus.message}
+            {navigationStatus.isError ? (
+              <AlertCircle size={16} aria-hidden="true" />
+            ) : (
+              <CheckCircle2 size={16} aria-hidden="true" />
+            )}
+            <span>{navigationStatus.message}</span>
           </p>
         )}
         <div
