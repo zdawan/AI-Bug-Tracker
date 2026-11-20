@@ -56,6 +56,12 @@ function getScrollBehavior() {
   return prefersReducedMotion ? "auto" : "smooth";
 }
 
+function replacePageHash(hash) {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.hash = hash;
+  window.history.replaceState(window.history.state, "", nextUrl.href);
+}
+
 function UserPageContent() {
   const searchParams = useSearchParams();
   const fullUrl = searchParams.get("url") || "";
@@ -74,6 +80,7 @@ function UserPageContent() {
 
   const focusReportFormForUrl = (url) => {
     updateFinalUrl(url);
+    replacePageHash(REPORT_FORM_HASH);
     setNavigationTarget(REPORT_FORM_ID);
   };
 
@@ -153,6 +160,10 @@ function UserPageContent() {
             you find.
             <span className="block">
               The selected URL is shared with the report form.
+            </span>
+            <span className="block">
+              Selecting an issue updates the address with a link to the report
+              form.
             </span>
           </p>
         </header>
