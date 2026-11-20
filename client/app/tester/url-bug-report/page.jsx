@@ -121,13 +121,14 @@ function UserPageContent() {
           aria-busy={shouldFocusReportForm}
           aria-label="Bug report form"
           aria-describedby="tester-bug-report-form-help"
-          className="scroll-mt-6 rounded-2xl outline-none focus-visible:outline
-          focus-visible:outline-2 focus-visible:outline-offset-4
-          focus-visible:ring-2 focus-visible:ring-purple-600
-          focus-visible:ring-offset-4"
+          className="scroll-mt-6 rounded-2xl outline-none
+          focus:outline focus:outline-2 focus:outline-offset-4
+          focus:outline-purple-700 focus:ring-2 focus:ring-purple-600
+          focus:ring-offset-4"
         >
           <p id="tester-bug-report-form-help" className="sr-only">
-            Report an issue with the selected test URL.
+            Report an issue with the selected test URL. Choosing to report an
+            issue moves focus to this form.
           </p>
           <BugForm testUrl={finalUrl} />
         </div>
