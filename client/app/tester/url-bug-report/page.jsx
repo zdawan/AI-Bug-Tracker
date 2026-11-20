@@ -81,7 +81,17 @@ export default function UserPage() {
       [background-size:24px_24px]
       bg-gradient-to-br from-blue-50 to-purple-100 overflow-hidden"
     >
+      <a
+        href="#tester-bug-report-form"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
+        focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
+        focus:text-sm focus:font-semibold focus:text-purple-800
+        focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+      >
+        Skip to bug report form
+      </a>
       <div
+        aria-hidden="true"
         className="absolute bottom-0 left-1/2 -translate-x-1/2
         w-[160vw] h-[160vw]
         bg-[radial-gradient(circle_at_bottom,
