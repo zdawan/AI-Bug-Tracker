@@ -82,6 +82,18 @@ function UserPageContent() {
     <>
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="relative z-10 max-w-3xl mx-auto">
+        <header className="mb-8 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            Test a URL and report bugs
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+            Work through the URL checklist, then submit a report for any issue
+            you find.
+            <span className="block">
+              The selected URL is shared with the report form.
+            </span>
+          </p>
+        </header>
         <a
           href={REPORT_FORM_HASH}
           aria-controls={REPORT_FORM_ID}
