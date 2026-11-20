@@ -93,7 +93,22 @@ export default function UserPage() {
         blur-3xl opacity-80"
       ></div>
 
-      <Suspense fallback={<div className="text-center mt-20">Loading…</div>}>
+      <Suspense
+        fallback={
+          <div
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+            className="mt-20 flex items-center justify-center gap-3 text-center text-slate-600"
+          >
+            <span
+              aria-hidden="true"
+              className="h-5 w-5 animate-spin rounded-full border-2 border-purple-200 border-t-purple-700 motion-reduce:animate-none"
+            />
+            <span>Loading tester report tools…</span>
+          </div>
+        }
+      >
         <UserPageContent />
       </Suspense>
     </main>
