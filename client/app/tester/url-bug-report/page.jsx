@@ -26,6 +26,12 @@ const SKIP_LINK_CLASS =
   "focus:text-sm focus:font-semibold focus:text-purple-800 " +
   "focus:shadow-lg focus:outline-2 focus:outline-offset-2 " +
   "focus:ring-2 focus:ring-purple-600";
+const SECTION_LINK_CLASS =
+  "inline-flex min-h-10 items-center rounded-lg border " +
+  "border-purple-200 bg-white px-3 py-2 text-sm font-medium " +
+  "text-purple-800 transition hover:bg-purple-50 " +
+  "focus:outline focus:outline-2 focus:outline-offset-2 " +
+  "focus:outline-purple-700 focus:ring-2 focus:ring-purple-600";
 const NAVIGATION_TARGETS = [
   {
     id: REPORT_FORM_ID,
@@ -250,11 +256,7 @@ function UserPageContent() {
             aria-current={
               currentSectionHash === URL_CHECKLIST_HASH ? "location" : undefined
             }
-            className="inline-flex min-h-10 items-center rounded-lg border
-            border-purple-200 bg-white px-3 py-2 text-sm font-medium
-            text-purple-800 transition hover:bg-purple-50
-            focus:outline focus:outline-2 focus:outline-offset-2
-            focus:outline-purple-700 focus:ring-2 focus:ring-purple-600"
+            className={SECTION_LINK_CLASS}
           >
             Back to URL checklist
           </a>
@@ -264,11 +266,7 @@ function UserPageContent() {
             aria-current={
               currentSectionHash === URL_CONTEXT_HASH ? "location" : undefined
             }
-            className="inline-flex min-h-10 items-center rounded-lg border
-            border-purple-200 bg-white px-3 py-2 text-sm font-medium
-            text-purple-800 transition hover:bg-purple-50
-            focus:outline focus:outline-2 focus:outline-offset-2
-            focus:outline-purple-700 focus:ring-2 focus:ring-purple-600"
+            className={SECTION_LINK_CLASS}
           >
             Back to test URL context
           </a>
