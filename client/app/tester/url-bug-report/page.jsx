@@ -48,6 +48,16 @@ function UserPageContent() {
     <>
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="relative z-10 max-w-3xl mx-auto">
+        <a
+          href="#tester-bug-report-form"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
+          focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
+          focus:text-sm focus:font-semibold focus:text-purple-800
+          focus:shadow-lg focus:outline-2 focus:outline-offset-2
+          focus:ring-2 focus:ring-purple-600"
+        >
+          Skip to bug report form
+        </a>
         <ReportUrlContext
           value={finalUrl}
           initialValue={fullUrl}
@@ -105,16 +115,6 @@ export default function UserPage() {
       [background-size:24px_24px]
       bg-gradient-to-br from-blue-50 to-purple-100 overflow-hidden"
     >
-      <a
-        href="#tester-bug-report-form"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
-        focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
-        focus:text-sm focus:font-semibold focus:text-purple-800
-        focus:shadow-lg focus:outline-2 focus:outline-offset-2
-        focus:ring-2 focus:ring-purple-600"
-      >
-        Skip to bug report form
-      </a>
       <div
         aria-hidden="true"
         className="absolute bottom-0 left-1/2 -translate-x-1/2
