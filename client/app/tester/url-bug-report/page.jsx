@@ -60,8 +60,10 @@ function UserPageContent() {
           role="region"
           aria-label="Bug report form"
           aria-describedby="tester-bug-report-form-help"
-          className="scroll-mt-6 rounded-2xl outline-none focus-visible:ring-2
-          focus-visible:ring-purple-600 focus-visible:ring-offset-4"
+          className="scroll-mt-6 rounded-2xl outline-none focus-visible:outline
+          focus-visible:outline-2 focus-visible:outline-offset-4
+          focus-visible:ring-2 focus-visible:ring-purple-600
+          focus-visible:ring-offset-4"
         >
           <p id="tester-bug-report-form-help" className="sr-only">
             Report an issue with the selected test URL.
@@ -86,7 +88,8 @@ export default function UserPage() {
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
         focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
         focus:text-sm focus:font-semibold focus:text-purple-800
-        focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+        focus:shadow-lg focus:outline-2 focus:outline-offset-2
+        focus:ring-2 focus:ring-purple-600"
       >
         Skip to bug report form
       </a>
@@ -108,6 +111,7 @@ export default function UserPage() {
           <div
             role="status"
             aria-live="polite"
+            aria-atomic="true"
             aria-busy="true"
             className="mt-20 flex items-center justify-center gap-3 text-center text-slate-600"
           >
