@@ -18,12 +18,19 @@ const EMPTY_REPORT_FOCUS_STATUS = Object.freeze({
   isError: false,
 });
 
+function getScrollBehavior() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? "auto"
+    : "smooth";
+}
+
 function UserPageContent() {
   const searchParams = useSearchParams();
   const fullUrl = searchParams.get("url") || "";
 
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
+  const [shouldFocusChecklist, setShouldFocusChecklist] = useState(false);
   const [reportFocusStatus, setReportFocusStatus] = useState(
     EMPTY_REPORT_FOCUS_STATUS,
   );
@@ -32,18 +39,20 @@ function UserPageContent() {
     setFinalUrl(url);
     setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     setShouldFocusReportForm(false);
+    setShouldFocusChecklist(false);
   };
 
   useEffect(() => {
     setFinalUrl(fullUrl);
     setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     setShouldFocusReportForm(false);
+    setShouldFocusChecklist(false);
   }, [fullUrl]);
 
   useEffect(() => {
     const focusReportFormFromHash = () => {
-      const shouldFocus = window.location.hash === REPORT_FORM_HASH;
-      setShouldFocusReportForm(shouldFocus);
+      setShouldFocusReportForm(window.location.hash === REPORT_FORM_HASH);
+      setShouldFocusChecklist(window.location.hash === URL_CHECKLIST_HASH);
       setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     };
 
@@ -67,9 +76,7 @@ function UserPageContent() {
       }
 
       reportForm.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
+        behavior: getScrollBehavior(),
         block: "start",
       });
       reportForm.focus({ preventScroll: true });
@@ -82,6 +89,35 @@ function UserPageContent() {
 
     return () => window.cancelAnimationFrame(frame);
   }, [shouldFocusReportForm]);
+
+  useEffect(() => {
+    if (!shouldFocusChecklist) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      const checklist = document.getElementById(URL_CHECKLIST_ID);
+      if (!checklist) {
+        setReportFocusStatus({
+          message: "Could not find the URL checklist. Reload and try again.",
+          isError: true,
+        });
+        setShouldFocusChecklist(false);
+        return;
+      }
+
+      checklist.scrollIntoView({
+        behavior: getScrollBehavior(),
+        block: "start",
+      });
+      checklist.focus({ preventScroll: true });
+      setReportFocusStatus({
+        message: "URL testing checklist focused.",
+        isError: false,
+      });
+      setShouldFocusChecklist(false);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [shouldFocusChecklist]);
 
   return (
     <>
@@ -129,6 +165,7 @@ function UserPageContent() {
         <section
           id={URL_CHECKLIST_ID}
           tabIndex={-1}
+          aria-busy={shouldFocusChecklist}
           aria-label="URL testing checklist"
           aria-describedby={URL_CHECKLIST_HELP_ID}
           className="scroll-mt-6 rounded-2xl outline-none
@@ -146,6 +183,7 @@ function UserPageContent() {
             onReportIssue={(url) => {
               setFinalUrl(url);
               setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
+              setShouldFocusChecklist(false);
               setShouldFocusReportForm(true);
             }}
           />
