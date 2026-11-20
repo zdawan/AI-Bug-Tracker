@@ -26,7 +26,7 @@ function UserPageContent() {
       const reportForm = document.getElementById("tester-bug-report-form");
       reportForm?.scrollIntoView({
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant"
+          ? "auto"
           : "smooth",
         block: "start",
       });
@@ -57,9 +57,15 @@ function UserPageContent() {
         <div
           id="tester-bug-report-form"
           tabIndex={-1}
+          role="region"
           aria-label="Bug report form"
-          className="scroll-mt-6 outline-none"
+          aria-describedby="tester-bug-report-form-help"
+          className="scroll-mt-6 rounded-2xl outline-none focus-visible:ring-2
+          focus-visible:ring-purple-600 focus-visible:ring-offset-4"
         >
+          <p id="tester-bug-report-form-help" className="sr-only">
+            Report an issue with the selected test URL.
+          </p>
           <BugForm testUrl={finalUrl} />
         </div>
       </div>
