@@ -53,15 +53,20 @@ function UserPageContent() {
           initialValue={fullUrl}
           onChange={setFinalUrl}
         />
-        <UrlTestChecklist
-          value={finalUrl}
-          onSelect={setFinalUrl}
-          onReportIssue={(url) => {
-            setFinalUrl(url);
-            setReportFocusMessage("");
-            setShouldFocusReportForm(true);
-          }}
-        />
+        <section
+          aria-label="URL testing checklist"
+          className="scroll-mt-6"
+        >
+          <UrlTestChecklist
+            value={finalUrl}
+            onSelect={setFinalUrl}
+            onReportIssue={(url) => {
+              setFinalUrl(url);
+              setReportFocusMessage("");
+              setShouldFocusReportForm(true);
+            }}
+          />
+        </section>
         <p
           role="status"
           aria-live="polite"
@@ -74,6 +79,7 @@ function UserPageContent() {
           id="tester-bug-report-form"
           tabIndex={-1}
           role="region"
+          aria-busy={shouldFocusReportForm}
           aria-label="Bug report form"
           aria-describedby="tester-bug-report-form-help"
           className="scroll-mt-6 rounded-2xl outline-none focus-visible:outline
