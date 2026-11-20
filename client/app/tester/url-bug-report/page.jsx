@@ -106,7 +106,7 @@ function UserPageContent() {
   }, [fullUrl]);
 
   useEffect(() => {
-    const focusReportFormFromHash = () => {
+    const syncNavigationFromLocation = () => {
       const currentHash = window.location.hash;
       const target = NAVIGATION_TARGETS.find(
         ({ hash }) => hash === currentHash,
@@ -116,9 +116,13 @@ function UserPageContent() {
       setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     };
 
-    focusReportFormFromHash();
-    window.addEventListener("hashchange", focusReportFormFromHash);
-    return () => window.removeEventListener("hashchange", focusReportFormFromHash);
+    syncNavigationFromLocation();
+    window.addEventListener("hashchange", syncNavigationFromLocation);
+    window.addEventListener("popstate", syncNavigationFromLocation);
+    return () => {
+      window.removeEventListener("hashchange", syncNavigationFromLocation);
+      window.removeEventListener("popstate", syncNavigationFromLocation);
+    };
   }, []);
 
   useEffect(() => {
