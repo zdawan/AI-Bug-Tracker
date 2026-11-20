@@ -98,12 +98,21 @@ function UserPageContent() {
   }, []);
 
   useEffect(() => {
-    if (!navigationTarget) return undefined;
+    if (!navigationTarget) {
+      return undefined;
+    }
 
     const targetConfig = NAVIGATION_TARGETS.find(
       ({ id }) => id === navigationTarget,
     );
-    if (!targetConfig) return undefined;
+    if (!targetConfig) {
+      setNavigationStatus({
+        message: "Could not identify the requested page section.",
+        isError: true,
+      });
+      setNavigationTarget(null);
+      return undefined;
+    }
 
     const frame = window.requestAnimationFrame(() => {
       const target = document.getElementById(navigationTarget);
