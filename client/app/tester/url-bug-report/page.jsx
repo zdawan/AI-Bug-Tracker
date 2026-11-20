@@ -169,6 +169,18 @@ function UserPageContent() {
     return () => window.cancelAnimationFrame(frame);
   }, [navigationTarget]);
 
+  useEffect(() => {
+    if (!navigationStatus.message || navigationStatus.isError) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(
+      () => setNavigationStatus(EMPTY_NAVIGATION_STATUS),
+      5000,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [navigationStatus]);
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
