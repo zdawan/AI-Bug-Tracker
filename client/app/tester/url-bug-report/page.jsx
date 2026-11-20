@@ -68,6 +68,7 @@ function UserPageContent() {
 
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [navigationTarget, setNavigationTarget] = useState(null);
+  const [currentSectionHash, setCurrentSectionHash] = useState("");
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
@@ -81,6 +82,7 @@ function UserPageContent() {
   const focusReportFormForUrl = (url) => {
     updateFinalUrl(url);
     replacePageHash(REPORT_FORM_HASH);
+    setCurrentSectionHash(REPORT_FORM_HASH);
     setNavigationTarget(REPORT_FORM_ID);
   };
 
@@ -92,9 +94,11 @@ function UserPageContent() {
 
   useEffect(() => {
     const focusReportFormFromHash = () => {
+      const currentHash = window.location.hash;
       const target = NAVIGATION_TARGETS.find(
-        ({ hash }) => hash === window.location.hash,
+        ({ hash }) => hash === currentHash,
       );
+      setCurrentSectionHash(target ? target.hash : "");
       setNavigationTarget(target ? target.id : null);
       setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     };
@@ -171,6 +175,9 @@ function UserPageContent() {
           <a
             href={URL_CONTEXT_HASH}
             aria-controls={URL_CONTEXT_ID}
+            aria-current={
+              currentSectionHash === URL_CONTEXT_HASH ? "location" : undefined
+            }
             className={SKIP_LINK_CLASS}
           >
             Skip to test URL context
@@ -178,6 +185,9 @@ function UserPageContent() {
           <a
             href={URL_CHECKLIST_HASH}
             aria-controls={URL_CHECKLIST_ID}
+            aria-current={
+              currentSectionHash === URL_CHECKLIST_HASH ? "location" : undefined
+            }
             className={SKIP_LINK_CLASS}
           >
             Skip to URL testing checklist
@@ -185,6 +195,9 @@ function UserPageContent() {
           <a
             href={REPORT_FORM_HASH}
             aria-controls={REPORT_FORM_ID}
+            aria-current={
+              currentSectionHash === REPORT_FORM_HASH ? "location" : undefined
+            }
             className={SKIP_LINK_CLASS}
           >
             Skip to bug report form
@@ -234,6 +247,9 @@ function UserPageContent() {
           <a
             href={URL_CHECKLIST_HASH}
             aria-controls={URL_CHECKLIST_ID}
+            aria-current={
+              currentSectionHash === URL_CHECKLIST_HASH ? "location" : undefined
+            }
             className="inline-flex min-h-10 items-center rounded-lg border
             border-purple-200 bg-white px-3 py-2 text-sm font-medium
             text-purple-800 transition hover:bg-purple-50
@@ -245,6 +261,9 @@ function UserPageContent() {
           <a
             href={URL_CONTEXT_HASH}
             aria-controls={URL_CONTEXT_ID}
+            aria-current={
+              currentSectionHash === URL_CONTEXT_HASH ? "location" : undefined
+            }
             className="inline-flex min-h-10 items-center rounded-lg border
             border-purple-200 bg-white px-3 py-2 text-sm font-medium
             text-purple-800 transition hover:bg-purple-50
