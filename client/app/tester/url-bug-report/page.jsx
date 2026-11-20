@@ -19,6 +19,12 @@ const EMPTY_NAVIGATION_STATUS = Object.freeze({
   message: "",
   isError: false,
 });
+const SKIP_LINK_CLASS =
+  "sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 " +
+  "focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 " +
+  "focus:text-sm focus:font-semibold focus:text-purple-800 " +
+  "focus:shadow-lg focus:outline-2 focus:outline-offset-2 " +
+  "focus:ring-2 focus:ring-purple-600";
 const NAVIGATION_TARGETS = [
   {
     id: REPORT_FORM_ID,
@@ -140,22 +146,14 @@ function UserPageContent() {
         <a
           href={URL_CHECKLIST_HASH}
           aria-controls={URL_CHECKLIST_ID}
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
-          focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
-          focus:text-sm focus:font-semibold focus:text-purple-800
-          focus:shadow-lg focus:outline-2 focus:outline-offset-2
-          focus:ring-2 focus:ring-purple-600"
+          className={SKIP_LINK_CLASS}
         >
           Skip to URL testing checklist
         </a>
         <a
           href={REPORT_FORM_HASH}
           aria-controls={REPORT_FORM_ID}
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4
-          focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3
-          focus:text-sm focus:font-semibold focus:text-purple-800
-          focus:shadow-lg focus:outline-2 focus:outline-offset-2
-          focus:ring-2 focus:ring-purple-600"
+          className={SKIP_LINK_CLASS}
         >
           Skip to bug report form
         </a>
