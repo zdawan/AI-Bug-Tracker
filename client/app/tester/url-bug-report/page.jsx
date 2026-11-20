@@ -14,6 +14,7 @@ function UserPageContent() {
 
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
+  const [reportFocusMessage, setReportFocusMessage] = useState("");
 
   useEffect(() => {
     setFinalUrl(fullUrl);
@@ -24,13 +25,19 @@ function UserPageContent() {
 
     const frame = window.requestAnimationFrame(() => {
       const reportForm = document.getElementById("tester-bug-report-form");
+      if (!reportForm) {
+        setShouldFocusReportForm(false);
+        return;
+      }
+
       reportForm?.scrollIntoView({
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
           ? "auto"
           : "smooth",
         block: "start",
       });
-      reportForm?.focus({ preventScroll: true });
+      reportForm.focus({ preventScroll: true });
+      setReportFocusMessage("Bug report form focused for the selected test URL.");
       setShouldFocusReportForm(false);
     });
 
@@ -51,9 +58,18 @@ function UserPageContent() {
           onSelect={setFinalUrl}
           onReportIssue={(url) => {
             setFinalUrl(url);
+            setReportFocusMessage("");
             setShouldFocusReportForm(true);
           }}
         />
+        <p
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {reportFocusMessage}
+        </p>
         <div
           id="tester-bug-report-form"
           tabIndex={-1}
