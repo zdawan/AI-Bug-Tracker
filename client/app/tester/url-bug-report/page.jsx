@@ -21,6 +21,12 @@ function UserPageContent() {
   }, [fullUrl]);
 
   useEffect(() => {
+    if (window.location.hash === "#tester-bug-report-form") {
+      setShouldFocusReportForm(true);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!shouldFocusReportForm) return undefined;
 
     const frame = window.requestAnimationFrame(() => {
