@@ -33,6 +33,7 @@ function UserPageContent() {
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [shouldFocusReportForm, setShouldFocusReportForm] = useState(false);
   const [shouldFocusChecklist, setShouldFocusChecklist] = useState(false);
+  const [shouldFocusUrlContext, setShouldFocusUrlContext] = useState(false);
   const [reportFocusStatus, setReportFocusStatus] = useState(
     EMPTY_REPORT_FOCUS_STATUS,
   );
@@ -42,6 +43,7 @@ function UserPageContent() {
     setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     setShouldFocusReportForm(false);
     setShouldFocusChecklist(false);
+    setShouldFocusUrlContext(false);
   };
 
   useEffect(() => {
@@ -49,12 +51,14 @@ function UserPageContent() {
     setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     setShouldFocusReportForm(false);
     setShouldFocusChecklist(false);
+    setShouldFocusUrlContext(false);
   }, [fullUrl]);
 
   useEffect(() => {
     const focusReportFormFromHash = () => {
       setShouldFocusReportForm(window.location.hash === REPORT_FORM_HASH);
       setShouldFocusChecklist(window.location.hash === URL_CHECKLIST_HASH);
+      setShouldFocusUrlContext(window.location.hash === URL_CONTEXT_HASH);
       setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     };
 
@@ -121,6 +125,35 @@ function UserPageContent() {
     return () => window.cancelAnimationFrame(frame);
   }, [shouldFocusChecklist]);
 
+  useEffect(() => {
+    if (!shouldFocusUrlContext) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      const urlContext = document.getElementById(URL_CONTEXT_ID);
+      if (!urlContext) {
+        setReportFocusStatus({
+          message: "Could not find the test URL context. Reload and try again.",
+          isError: true,
+        });
+        setShouldFocusUrlContext(false);
+        return;
+      }
+
+      urlContext.scrollIntoView({
+        behavior: getScrollBehavior(),
+        block: "start",
+      });
+      urlContext.focus({ preventScroll: true });
+      setReportFocusStatus({
+        message: "Test URL context focused.",
+        isError: false,
+      });
+      setShouldFocusUrlContext(false);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [shouldFocusUrlContext]);
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
@@ -163,6 +196,7 @@ function UserPageContent() {
           id={URL_CONTEXT_ID}
           tabIndex={-1}
           role="region"
+          aria-busy={shouldFocusUrlContext}
           aria-label="Test URL context"
           className="mb-6 rounded-2xl outline-none focus:outline
           focus:outline-2 focus:outline-offset-4 focus:outline-purple-700
