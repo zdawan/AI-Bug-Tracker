@@ -40,6 +40,7 @@ function UserPageContent() {
     const frame = window.requestAnimationFrame(() => {
       const reportForm = document.getElementById("tester-bug-report-form");
       if (!reportForm) {
+        setReportFocusMessage("Could not find the bug report form.");
         setShouldFocusReportForm(false);
         return;
       }
@@ -91,14 +92,20 @@ function UserPageContent() {
             }}
           />
         </section>
-        <p
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-          className="sr-only"
-        >
-          {reportFocusMessage}
-        </p>
+        {reportFocusMessage && (
+          <p
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className={
+              reportFocusMessage.startsWith("Could not")
+                ? "mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                : "sr-only"
+            }
+          >
+            {reportFocusMessage}
+          </p>
+        )}
         <div
           id="tester-bug-report-form"
           tabIndex={-1}
