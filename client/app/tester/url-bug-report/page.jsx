@@ -28,6 +28,7 @@ function UserPageContent() {
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
     setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
+    setShouldFocusReportForm(false);
   };
 
   useEffect(() => {
@@ -40,9 +41,7 @@ function UserPageContent() {
     const focusReportFormFromHash = () => {
       const shouldFocus = window.location.hash === REPORT_FORM_HASH;
       setShouldFocusReportForm(shouldFocus);
-      if (!shouldFocus) {
-        setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
-      }
+      setReportFocusStatus(EMPTY_REPORT_FOCUS_STATUS);
     };
 
     focusReportFormFromHash();
@@ -57,7 +56,7 @@ function UserPageContent() {
       const reportForm = document.getElementById(REPORT_FORM_ID);
       if (!reportForm) {
         setReportFocusStatus({
-          message: "Could not find the bug report form.",
+          message: "Could not find the bug report form. Reload and try again.",
           isError: true,
         });
         setShouldFocusReportForm(false);
@@ -129,8 +128,8 @@ function UserPageContent() {
         </section>
         {reportFocusStatus.message && (
           <p
-            role="status"
-            aria-live="polite"
+            role={reportFocusStatus.isError ? "alert" : "status"}
+            aria-live={reportFocusStatus.isError ? "assertive" : "polite"}
             aria-atomic="true"
             className={
               reportFocusStatus.isError
@@ -155,7 +154,8 @@ function UserPageContent() {
         >
           <p id="tester-bug-report-form-help" className="sr-only">
             Report an issue with the selected test URL. Choosing to report an
-            issue moves focus to this form.
+            issue moves focus to this form. Changing the test URL cancels
+            pending focus.
           </p>
           <BugForm testUrl={finalUrl} />
         </div>
