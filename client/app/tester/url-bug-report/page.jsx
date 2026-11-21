@@ -12,6 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 const REPORT_FORM_ID = "tester-bug-report-form";
 const REPORT_FORM_HASH = `#${REPORT_FORM_ID}`;
 const PAGE_TITLE_ID = "tester-url-report-title";
+const NAVIGATION_STATUS_ID = "navigation-status-notice";
 const URL_CHECKLIST_ID = "tester-url-checklist";
 const URL_CHECKLIST_HASH = `#${URL_CHECKLIST_ID}`;
 const URL_CHECKLIST_HELP_ID = "tester-url-checklist-help";
@@ -135,6 +136,7 @@ function UserPageContent() {
   };
 
   const resetNavigationStatus = useCallback(() => {
+    navigationStatusSequence.current += 1;
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     navigationStatusRemainingSeconds.current = 5;
     setNavigationStatusSeconds(0);
@@ -249,6 +251,14 @@ function UserPageContent() {
     }, 1000);
     navigationCountdownId.current = countdownId;
     const timeoutId = window.setTimeout(() => {
+      if (navigationStatusSequence.current !== statusSequence) return;
+
+      const notice = document.getElementById(NAVIGATION_STATUS_ID);
+      if (notice?.contains(document.activeElement)) {
+        document
+          .getElementById(PAGE_TITLE_ID)
+          ?.focus({ preventScroll: true });
+      }
       setNavigationStatus((current) =>
         current.sequence === statusSequence
           ? EMPTY_NAVIGATION_STATUS
@@ -394,7 +404,7 @@ function UserPageContent() {
         </nav>
         {navigationStatus.message && (
           <div
-            id={!navigationStatus.isError ? "navigation-status-notice" : undefined}
+            id={!navigationStatus.isError ? NAVIGATION_STATUS_ID : undefined}
             role={navigationStatus.isError ? "alert" : "status"}
             aria-live={navigationStatus.isError ? "assertive" : "polite"}
             aria-atomic="true"
@@ -443,7 +453,7 @@ function UserPageContent() {
                   setIsCountdownManuallyPaused((paused) => !paused)
                 }
                 aria-pressed={isCountdownManuallyPaused}
-                aria-controls="navigation-status-notice"
+                aria-controls={NAVIGATION_STATUS_ID}
                 aria-describedby="navigation-notice-timer-help"
                 aria-label={
                   isNavigationNoticePaused
