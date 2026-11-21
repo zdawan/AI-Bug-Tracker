@@ -177,37 +177,15 @@ function UserPageContent() {
       if (!menu || menu.contains(event.target)) return;
 
       const menuHadFocus = menu.contains(document.activeElement);
-      const clickedControl =
-        event.target instanceof Element
-          ? event.target.closest(
-              [
-                "a",
-                "button",
-                "input",
-                "select",
-                "textarea",
-                "summary",
-                "[role='button']",
-                "[role='checkbox']",
-                "[role='combobox']",
-                "[role='link']",
-                "[role='menuitem']",
-                "[role='menuitemcheckbox']",
-                "[role='menuitemradio']",
-                "[role='option']",
-                "[role='radio']",
-                "[role='slider']",
-                "[role='spinbutton']",
-                "[role='switch']",
-                "[role='tab']",
-                "[contenteditable='true']",
-                "[tabindex]:not([tabindex='-1'])",
-              ].join(", "),
-            )
-          : null;
       setIsSectionMenuOpen(false);
-      if (menuHadFocus && !clickedControl) {
-        sectionMenuToggleRef.current?.focus({ preventScroll: true });
+      if (menuHadFocus) {
+        window.requestAnimationFrame(() => {
+          const activeElement = document.activeElement;
+          if (activeElement !== document.body && !menu.contains(activeElement)) {
+            return;
+          }
+          sectionMenuToggleRef.current?.focus({ preventScroll: true });
+        });
       }
     };
 
