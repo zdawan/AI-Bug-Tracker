@@ -538,6 +538,26 @@ function UserPageContent() {
               } notice controls`}
               className="flex shrink-0 items-center gap-1"
             >
+              {navigationStatus.isError && (
+                <button
+                  type="button"
+                  aria-controls={PAGE_TITLE_ID}
+                  onClick={() => {
+                    const pageTitle = document.getElementById(PAGE_TITLE_ID);
+                    pageTitle?.scrollIntoView({
+                      behavior: getScrollBehavior(),
+                      block: "start",
+                    });
+                    pageTitle?.focus({ preventScroll: true });
+                  }}
+                  className="min-h-10 rounded px-2 text-xs font-semibold
+                  text-amber-800 hover:bg-amber-100 focus:outline
+                  focus:outline-2 focus:outline-offset-2
+                  focus:outline-amber-800"
+                >
+                  Back to page start
+                </button>
+              )}
               <button
                 type="button"
                 onClick={dismissNavigationStatus}
