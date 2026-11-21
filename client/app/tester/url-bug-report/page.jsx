@@ -493,9 +493,16 @@ function UserPageContent() {
                   Error
                 </span>
               )}
-              <span className="min-w-0 break-words">
-                {navigationStatus.message}
-              </span>
+              <div className="min-w-0 flex-1">
+                <span className="block break-words">
+                  {navigationStatus.message}
+                </span>
+                {navigationStatus.isError && (
+                  <span className="mt-1 block text-xs text-amber-900">
+                    This error remains visible until dismissed.
+                  </span>
+                )}
+              </div>
               {!navigationStatus.isError && (
                 <span
                   aria-hidden="true"
@@ -531,6 +538,26 @@ function UserPageContent() {
               } notice controls`}
               className="flex shrink-0 items-center gap-1"
             >
+              {navigationStatus.isError && (
+                <button
+                  type="button"
+                  aria-controls={PAGE_TITLE_ID}
+                  onClick={() => {
+                    const pageTitle = document.getElementById(PAGE_TITLE_ID);
+                    pageTitle?.scrollIntoView({
+                      behavior: getScrollBehavior(),
+                      block: "start",
+                    });
+                    pageTitle?.focus({ preventScroll: true });
+                  }}
+                  className="min-h-10 rounded px-2 text-xs font-semibold
+                  text-amber-800 hover:bg-amber-100 focus:outline
+                  focus:outline-2 focus:outline-offset-2
+                  focus:outline-amber-800"
+                >
+                  Back to page start
+                </button>
+              )}
               <button
                 type="button"
                 onClick={dismissNavigationStatus}
@@ -594,8 +621,8 @@ function UserPageContent() {
         )}
         {navigationStatus.message && navigationStatus.isError && (
           <span id="navigation-error-help" className="sr-only">
-            This error remains visible until dismissed. Press Escape while a
-            notice control is focused to dismiss it.
+            Press Escape while a notice control is focused to dismiss this
+            error.
           </span>
         )}
         {navigationStatus.message && !navigationStatus.isError && (
