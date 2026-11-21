@@ -220,8 +220,16 @@ export default function TesterPage() {
                   type="button"
                   onClick={clearUrlInput}
                   aria-controls="test-url"
+                  aria-describedby="test-url-hint"
                   aria-label="Clear website name"
+                  aria-keyshortcuts="Escape"
                   title="Clear website name"
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      clearUrlInput();
+                    }
+                  }}
                   className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
                 >
                   <span aria-hidden="true" className="text-2xl leading-none">
