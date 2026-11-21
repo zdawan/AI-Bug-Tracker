@@ -405,16 +405,20 @@ function UserPageContent() {
         {navigationStatus.message && (
           <div
             id={!navigationStatus.isError ? NAVIGATION_STATUS_ID : undefined}
-            role={navigationStatus.isError ? "alert" : "status"}
-            aria-live={navigationStatus.isError ? "assertive" : "polite"}
-            aria-atomic="true"
             className={
               navigationStatus.isError
-                ? "mb-3 flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
-                : "mb-3 flex items-center justify-end gap-2 text-sm text-emerald-700"
+                ? "mb-3 flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-3 py-2"
+                : "mb-3 flex items-center justify-between gap-3 text-emerald-700"
             }
           >
-            <div className="flex items-center gap-2">
+            <div
+              role={navigationStatus.isError ? "alert" : "status"}
+              aria-live={navigationStatus.isError ? "assertive" : "polite"}
+              aria-atomic="true"
+              className={`flex min-w-0 items-center gap-2 text-sm ${
+                navigationStatus.isError ? "text-amber-800" : "text-emerald-700"
+              }`}
+            >
               {navigationStatus.isError ? (
                 <AlertCircle size={16} aria-hidden="true" />
               ) : (
@@ -422,10 +426,7 @@ function UserPageContent() {
               )}
               <span>{navigationStatus.message}</span>
               {!navigationStatus.isError && (
-                <span
-                  aria-hidden="true"
-                  className="text-[10px] tabular-nums"
-                >
+                <span aria-hidden="true" className="text-[10px] tabular-nums">
                   {isNavigationNoticePaused
                     ? isDocumentHidden
                       ? "Paused · tab hidden"
@@ -434,41 +435,43 @@ function UserPageContent() {
                 </span>
               )}
             </div>
-            <button
-              type="button"
-              onClick={dismissNavigationStatus}
-              aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
-              className={`rounded p-1 focus:outline focus:outline-2
-              focus:outline-offset-2 ${
-                navigationStatus.isError
-                  ? "text-amber-800 hover:bg-amber-100 focus:outline-amber-800"
-                  : "text-emerald-800 hover:bg-emerald-100 focus:outline-emerald-800"
-              }`}
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-            {!navigationStatus.isError && (
+            <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
-                onClick={() =>
-                  setIsCountdownManuallyPaused((paused) => !paused)
-                }
-                aria-pressed={isCountdownManuallyPaused}
-                aria-controls={NAVIGATION_STATUS_ID}
-                aria-describedby="navigation-notice-timer-help"
-                aria-label={
-                  isNavigationNoticePaused
-                    ? "Resume navigation notice countdown"
-                    : "Pause navigation notice countdown"
-                }
-                className="rounded border border-emerald-200 px-2 py-1 text-[10px]
-                font-semibold text-emerald-800 hover:bg-emerald-50
-                focus:outline focus:outline-2 focus:outline-offset-2
-                focus:outline-emerald-700"
+                onClick={dismissNavigationStatus}
+                aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
+                className={`rounded p-1 focus:outline focus:outline-2
+                focus:outline-offset-2 ${
+                  navigationStatus.isError
+                    ? "text-amber-800 hover:bg-amber-100 focus:outline-amber-800"
+                    : "text-emerald-800 hover:bg-emerald-100 focus:outline-emerald-800"
+                }`}
               >
-                {isNavigationNoticePaused ? "Resume" : "Pause"}
+                <X size={16} aria-hidden="true" />
               </button>
-            )}
+              {!navigationStatus.isError && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsCountdownManuallyPaused((paused) => !paused)
+                  }
+                  aria-pressed={isCountdownManuallyPaused}
+                  aria-controls={NAVIGATION_STATUS_ID}
+                  aria-describedby="navigation-notice-timer-help"
+                  aria-label={
+                    isNavigationNoticePaused
+                      ? "Resume navigation notice countdown"
+                      : "Pause navigation notice countdown"
+                  }
+                  className="rounded border border-emerald-200 px-2 py-1
+                  text-[10px] font-semibold text-emerald-800
+                  hover:bg-emerald-50 focus:outline focus:outline-2
+                  focus:outline-offset-2 focus:outline-emerald-700"
+                >
+                  {isNavigationNoticePaused ? "Resume" : "Pause"}
+                </button>
+              )}
+            </div>
           </div>
         )}
         {navigationStatus.message && !navigationStatus.isError && (
