@@ -196,7 +196,7 @@ function UserPageContent() {
         const maxScroll = pageHeight - window.innerHeight;
         setIsPageScrollable(maxScroll > 0);
         const progress =
-          maxScroll > 0 ? (scrollElement.scrollTop / maxScroll) * 100 : 100;
+          maxScroll > 0 ? (scrollElement.scrollTop / maxScroll) * 100 : 0;
         setPageScrollProgress(Math.min(100, Math.max(0, progress)));
       });
     };
@@ -489,11 +489,15 @@ function UserPageContent() {
           isPageScrollable,
         )}
         aria-live="off"
-        className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 bg-purple-100"
+        className={`pointer-events-none fixed inset-x-0 top-0 z-50 h-1 ${
+          isPageScrollable ? "bg-purple-100" : "bg-slate-100"
+        }`}
       >
         <div
           aria-hidden="true"
-          className="h-full bg-purple-700 motion-reduce:transition-none"
+          className={`h-full motion-reduce:transition-none ${
+            isPageScrollable ? "bg-purple-700" : "bg-slate-300"
+          }`}
           style={{ width: `${pageScrollProgress}%` }}
         />
       </div>
