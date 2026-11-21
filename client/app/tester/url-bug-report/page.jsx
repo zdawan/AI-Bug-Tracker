@@ -175,6 +175,13 @@ function UserPageContent() {
     });
   };
 
+  const handleNavigationStatusKeyDown = (event) => {
+    if (event.key !== "Escape") return;
+
+    event.preventDefault();
+    dismissNavigationStatus();
+  };
+
   useEffect(() => {
     setFinalUrl(fullUrl);
     resetNavigationStatus();
@@ -415,6 +422,7 @@ function UserPageContent() {
         {navigationStatus.message && (
           <div
             id={!navigationStatus.isError ? NAVIGATION_STATUS_ID : undefined}
+            onKeyDown={handleNavigationStatusKeyDown}
             className={
               navigationStatus.isError
                 ? "mb-3 flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-3 py-2"
@@ -448,6 +456,7 @@ function UserPageContent() {
                 type="button"
                 onClick={dismissNavigationStatus}
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
+                aria-keyshortcuts="Escape"
                 className={`rounded p-1 focus:outline focus:outline-2
                 focus:outline-offset-2 ${
                   navigationStatus.isError
@@ -464,6 +473,7 @@ function UserPageContent() {
                     setIsCountdownManuallyPaused((paused) => !paused)
                   }
                   aria-pressed={isCountdownManuallyPaused}
+                  aria-keyshortcuts="Escape"
                   aria-controls={NAVIGATION_STATUS_ID}
                   aria-describedby="navigation-notice-timer-help"
                   aria-label={
@@ -487,7 +497,8 @@ function UserPageContent() {
             This success notice closes after {NAVIGATION_NOTICE_SECONDS} seconds.
             Pause keeps it open;
             resume continues the remaining time. The countdown also pauses
-            while this tab is hidden. The progress bar shows elapsed time.
+            while this tab is hidden. The progress bar shows elapsed time. Press
+            Escape while a notice control is focused to dismiss the notice.
           </span>
         )}
         {navigationStatus.message && !navigationStatus.isError && (
