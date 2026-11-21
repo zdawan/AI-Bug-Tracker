@@ -49,6 +49,14 @@ function formatRemainingTime(seconds) {
   return `${seconds} ${unit} remaining`;
 }
 
+function getScrollProgressLabel(progress, isScrollable) {
+  if (!isScrollable) return "Page fits in viewport";
+  if (progress <= 0) return "At page start; 0% scrolled";
+  if (progress >= 100) return "At page end; 100% scrolled";
+
+  return `${Math.round(progress)}% of page scrolled`;
+}
+
 const NAVIGATION_TARGETS = [
   {
     id: REPORT_FORM_ID,
@@ -476,11 +484,10 @@ function UserPageContent() {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(pageScrollProgress)}
-        aria-valuetext={
-          isPageScrollable
-            ? `${Math.round(pageScrollProgress)}% of page scrolled`
-            : "Page fits in viewport"
-        }
+        aria-valuetext={getScrollProgressLabel(
+          pageScrollProgress,
+          isPageScrollable,
+        )}
         aria-live="off"
         className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 bg-purple-100"
       >
