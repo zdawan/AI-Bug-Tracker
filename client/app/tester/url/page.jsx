@@ -1606,8 +1606,9 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
 
 function UrlLengthIndicator({ value, maxLength }) {
   const length = value.length;
+  const isAtLimit = length >= maxLength;
   const isLong = length > 500;
-  const isVeryLong = length > 2000;
+  const isVeryLong = length > maxLength - 48;
 
   return (
     <div className="mt-2 flex flex-wrap items-start justify-between gap-2 px-1">
@@ -1621,7 +1622,9 @@ function UrlLengthIndicator({ value, maxLength }) {
         }`}
         aria-live={isLong ? "polite" : "off"}
       >
-        {isVeryLong
+        {isAtLimit
+          ? "Maximum URL length reached. Remove characters before continuing."
+          : isVeryLong
           ? "This link is very long. Check for extra tracking or private data."
           : isLong
             ? "Long links can contain extra tracking or private data."
@@ -1636,7 +1639,9 @@ function UrlLengthIndicator({ value, maxLength }) {
               : "text-slate-400"
         }`}
         id="test-url-length"
-        aria-label={`${length} of ${maxLength} characters used in the address`}
+        aria-label={`${
+          isAtLimit ? "Maximum reached. " : ""
+        }${length} of ${maxLength} characters used in the address`}
         aria-live="off"
       >
         {length.toLocaleString("en-IN")} /{" "}
