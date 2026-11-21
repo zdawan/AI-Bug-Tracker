@@ -702,7 +702,11 @@ function UserPageContent() {
                     : "bg-purple-900"
               }`}
             >
-              {pageScrollProgress}%
+              {hasReachedPageStart
+                ? "Top"
+                : hasReachedPageEnd
+                  ? "End"
+                  : `${pageScrollProgress}%`}
             </span>
           )}
         </button>
