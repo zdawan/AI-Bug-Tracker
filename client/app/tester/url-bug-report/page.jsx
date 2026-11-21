@@ -596,12 +596,22 @@ function UserPageContent() {
               isNavigationNoticePaused ? `; ${navigationPauseReason}` : ""
             }`}
             aria-live="off"
-            className="mb-3 h-1 overflow-hidden rounded-full bg-emerald-100"
+            className={`mb-3 h-1 overflow-hidden rounded-full ${
+              isNavigationNoticePaused
+                ? "bg-slate-100"
+                : navigationStatusSeconds <= 2
+                  ? "bg-amber-100"
+                  : "bg-emerald-100"
+            }`}
           >
             <div
               aria-hidden="true"
               className={`h-full ${
-                isNavigationNoticePaused ? "bg-emerald-400" : "bg-emerald-600"
+                isNavigationNoticePaused
+                  ? "bg-slate-500"
+                  : navigationStatusSeconds <= 2
+                    ? "bg-amber-600"
+                    : "bg-emerald-600"
               } transition-[width] duration-300 motion-reduce:transition-none`}
               style={{
                 width: `${
