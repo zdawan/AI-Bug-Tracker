@@ -499,6 +499,7 @@ function UserPageContent() {
                     : "navigation-notice-timer-help"
                 }
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
+                title="Dismiss notice"
                 aria-keyshortcuts="Escape"
                 className={`min-h-10 min-w-10 rounded p-1 focus:outline focus:outline-2
                 focus:outline-offset-2 ${
