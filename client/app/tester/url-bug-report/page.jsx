@@ -261,8 +261,26 @@ function UserPageContent() {
         const [activeSection] = [...visibleSections.entries()].sort(
           (left, right) => right[1] - left[1],
         );
-        if (activeSection) {
-          setCurrentSectionHash(`#${activeSection[0].id}`);
+        const markerY = window.innerHeight * 0.3;
+        const nearestSection = sectionIds
+          .map((id) => document.getElementById(id))
+          .filter(Boolean)
+          .sort((left, right) => {
+            const leftBounds = left.getBoundingClientRect();
+            const rightBounds = right.getBoundingClientRect();
+            const leftDistance = Math.min(
+              Math.abs(leftBounds.top - markerY),
+              Math.abs(leftBounds.bottom - markerY),
+            );
+            const rightDistance = Math.min(
+              Math.abs(rightBounds.top - markerY),
+              Math.abs(rightBounds.bottom - markerY),
+            );
+            return leftDistance - rightDistance;
+          })[0];
+        const currentSection = activeSection?.[0] || nearestSection;
+        if (currentSection) {
+          setCurrentSectionHash(`#${currentSection.id}`);
         }
       },
       { rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.1, 0.25] },
