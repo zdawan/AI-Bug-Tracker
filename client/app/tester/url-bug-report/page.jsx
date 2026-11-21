@@ -615,8 +615,16 @@ function UserPageContent() {
           ref={sectionMenuToggleRef}
           aria-expanded={isSectionMenuOpen}
           aria-controls="tester-section-menu"
-          aria-label={`${isSectionMenuOpen ? "Close" : "Open"} section navigation. Current section: ${currentSectionLabel}`}
-          title={`Current section: ${currentSectionLabel}`}
+          aria-label={`${isSectionMenuOpen ? "Close" : "Open"} section navigation. Current section: ${currentSectionLabel}. ${
+            isPageScrollable
+              ? `Page progress: ${pageScrollProgress}%.`
+              : "Page fits in viewport."
+          }`}
+          title={`Current section: ${currentSectionLabel}. ${
+            isPageScrollable
+              ? `Page progress: ${pageScrollProgress}%.`
+              : "Page fits in viewport."
+          }`}
           aria-describedby="tester-section-menu-help"
           aria-keyshortcuts={
             isSectionMenuOpen ? "Escape Home End" : "Escape"
