@@ -185,12 +185,22 @@ function UserPageContent() {
       });
     };
 
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateScrollProgress);
+    resizeObserver?.observe(document.documentElement);
+    resizeObserver?.observe(document.body);
+
     updateScrollProgress();
     window.addEventListener("scroll", updateScrollProgress, { passive: true });
     window.addEventListener("resize", updateScrollProgress);
+    window.addEventListener("load", updateScrollProgress);
     return () => {
       window.removeEventListener("scroll", updateScrollProgress);
       window.removeEventListener("resize", updateScrollProgress);
+      window.removeEventListener("load", updateScrollProgress);
+      resizeObserver?.disconnect();
       if (frameId !== null) window.cancelAnimationFrame(frameId);
     };
   }, []);
