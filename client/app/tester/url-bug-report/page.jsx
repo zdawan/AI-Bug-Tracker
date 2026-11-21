@@ -568,7 +568,13 @@ function UserPageContent() {
         }}
         onKeyDown={(event) => {
           if (!isSectionMenuOpen) return;
-          if (event.key === "Home" || event.key === "End") {
+          if (
+            (event.key === "Home" || event.key === "End") &&
+            !event.altKey &&
+            !event.ctrlKey &&
+            !event.metaKey &&
+            !event.shiftKey
+          ) {
             const links = sectionMenuRef.current?.querySelectorAll("nav a");
             const targetLink =
               event.key === "Home" ? links?.[0] : links?.[links.length - 1];
