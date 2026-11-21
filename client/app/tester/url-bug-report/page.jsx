@@ -487,7 +487,15 @@ function UserPageContent() {
                 {navigationStatus.message}
               </span>
               {!navigationStatus.isError && (
-                <span aria-hidden="true" className="text-[10px] tabular-nums">
+                <span
+                  aria-hidden="true"
+                  className={`shrink-0 rounded px-1.5 py-0.5
+                  text-[10px] tabular-nums leading-none whitespace-nowrap ${
+                    !isNavigationNoticePaused && navigationStatusSeconds <= 2
+                      ? "bg-amber-50 font-semibold text-amber-900"
+                      : ""
+                  }`}
+                >
                   {isNavigationNoticePaused
                     ? navigationPauseReason
                     : `${navigationStatusSeconds}s left`}
