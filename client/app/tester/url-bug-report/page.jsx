@@ -96,6 +96,13 @@ function UserPageContent() {
     useState(false);
   const isNavigationNoticePaused =
     isDocumentHidden || isCountdownManuallyPaused;
+  const navigationPauseReason = isDocumentHidden
+    ? isCountdownManuallyPaused
+      ? "Paused · tab hidden and by you"
+      : "Paused · tab hidden"
+    : isCountdownManuallyPaused
+      ? "Paused · by you"
+      : "";
   const navigationStatusSequence = useRef(0);
   const navigationStatusRemainingSeconds = useRef(NAVIGATION_NOTICE_SECONDS);
   const navigationCountdownId = useRef(null);
@@ -431,9 +438,7 @@ function UserPageContent() {
               {!navigationStatus.isError && (
                 <span aria-hidden="true" className="text-[10px] tabular-nums">
                   {isNavigationNoticePaused
-                    ? isDocumentHidden
-                      ? "Paused · tab hidden"
-                      : "Paused · by you"
+                    ? navigationPauseReason
                     : `${navigationStatusSeconds}s`}
                 </span>
               )}
@@ -488,7 +493,7 @@ function UserPageContent() {
         {navigationStatus.message && !navigationStatus.isError && (
           <div
             role="progressbar"
-            aria-label="Navigation notice dismissal progress"
+            aria-label="Navigation notice countdown progress"
             aria-describedby="navigation-notice-timer-help"
             aria-orientation="horizontal"
             aria-valuemin={0}
@@ -497,7 +502,7 @@ function UserPageContent() {
               NAVIGATION_NOTICE_SECONDS - navigationStatusSeconds
             }
             aria-valuetext={`${navigationStatusSeconds} seconds remaining${
-              isNavigationNoticePaused ? ", countdown paused" : ""
+              isNavigationNoticePaused ? `; ${navigationPauseReason}` : ""
             }`}
             aria-live="off"
             className="mb-3 h-1 overflow-hidden rounded-full bg-emerald-100"
