@@ -248,9 +248,9 @@ export default function TesterPage() {
                       ? "test-url-error test-url-hint"
                       : "test-url-hint"
                   }
-                  aria-label="Clear website name"
+                  aria-label="Clear URL"
                   aria-keyshortcuts="Escape"
-                  title="Clear website name"
+                  title="Clear URL"
                   onKeyDown={(event) => {
                     if (event.key === "Escape") {
                       event.preventDefault();
