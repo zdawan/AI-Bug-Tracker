@@ -503,7 +503,8 @@ function UserPageContent() {
       >
         <div
           aria-hidden="true"
-          className={`h-full motion-reduce:transition-none ${
+          className={`h-full transition-[width] duration-75 ease-out
+          motion-reduce:transition-none ${
             isPageScrollable ? "bg-purple-700" : "bg-slate-300"
           }`}
           style={{ width: `${pageScrollProgress}%` }}
@@ -592,8 +593,11 @@ function UserPageContent() {
           {isPageScrollable && (
             <span
               aria-hidden="true"
-              className="rounded-full bg-purple-900 px-1.5 py-0.5
-              text-[10px] tabular-nums"
+              className="inline-flex min-w-10 justify-center rounded-full
+              bg-purple-900 px-1.5 py-0.5 text-center text-[10px]
+              leading-none whitespace-nowrap tabular-nums
+              transition-colors duration-150
+              motion-reduce:transition-none"
             >
               {pageScrollProgress}%
             </span>
