@@ -243,12 +243,19 @@ function UserPageContent() {
         frameId = window.requestAnimationFrame(() => {
           frameId = null;
           const markerY = window.innerHeight * 0.3;
-          const activeSection = sectionIds
+          const sections = sectionIds
             .map((id) => document.getElementById(id))
-            .find((section) => {
+            .filter(Boolean);
+          const sectionAtMarker = sections.find((section) => {
               const bounds = section?.getBoundingClientRect();
               return bounds && bounds.top <= markerY && bounds.bottom > markerY;
             });
+          const activeSection =
+            sectionAtMarker ||
+            [...sections]
+              .reverse()
+              .find((section) => section.getBoundingClientRect().top <= markerY) ||
+            sections[0];
           if (activeSection) {
             setCurrentSectionHash(`#${activeSection.id}`);
           }
