@@ -670,11 +670,11 @@ function UserPageContent() {
             isSectionMenuOpen ? "Escape Home End" : "Escape"
           }
           onClick={() => setIsSectionMenuOpen((open) => !open)}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full
-          bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg
-          hover:bg-purple-800
-          focus:outline focus:outline-2 focus:outline-offset-2
-          focus:outline-purple-800"
+          className={`inline-flex min-h-10 items-center gap-2 rounded-full
+          px-4 py-2 text-sm font-semibold text-white shadow-lg
+          ${isSectionMenuOpen ? "bg-purple-900" : "bg-purple-700"}
+          hover:bg-purple-800 focus:outline focus:outline-2
+          focus:outline-offset-2 focus:outline-purple-800`}
         >
           {isSectionMenuOpen ? "Close sections" : "Sections"}
           {!isSectionMenuOpen && (
