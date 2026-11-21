@@ -168,6 +168,38 @@ function UserPageContent() {
 
   useEffect(() => {
     const sectionIds = [URL_CONTEXT_ID, URL_CHECKLIST_ID, REPORT_FORM_ID];
+    if (typeof IntersectionObserver === "undefined") {
+      let frameId = null;
+      const updateActiveSection = () => {
+        if (frameId !== null) return;
+
+        frameId = window.requestAnimationFrame(() => {
+          frameId = null;
+          const markerY = window.innerHeight * 0.3;
+          const activeSection = sectionIds
+            .map((id) => document.getElementById(id))
+            .find((section) => {
+              const bounds = section?.getBoundingClientRect();
+              return bounds && bounds.top <= markerY && bounds.bottom > markerY;
+            });
+          if (activeSection) {
+            setCurrentSectionHash(`#${activeSection.id}`);
+          }
+        });
+      };
+
+      updateActiveSection();
+      window.addEventListener("scroll", updateActiveSection, {
+        passive: true,
+      });
+      window.addEventListener("resize", updateActiveSection);
+      return () => {
+        window.removeEventListener("scroll", updateActiveSection);
+        window.removeEventListener("resize", updateActiveSection);
+        if (frameId !== null) window.cancelAnimationFrame(frameId);
+      };
+    }
+
     const visibleSections = new Map();
     const observer = new IntersectionObserver(
       (entries) => {
