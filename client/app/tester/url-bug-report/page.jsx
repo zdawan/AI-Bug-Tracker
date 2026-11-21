@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import BugForm from "../components/BugForm";
@@ -21,6 +21,7 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const EMPTY_NAVIGATION_STATUS = Object.freeze({
   message: "",
   isError: false,
+  sequence: 0,
 });
 const SKIP_LINK_CLASS =
   "sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 " +
@@ -87,6 +88,16 @@ function UserPageContent() {
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
+  const navigationStatusSequence = useRef(0);
+
+  const showNavigationStatus = (message, isError = false) => {
+    navigationStatusSequence.current += 1;
+    setNavigationStatus({
+      message,
+      isError,
+      sequence: navigationStatusSequence.current,
+    });
+  };
 
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
@@ -145,10 +156,10 @@ function UserPageContent() {
       ({ id }) => id === navigationTarget,
     );
     if (!targetConfig) {
-      setNavigationStatus({
-        message: "Could not identify the requested page section.",
-        isError: true,
-      });
+      showNavigationStatus(
+        "Could not identify the requested page section.",
+        true,
+      );
       setNavigationTarget(null);
       return undefined;
     }
@@ -156,10 +167,7 @@ function UserPageContent() {
     const frame = window.requestAnimationFrame(() => {
       const target = document.getElementById(navigationTarget);
       if (!target) {
-        setNavigationStatus({
-          message: targetConfig.error,
-          isError: true,
-        });
+        showNavigationStatus(targetConfig.error, true);
         setNavigationTarget(null);
         return;
       }
@@ -169,10 +177,7 @@ function UserPageContent() {
         block: "start",
       });
       target.focus({ preventScroll: true });
-      setNavigationStatus({
-        message: targetConfig.complete,
-        isError: false,
-      });
+      showNavigationStatus(targetConfig.complete);
       setNavigationTarget(null);
     });
 
@@ -184,10 +189,14 @@ function UserPageContent() {
       return undefined;
     }
 
-    const timeoutId = window.setTimeout(
-      () => setNavigationStatus(EMPTY_NAVIGATION_STATUS),
-      5000,
-    );
+    const statusSequence = navigationStatus.sequence;
+    const timeoutId = window.setTimeout(() => {
+      setNavigationStatus((current) =>
+        current.sequence === statusSequence
+          ? EMPTY_NAVIGATION_STATUS
+          : current,
+      );
+    }, 5000);
     return () => window.clearTimeout(timeoutId);
   }, [navigationStatus]);
 
