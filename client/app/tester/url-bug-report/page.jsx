@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import BugForm from "../components/BugForm";
@@ -134,11 +134,16 @@ function UserPageContent() {
     });
   };
 
-  const updateFinalUrl = (url) => {
-    setFinalUrl(url);
+  const resetNavigationStatus = useCallback(() => {
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
     navigationStatusRemainingSeconds.current = 5;
     setNavigationStatusSeconds(0);
+    setIsCountdownManuallyPaused(false);
+  }, []);
+
+  const updateFinalUrl = (url) => {
+    setFinalUrl(url);
+    resetNavigationStatus();
     setNavigationTarget(null);
   };
 
@@ -150,7 +155,7 @@ function UserPageContent() {
   };
 
   const dismissNavigationError = () => {
-    setNavigationStatus(EMPTY_NAVIGATION_STATUS);
+    resetNavigationStatus();
     window.requestAnimationFrame(() => {
       document
         .getElementById(PAGE_TITLE_ID)
@@ -160,11 +165,9 @@ function UserPageContent() {
 
   useEffect(() => {
     setFinalUrl(fullUrl);
-    setNavigationStatus(EMPTY_NAVIGATION_STATUS);
-    navigationStatusRemainingSeconds.current = 5;
-    setNavigationStatusSeconds(0);
+    resetNavigationStatus();
     setNavigationTarget(null);
-  }, [fullUrl]);
+  }, [fullUrl, resetNavigationStatus]);
 
   useEffect(() => {
     const syncNavigationFromLocation = () => {
@@ -174,9 +177,7 @@ function UserPageContent() {
       );
       setCurrentSectionHash(target ? target.hash : "");
       setNavigationTarget(target ? target.id : null);
-      setNavigationStatus(EMPTY_NAVIGATION_STATUS);
-      navigationStatusRemainingSeconds.current = 5;
-      setNavigationStatusSeconds(0);
+      resetNavigationStatus();
     };
 
     syncNavigationFromLocation();
@@ -186,7 +187,7 @@ function UserPageContent() {
       window.removeEventListener("hashchange", syncNavigationFromLocation);
       window.removeEventListener("popstate", syncNavigationFromLocation);
     };
-  }, []);
+  }, [resetNavigationStatus]);
 
   useEffect(() => {
     if (!navigationTarget) {
@@ -228,7 +229,7 @@ function UserPageContent() {
   useEffect(() => {
     if (!navigationStatus.message || navigationStatus.isError) {
       setNavigationStatusSeconds(0);
-      setIsNavigationNoticePaused(document.visibilityState === "hidden");
+      navigationStatusRemainingSeconds.current = 5;
       return undefined;
     }
 
@@ -416,7 +417,9 @@ function UserPageContent() {
                   className="text-[10px] tabular-nums"
                 >
                   {isNavigationNoticePaused
-                    ? "Paused"
+                    ? isDocumentHidden
+                      ? "Paused · tab hidden"
+                      : "Paused · by you"
                     : `${navigationStatusSeconds}s`}
                 </span>
               )}
