@@ -456,6 +456,11 @@ function UserPageContent() {
       </div>
       <div
         ref={sectionMenuRef}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setIsSectionMenuOpen(false);
+          }
+        }}
         onKeyDown={(event) => {
           if (event.key !== "Escape" || !isSectionMenuOpen) return;
           event.preventDefault();
@@ -495,6 +500,8 @@ function UserPageContent() {
           ref={sectionMenuToggleRef}
           aria-expanded={isSectionMenuOpen}
           aria-controls="tester-section-menu"
+          aria-label="Open or close page section navigation"
+          aria-describedby="tester-section-menu-help"
           aria-keyshortcuts="Escape"
           onClick={() => setIsSectionMenuOpen((open) => !open)}
           className="min-h-10 rounded-full bg-purple-700 px-4 py-2
@@ -505,6 +512,10 @@ function UserPageContent() {
           {isSectionMenuOpen ? "Close sections" : "Sections"}
         </button>
       </div>
+      <span id="tester-section-menu-help" className="sr-only">
+        When open, use Tab to move through sections, Enter to navigate, and
+        Escape to close the menu.
+      </span>
       {isPageScrollable && pageScrollProgress > 5 && (
         <button
           type="button"
