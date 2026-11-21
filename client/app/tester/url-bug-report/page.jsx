@@ -393,6 +393,7 @@ function UserPageContent() {
         </nav>
         {navigationStatus.message && (
           <div
+            id={!navigationStatus.isError ? "navigation-status-notice" : undefined}
             role={navigationStatus.isError ? "alert" : "status"}
             aria-live={navigationStatus.isError ? "assertive" : "polite"}
             aria-atomic="true"
@@ -438,6 +439,9 @@ function UserPageContent() {
                 onClick={() =>
                   setIsCountdownManuallyPaused((paused) => !paused)
                 }
+                aria-pressed={isCountdownManuallyPaused}
+                aria-controls="navigation-status-notice"
+                aria-describedby="navigation-notice-timer-help"
                 aria-label={
                   isNavigationNoticePaused
                     ? "Resume navigation notice countdown"
@@ -452,6 +456,13 @@ function UserPageContent() {
               </button>
             )}
           </div>
+        )}
+        {navigationStatus.message && !navigationStatus.isError && (
+          <span id="navigation-notice-timer-help" className="sr-only">
+            This success notice closes after five seconds. Pause keeps it open;
+            resume continues the remaining time. The countdown also pauses
+            while this tab is hidden.
+          </span>
         )}
         <div
           id={REPORT_FORM_ID}
