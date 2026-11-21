@@ -177,9 +177,23 @@ function UserPageContent() {
       if (!menu || menu.contains(event.target)) return;
 
       const menuHadFocus = menu.contains(document.activeElement);
-      const clickedControl = event.target.closest(
-        "a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
-      );
+      const clickedControl =
+        event.target instanceof Element
+          ? event.target.closest(
+              [
+                "a",
+                "button",
+                "input",
+                "select",
+                "textarea",
+                "summary",
+                "[role='button']",
+                "[role='link']",
+                "[contenteditable='true']",
+                "[tabindex]:not([tabindex='-1'])",
+              ].join(", "),
+            )
+          : null;
       setIsSectionMenuOpen(false);
       if (menuHadFocus && !clickedControl) {
         sectionMenuToggleRef.current?.focus({ preventScroll: true });
