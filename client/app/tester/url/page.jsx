@@ -1606,6 +1606,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
 
 function UrlLengthIndicator({ value, maxLength }) {
   const length = value.length;
+  const formattedMaxLength = maxLength.toLocaleString("en-IN");
   const isAtLimit = length >= maxLength;
   const isLong = length > 500;
   const isVeryLong = length > maxLength - 48;
@@ -1641,11 +1642,11 @@ function UrlLengthIndicator({ value, maxLength }) {
         id="test-url-length"
         aria-label={`${
           isAtLimit ? "Maximum reached. " : ""
-        }${length} of ${maxLength} characters used in the address`}
+        }${length} of ${formattedMaxLength} characters used in the address`}
         aria-live="off"
       >
         {length.toLocaleString("en-IN")} /{" "}
-        {maxLength.toLocaleString("en-IN")} characters
+        {formattedMaxLength} characters
       </span>
     </div>
   );
