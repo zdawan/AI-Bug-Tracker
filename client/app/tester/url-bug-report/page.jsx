@@ -473,6 +473,16 @@ function UserPageContent() {
               ) : (
                 <CheckCircle2 size={16} aria-hidden="true" />
               )}
+              {navigationStatus.isError && (
+                <span
+                  className="shrink-0 rounded bg-amber-100 px-2 py-0.5
+                  text-[10px] font-bold uppercase tracking-wide
+                  leading-none whitespace-nowrap
+                  text-amber-900"
+                >
+                  Error
+                </span>
+              )}
               <span className="min-w-0 break-words">
                 {navigationStatus.message}
               </span>
