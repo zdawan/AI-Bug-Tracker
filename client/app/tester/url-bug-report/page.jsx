@@ -51,17 +51,20 @@ function formatRemainingTime(seconds) {
 
 function getScrollProgressLabel(progress, isScrollable) {
   if (!isScrollable) return "Page fits in viewport";
-  if (progress <= 0) return "At page start; 0% scrolled";
-  if (progress >= 100) return "At page end; 100% scrolled";
+  if (progress === 0) return "At page start; 0% scrolled";
+  if (progress === 100) return "At page end; 100% scrolled";
 
   return `${Math.round(progress)}% of page scrolled`;
 }
 
 function getScrollProgress(scrollTop, maxScroll) {
-  if (maxScroll <= 0) return 0;
+  const isAtPageStart = scrollTop <= 0;
+  const isAtPageEnd = scrollTop >= maxScroll;
+  if (maxScroll <= 0 || isAtPageStart) return 0;
+  if (isAtPageEnd) return 100;
 
   const progress = (scrollTop / maxScroll) * 100;
-  return Math.round(Math.min(100, Math.max(0, progress)));
+  return Math.min(99, Math.max(1, Math.round(progress)));
 }
 
 const NAVIGATION_TARGETS = [
@@ -121,7 +124,7 @@ function UserPageContent() {
     useState(false);
   const isNavigationNoticePaused =
     isDocumentHidden || isCountdownManuallyPaused;
-  const hasReachedPageEnd = isPageScrollable && pageScrollProgress >= 100;
+  const hasReachedPageEnd = isPageScrollable && pageScrollProgress === 100;
   const navigationPauseReason = isDocumentHidden
     ? isCountdownManuallyPaused
       ? "Paused · tab hidden and by you"
