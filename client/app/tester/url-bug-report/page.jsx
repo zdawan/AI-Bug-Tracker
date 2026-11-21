@@ -121,6 +121,7 @@ function UserPageContent() {
     useState(false);
   const isNavigationNoticePaused =
     isDocumentHidden || isCountdownManuallyPaused;
+  const hasReachedPageEnd = isPageScrollable && pageScrollProgress >= 100;
   const navigationPauseReason = isDocumentHidden
     ? isCountdownManuallyPaused
       ? "Paused · tab hidden and by you"
@@ -505,7 +506,11 @@ function UserPageContent() {
           aria-hidden="true"
           className={`h-full transition-[width] duration-75 ease-out
           motion-reduce:transition-none ${
-            isPageScrollable ? "bg-purple-700" : "bg-slate-300"
+            !isPageScrollable
+              ? "bg-slate-300"
+              : hasReachedPageEnd
+                ? "bg-emerald-600"
+                : "bg-purple-700"
           }`}
           style={{ width: `${pageScrollProgress}%` }}
         />
@@ -593,11 +598,11 @@ function UserPageContent() {
           {isPageScrollable && (
             <span
               aria-hidden="true"
-              className="inline-flex min-w-10 justify-center rounded-full
-              bg-purple-900 px-1.5 py-0.5 text-center text-[10px]
+              className={`inline-flex min-w-10 justify-center rounded-full
+              px-1.5 py-0.5 text-center text-[10px]
               leading-none whitespace-nowrap tabular-nums
-              transition-colors duration-150
-              motion-reduce:transition-none"
+              transition-colors duration-150 motion-reduce:transition-none
+              ${hasReachedPageEnd ? "bg-emerald-800" : "bg-purple-900"}`}
             >
               {pageScrollProgress}%
             </span>
