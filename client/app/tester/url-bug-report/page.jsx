@@ -95,6 +95,7 @@ function UserPageContent() {
   const [pageScrollProgress, setPageScrollProgress] = useState(0);
   const [isPageScrollable, setIsPageScrollable] = useState(false);
   const [isSectionMenuOpen, setIsSectionMenuOpen] = useState(false);
+  const sectionMenuRef = useRef(null);
   const sectionMenuToggleRef = useRef(null);
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
@@ -139,6 +140,20 @@ function UserPageContent() {
     return () =>
       document.removeEventListener("visibilitychange", syncNoticeVisibility);
   }, []);
+
+  useEffect(() => {
+    if (!isSectionMenuOpen) return undefined;
+
+    const closeOnOutsidePointer = (event) => {
+      if (!sectionMenuRef.current?.contains(event.target)) {
+        setIsSectionMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [isSectionMenuOpen]);
 
   useEffect(() => {
     let frameId = null;
@@ -428,6 +443,7 @@ function UserPageContent() {
         />
       </div>
       <div
+        ref={sectionMenuRef}
         onKeyDown={(event) => {
           if (event.key !== "Escape" || !isSectionMenuOpen) return;
           event.preventDefault();
