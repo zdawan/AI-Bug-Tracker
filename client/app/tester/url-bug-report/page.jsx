@@ -406,9 +406,16 @@ function UserPageContent() {
       const target = NAVIGATION_TARGETS.find(
         ({ hash }) => hash === currentHash,
       );
+      const menuHadFocus = sectionMenuRef.current?.contains(
+        document.activeElement,
+      );
+      setIsSectionMenuOpen(false);
       setCurrentSectionHash(target ? target.hash : "");
       setNavigationTarget(target ? target.id : null);
       resetNavigationStatus();
+      if (menuHadFocus && !target) {
+        sectionMenuToggleRef.current?.focus({ preventScroll: true });
+      }
     };
 
     syncNavigationFromLocation();
