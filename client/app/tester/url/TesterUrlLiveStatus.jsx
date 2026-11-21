@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, CircleDashed, TriangleAlert } from "lucide-react";
+import { isValidTesterWebUrl } from "./urlValidation";
 
 function getStatus(value) {
   const trimmed = value.trim();
@@ -16,9 +17,7 @@ function getStatus(value) {
 
   try {
     const parsed = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
-    const hasUsableHost = parsed.hostname.includes(".") || parsed.hostname === "localhost";
-
-    if (!hasUsableHost) throw new Error("Incomplete host");
+    if (!isValidTesterWebUrl(parsed)) throw new Error("Invalid web address");
 
     return {
       icon: CheckCircle2,
