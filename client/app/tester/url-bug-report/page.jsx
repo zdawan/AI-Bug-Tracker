@@ -708,7 +708,7 @@ function UserPageContent() {
           <h1
             id={PAGE_TITLE_ID}
             tabIndex={-1}
-            className="rounded-sm text-3xl font-semibold tracking-tight
+            className="scroll-mt-6 rounded-sm text-3xl font-semibold tracking-tight
             text-slate-950 outline-none sm:text-4xl focus:outline
             focus:outline-2 focus:outline-offset-4 focus:outline-purple-700"
           >
@@ -778,7 +778,7 @@ function UserPageContent() {
           role="region"
           aria-busy={navigationTarget === URL_CONTEXT_ID}
           aria-label="Test URL context"
-          className="mb-6 rounded-2xl outline-none focus:outline
+          className="mb-6 scroll-mt-6 rounded-2xl outline-none focus:outline
           focus:outline-2 focus:outline-offset-4 focus:outline-purple-700
           focus:ring-2 focus:ring-purple-600 focus:ring-offset-4"
         >
