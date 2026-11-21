@@ -523,11 +523,23 @@ function UserPageContent() {
           }
         }}
         onKeyDown={(event) => {
-          if (event.key !== "Escape" || !isSectionMenuOpen) return;
-          event.preventDefault();
-          event.stopPropagation();
-          setIsSectionMenuOpen(false);
-          sectionMenuToggleRef.current?.focus();
+          if (!isSectionMenuOpen) return;
+          if (event.key === "Home" || event.key === "End") {
+            const links = sectionMenuRef.current?.querySelectorAll("nav a");
+            const targetLink =
+              event.key === "Home" ? links?.[0] : links?.[links.length - 1];
+            if (targetLink) {
+              event.preventDefault();
+              targetLink.focus();
+            }
+            return;
+          }
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsSectionMenuOpen(false);
+            sectionMenuToggleRef.current?.focus();
+          }
         }}
         className="fixed right-4 top-1/2 z-40 -translate-y-1/2"
       >
@@ -576,7 +588,7 @@ function UserPageContent() {
           aria-label={`${isSectionMenuOpen ? "Close" : "Open"} section navigation. Current section: ${currentSectionLabel}`}
           title={`Current section: ${currentSectionLabel}`}
           aria-describedby="tester-section-menu-help"
-          aria-keyshortcuts="Escape"
+          aria-keyshortcuts="Escape Home End"
           onClick={() => setIsSectionMenuOpen((open) => !open)}
           className="inline-flex min-h-10 items-center gap-2 rounded-full
           bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg
@@ -610,8 +622,8 @@ function UserPageContent() {
         </button>
       </div>
       <span id="tester-section-menu-help" className="sr-only">
-        When open, use Tab to move through sections, Enter to navigate, and
-        Escape to close the menu.
+        When open, use Tab to move through sections, Enter to navigate, Home or
+        End to focus the first or last section, and Escape to close the menu.
       </span>
       {isPageScrollable && pageScrollProgress > 5 && (
         <button
