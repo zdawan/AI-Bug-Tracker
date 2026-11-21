@@ -222,6 +222,10 @@ export default function TesterPage() {
                 placeholder="e.g. github.com"
                 value={url}
                 onChange={(event) => updateUrl(event.target.value)}
+                onInvalid={(event) => {
+                  event.preventDefault();
+                  reportUrlValidationError("Please enter a website name.");
+                }}
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && url) {
                     event.preventDefault();
