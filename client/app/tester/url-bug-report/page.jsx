@@ -57,6 +57,13 @@ function getScrollProgressLabel(progress, isScrollable) {
   return `${Math.round(progress)}% of page scrolled`;
 }
 
+function getScrollProgress(scrollTop, maxScroll) {
+  if (maxScroll <= 0) return 0;
+
+  const progress = (scrollTop / maxScroll) * 100;
+  return Math.round(Math.min(100, Math.max(0, progress)));
+}
+
 const NAVIGATION_TARGETS = [
   {
     id: REPORT_FORM_ID,
@@ -195,9 +202,10 @@ function UserPageContent() {
         const pageHeight = scrollElement.scrollHeight;
         const maxScroll = pageHeight - window.innerHeight;
         setIsPageScrollable(maxScroll > 0);
-        const progress =
-          maxScroll > 0 ? (scrollElement.scrollTop / maxScroll) * 100 : 0;
-        setPageScrollProgress(Math.min(100, Math.max(0, progress)));
+        const progress = getScrollProgress(scrollElement.scrollTop, maxScroll);
+        setPageScrollProgress((currentProgress) =>
+          currentProgress === progress ? currentProgress : progress,
+        );
       });
     };
 
@@ -483,7 +491,7 @@ function UserPageContent() {
         aria-label="Page scroll progress"
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={Math.round(pageScrollProgress)}
+        aria-valuenow={pageScrollProgress}
         aria-valuetext={getScrollProgressLabel(
           pageScrollProgress,
           isPageScrollable,
@@ -577,7 +585,7 @@ function UserPageContent() {
               className="rounded-full bg-purple-900 px-1.5 py-0.5
               text-[10px] tabular-nums"
             >
-              {Math.round(pageScrollProgress)}%
+              {pageScrollProgress}%
             </span>
           )}
         </button>
