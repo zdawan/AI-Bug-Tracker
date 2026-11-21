@@ -90,6 +90,7 @@ export default function TesterPage() {
         position: "top-right",
         autoClose: 3000,
       });
+      urlInputRef.current?.focus();
       return;
     }
 
@@ -102,6 +103,7 @@ export default function TesterPage() {
         position: "top-right",
         autoClose: 3000,
       });
+      urlInputRef.current?.focus();
       return;
     }
 
@@ -117,6 +119,7 @@ export default function TesterPage() {
         position: "top-right",
         autoClose: 3000,
       });
+      urlInputRef.current?.focus();
       return;
     }
 
