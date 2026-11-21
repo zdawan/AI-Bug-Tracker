@@ -45,6 +45,10 @@ export default function TesterPage() {
     });
   };
 
+  const urlInputDescription = urlValidationError
+    ? "test-url-error test-url-hint test-url-length"
+    : "test-url-hint test-url-length";
+
   const reportUrlValidationError = (message) => {
     setUrlValidationError(message);
     toast.error(message, {
@@ -215,11 +219,7 @@ export default function TesterPage() {
                 enterKeyHint="go"
                 maxLength={2048}
                 aria-invalid={urlValidationError ? true : undefined}
-                aria-describedby={
-                  urlValidationError
-                    ? "test-url-error test-url-hint"
-                    : "test-url-hint"
-                }
+                aria-describedby={urlInputDescription}
                 aria-keyshortcuts={url ? "Escape" : undefined}
                 placeholder="e.g. github.com"
                 value={url}
@@ -1628,8 +1628,9 @@ function UrlLengthIndicator({ value }) {
               ? "text-amber-700"
               : "text-slate-400"
         }`}
+        id="test-url-length"
         aria-label={`${length} characters in the address`}
-        aria-live={isLong ? "polite" : "off"}
+        aria-live="off"
       >
         {length.toLocaleString("en-IN")} characters
       </span>
