@@ -145,6 +145,7 @@ function UserPageContent() {
   const navigationStatusRemainingSeconds = useRef(NAVIGATION_NOTICE_SECONDS);
   const navigationCountdownId = useRef(null);
   const navigationTimeoutId = useRef(null);
+  const hasScrolledRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -208,6 +209,10 @@ function UserPageContent() {
 
   useEffect(() => {
     let frameId = null;
+    const handleScroll = () => {
+      hasScrolledRef.current = true;
+      updateScrollProgress();
+    };
     const updateScrollProgress = () => {
       if (frameId !== null) return;
 
@@ -233,11 +238,11 @@ function UserPageContent() {
     resizeObserver?.observe(document.body);
 
     updateScrollProgress();
-    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", updateScrollProgress);
     window.addEventListener("load", updateScrollProgress);
     return () => {
-      window.removeEventListener("scroll", updateScrollProgress);
+      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", updateScrollProgress);
       window.removeEventListener("load", updateScrollProgress);
       resizeObserver?.disconnect();
@@ -370,12 +375,9 @@ function UserPageContent() {
 
   const updateCurrentSectionFromScroll = (section) => {
     const sectionHash = `#${section.id}`;
-    const currentHashIsSection = NAVIGATION_TARGETS.some(
-      ({ hash }) => hash === window.location.hash,
-    );
     setCurrentSectionHash(sectionHash);
     if (
-      (window.scrollY > 0 || currentHashIsSection) &&
+      (hasScrolledRef.current || window.scrollY > 0) &&
       window.location.hash !== sectionHash
     ) {
       replacePageHash(sectionHash);
