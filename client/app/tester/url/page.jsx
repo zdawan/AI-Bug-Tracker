@@ -26,6 +26,8 @@ import TesterUrlQuerySummary from "./TesterUrlQuerySummary";
 import TesterUrlFragmentSummary from "./TesterUrlFragmentSummary";
 import TesterUrlReadinessChecklist from "./TesterUrlReadinessChecklist";
 
+const MAX_URL_LENGTH = 2048;
+
 export default function TesterPage() {
   const [url, setUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -225,7 +227,7 @@ export default function TesterPage() {
                 autoCapitalize="none"
                 spellCheck={false}
                 enterKeyHint="go"
-                maxLength={2048}
+                maxLength={MAX_URL_LENGTH}
                 aria-invalid={urlValidationError ? true : undefined}
                 aria-describedby={urlInputDescription}
                 aria-keyshortcuts={url ? "Escape" : undefined}
@@ -280,8 +282,8 @@ export default function TesterPage() {
               className="mt-2 px-1 text-sm leading-5 text-slate-500"
             >
               Enter a name like github.com or a full page URL. Press Escape to
-              clear it when the field contains a URL. URLs are limited to
-              2,048 characters.
+              clear it when the field contains a URL. URLs are limited to{" "}
+              {MAX_URL_LENGTH.toLocaleString("en-IN")} characters.
             </p>
             {urlValidationError && (
               <p
@@ -291,7 +293,7 @@ export default function TesterPage() {
                 {urlValidationError}
               </p>
             )}
-            <UrlLengthIndicator value={url} />
+            <UrlLengthIndicator value={url} maxLength={MAX_URL_LENGTH} />
             <TesterUrlValidationTip />
             <TesterUrlInputBehaviorNote />
             <TesterUrlLiveStatus value={url} />
@@ -1602,7 +1604,7 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   );
 }
 
-function UrlLengthIndicator({ value }) {
+function UrlLengthIndicator({ value, maxLength }) {
   const length = value.length;
   const isLong = length > 500;
   const isVeryLong = length > 2000;
@@ -1634,10 +1636,11 @@ function UrlLengthIndicator({ value }) {
               : "text-slate-400"
         }`}
         id="test-url-length"
-        aria-label={`${length} characters in the address`}
+        aria-label={`${length} of ${maxLength} characters used in the address`}
         aria-live="off"
       >
-        {length.toLocaleString("en-IN")} characters
+        {length.toLocaleString("en-IN")} /{" "}
+        {maxLength.toLocaleString("en-IN")} characters
       </span>
     </div>
   );
