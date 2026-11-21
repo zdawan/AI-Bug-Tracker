@@ -44,6 +44,11 @@ function getSectionLinkClass(isCurrent) {
     : SECTION_LINK_CLASS;
 }
 
+function formatRemainingTime(seconds) {
+  const unit = seconds === 1 ? "second" : "seconds";
+  return `${seconds} ${unit} remaining`;
+}
+
 const NAVIGATION_TARGETS = [
   {
     id: REPORT_FORM_ID,
@@ -512,7 +517,7 @@ function UserPageContent() {
             aria-valuenow={
               NAVIGATION_NOTICE_SECONDS - navigationStatusSeconds
             }
-            aria-valuetext={`${navigationStatusSeconds} seconds remaining${
+            aria-valuetext={`${formatRemainingTime(navigationStatusSeconds)}${
               isNavigationNoticePaused ? `; ${navigationPauseReason}` : ""
             }`}
             aria-live="off"
