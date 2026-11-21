@@ -113,6 +113,14 @@ function UserPageContent() {
     : isCountdownManuallyPaused
       ? "Paused · by you"
       : "";
+  const currentSectionLabel =
+    currentSectionHash === URL_CONTEXT_HASH
+      ? "test URL context"
+      : currentSectionHash === URL_CHECKLIST_HASH
+        ? "URL testing checklist"
+        : currentSectionHash === REPORT_FORM_HASH
+          ? "bug report form"
+          : "page overview";
   const navigationStatusSequence = useRef(0);
   const navigationStatusRemainingSeconds = useRef(NAVIGATION_NOTICE_SECONDS);
   const navigationCountdownId = useRef(null);
@@ -522,7 +530,8 @@ function UserPageContent() {
           ref={sectionMenuToggleRef}
           aria-expanded={isSectionMenuOpen}
           aria-controls="tester-section-menu"
-          aria-label="Open or close page section navigation"
+          aria-label={`${isSectionMenuOpen ? "Close" : "Open"} section navigation. Current section: ${currentSectionLabel}`}
+          title={`Current section: ${currentSectionLabel}`}
           aria-describedby="tester-section-menu-help"
           aria-keyshortcuts="Escape"
           onClick={() => setIsSectionMenuOpen((open) => !open)}
@@ -577,15 +586,7 @@ function UserPageContent() {
           </p>
         </header>
         <nav
-          aria-label={`Page section shortcuts. Current section: ${
-            currentSectionHash === URL_CONTEXT_HASH
-              ? "test URL context"
-              : currentSectionHash === URL_CHECKLIST_HASH
-                ? "URL testing checklist"
-                : currentSectionHash === REPORT_FORM_HASH
-                  ? "bug report form"
-                  : "page overview"
-          }`}
+          aria-label={`Page section shortcuts. Current section: ${currentSectionLabel}`}
         >
           <a
             href={URL_CONTEXT_HASH}
