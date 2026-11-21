@@ -353,8 +353,8 @@ function UserPageContent() {
               <span>{navigationStatus.message}</span>
               {!navigationStatus.isError && (
                 <span
+                  aria-hidden="true"
                   className="text-[10px] tabular-nums"
-                  aria-label={`Notice closes in ${navigationStatusSeconds} seconds`}
                 >
                   {navigationStatusSeconds}s
                 </span>
