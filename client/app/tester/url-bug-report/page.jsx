@@ -132,6 +132,8 @@ function UserPageContent() {
   const updateFinalUrl = (url) => {
     setFinalUrl(url);
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
+    navigationStatusRemainingSeconds.current = 5;
+    setNavigationStatusSeconds(0);
     setNavigationTarget(null);
   };
 
@@ -154,6 +156,8 @@ function UserPageContent() {
   useEffect(() => {
     setFinalUrl(fullUrl);
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
+    navigationStatusRemainingSeconds.current = 5;
+    setNavigationStatusSeconds(0);
     setNavigationTarget(null);
   }, [fullUrl]);
 
@@ -166,6 +170,8 @@ function UserPageContent() {
       setCurrentSectionHash(target ? target.hash : "");
       setNavigationTarget(target ? target.id : null);
       setNavigationStatus(EMPTY_NAVIGATION_STATUS);
+      navigationStatusRemainingSeconds.current = 5;
+      setNavigationStatusSeconds(0);
     };
 
     syncNavigationFromLocation();
