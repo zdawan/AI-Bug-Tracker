@@ -215,7 +215,7 @@ export default function TesterPage() {
                 aria-invalid={urlValidationError ? true : undefined}
                 aria-describedby={
                   urlValidationError
-                    ? "test-url-hint test-url-error"
+                    ? "test-url-error test-url-hint"
                     : "test-url-hint"
                 }
                 aria-keyshortcuts={url ? "Escape" : undefined}
@@ -243,7 +243,7 @@ export default function TesterPage() {
                   aria-controls="test-url"
                   aria-describedby={
                     urlValidationError
-                      ? "test-url-hint test-url-error"
+                      ? "test-url-error test-url-hint"
                       : "test-url-hint"
                   }
                   aria-label="Clear website name"
