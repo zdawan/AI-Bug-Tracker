@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -29,7 +29,13 @@ import TesterUrlReadinessChecklist from "./TesterUrlReadinessChecklist";
 export default function TesterPage() {
   const [url, setUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const urlInputRef = useRef(null);
   const router = useRouter();
+
+  const clearUrlInput = () => {
+    setUrl("");
+    urlInputRef.current?.focus();
+  };
 
   const normalizeUrl = (value) => {
     const trimmed = value.trim();
@@ -185,6 +191,7 @@ export default function TesterPage() {
 
               <input
                 id="test-url"
+                ref={urlInputRef}
                 name="testUrl"
                 type="text"
                 inputMode="url"
@@ -201,7 +208,7 @@ export default function TesterPage() {
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && url) {
                     event.preventDefault();
-                    setUrl("");
+                    clearUrlInput();
                   }
                 }}
                 required
@@ -211,7 +218,8 @@ export default function TesterPage() {
               {url && (
                 <button
                   type="button"
-                  onClick={() => setUrl("")}
+                  onClick={clearUrlInput}
+                  aria-controls="test-url"
                   aria-label="Clear website name"
                   title="Clear website name"
                   className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
