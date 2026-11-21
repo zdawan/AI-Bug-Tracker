@@ -461,6 +461,9 @@ function UserPageContent() {
               role={navigationStatus.isError ? "alert" : "status"}
               aria-live={navigationStatus.isError ? "assertive" : "polite"}
               aria-atomic="true"
+              aria-describedby={
+                navigationStatus.isError ? "navigation-error-help" : undefined
+              }
               className={`flex min-w-0 flex-1 items-center gap-2 text-sm ${
                 navigationStatus.isError ? "text-amber-800" : "text-emerald-700"
               }`}
@@ -521,6 +524,12 @@ function UserPageContent() {
               )}
             </div>
           </div>
+        )}
+        {navigationStatus.message && navigationStatus.isError && (
+          <span id="navigation-error-help" className="sr-only">
+            This error remains visible until dismissed. Press Escape while a
+            notice control is focused to dismiss it.
+          </span>
         )}
         {navigationStatus.message && !navigationStatus.isError && (
           <span id="navigation-notice-timer-help" className="sr-only">
