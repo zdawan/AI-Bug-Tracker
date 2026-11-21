@@ -543,14 +543,22 @@ function UserPageContent() {
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
                 title={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
                 aria-keyshortcuts="Escape"
-                className={`min-h-10 min-w-10 rounded p-1 focus:outline focus:outline-2
-                focus:outline-offset-2 ${
+                className={`inline-flex min-h-10 items-center justify-center
+                rounded focus:outline focus:outline-2 focus:outline-offset-2 ${
                   navigationStatus.isError
-                    ? "text-amber-800 hover:bg-amber-100 focus:outline-amber-800"
-                    : "text-emerald-800 hover:bg-emerald-100 focus:outline-emerald-800"
+                    ? "min-w-24 gap-1 px-2 text-amber-800 hover:bg-amber-100 focus:outline-amber-800"
+                    : "min-w-10 p-1 text-emerald-800 hover:bg-emerald-100 focus:outline-emerald-800"
                 }`}
               >
                 <X size={16} aria-hidden="true" />
+                {navigationStatus.isError && (
+                  <span
+                    aria-hidden="true"
+                    className="text-xs font-semibold"
+                  >
+                    Dismiss
+                  </span>
+                )}
               </button>
               {!navigationStatus.isError && (
                 <button
