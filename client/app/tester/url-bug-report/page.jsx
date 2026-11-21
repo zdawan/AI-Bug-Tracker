@@ -493,6 +493,11 @@ function UserPageContent() {
                 type="button"
                 onClick={dismissNavigationStatus}
                 aria-controls={NAVIGATION_STATUS_ID}
+                aria-describedby={
+                  navigationStatus.isError
+                    ? "navigation-error-help"
+                    : "navigation-notice-timer-help"
+                }
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
                 aria-keyshortcuts="Escape"
                 className={`min-h-10 min-w-10 rounded p-1 focus:outline focus:outline-2
