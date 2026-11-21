@@ -579,6 +579,16 @@ function UserPageContent() {
           focus:outline-purple-800"
         >
           {isSectionMenuOpen ? "Close sections" : "Sections"}
+          {!isSectionMenuOpen && (
+            <span
+              aria-hidden="true"
+              className="hidden min-w-0 max-w-36 truncate rounded-full
+              bg-purple-800 px-2 py-0.5 text-left text-[10px]
+              font-medium leading-4 sm:inline"
+            >
+              Current: {currentSectionLabel}
+            </span>
+          )}
           {isPageScrollable && (
             <span
               aria-hidden="true"
