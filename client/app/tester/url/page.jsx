@@ -40,7 +40,9 @@ export default function TesterPage() {
 
   const clearUrlInput = () => {
     updateUrl("");
-    urlInputRef.current?.focus();
+    window.requestAnimationFrame(() => {
+      urlInputRef.current?.focus();
+    });
   };
 
   const reportUrlValidationError = (message) => {
