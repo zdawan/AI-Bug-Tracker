@@ -156,7 +156,7 @@ function UserPageContent() {
     setNavigationTarget(REPORT_FORM_ID);
   };
 
-  const dismissNavigationError = () => {
+  const dismissNavigationStatus = () => {
     resetNavigationStatus();
     window.requestAnimationFrame(() => {
       document
@@ -434,18 +434,19 @@ function UserPageContent() {
                 </span>
               )}
             </div>
-            {navigationStatus.isError && (
-              <button
-                type="button"
-                onClick={dismissNavigationError}
-                aria-label="Dismiss navigation error"
-                className="rounded p-1 text-amber-800 hover:bg-amber-100
-                focus:outline focus:outline-2 focus:outline-offset-2
-                focus:outline-amber-800"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={dismissNavigationStatus}
+              aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
+              className={`rounded p-1 focus:outline focus:outline-2
+              focus:outline-offset-2 ${
+                navigationStatus.isError
+                  ? "text-amber-800 hover:bg-amber-100 focus:outline-amber-800"
+                  : "text-emerald-800 hover:bg-emerald-100 focus:outline-emerald-800"
+              }`}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
             {!navigationStatus.isError && (
               <button
                 type="button"
