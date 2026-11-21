@@ -200,7 +200,15 @@ export default function TesterPage() {
               Website name or URL
             </label>
 
-            <div className="flex h-14 items-center gap-3 rounded-2xl border border-[#d4d8e1] bg-white px-4 shadow-sm transition hover:border-gray-400 focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-100 motion-reduce:transition-none">
+            <div
+              className={`flex h-14 items-center gap-3 rounded-2xl border
+              bg-white px-4 shadow-sm transition focus-within:ring-4
+              motion-reduce:transition-none ${
+                urlValidationError
+                  ? "border-rose-400 hover:border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-100"
+                  : "border-[#d4d8e1] hover:border-gray-400 focus-within:border-purple-500 focus-within:ring-purple-100"
+              }`}
+            >
               <Globe
                 size={20}
                 aria-hidden="true"
