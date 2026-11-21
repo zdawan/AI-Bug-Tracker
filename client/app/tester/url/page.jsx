@@ -26,6 +26,8 @@ import TesterUrlQuerySummary from "./TesterUrlQuerySummary";
 import TesterUrlFragmentSummary from "./TesterUrlFragmentSummary";
 import TesterUrlReadinessChecklist from "./TesterUrlReadinessChecklist";
 
+const MAX_URL_LENGTH = 2048;
+
 export default function TesterPage() {
   const [url, setUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -225,7 +227,7 @@ export default function TesterPage() {
                 autoCapitalize="none"
                 spellCheck={false}
                 enterKeyHint="go"
-                maxLength={2048}
+                maxLength={MAX_URL_LENGTH}
                 aria-invalid={urlValidationError ? true : undefined}
                 aria-describedby={urlInputDescription}
                 aria-keyshortcuts={url ? "Escape" : undefined}
@@ -280,8 +282,8 @@ export default function TesterPage() {
               className="mt-2 px-1 text-sm leading-5 text-slate-500"
             >
               Enter a name like github.com or a full page URL. Press Escape to
-              clear it when the field contains a URL. URLs are limited to
-              2,048 characters.
+              clear it when the field contains a URL. URLs are limited to{" "}
+              {MAX_URL_LENGTH.toLocaleString("en-IN")} characters.
             </p>
             {urlValidationError && (
               <p
@@ -291,7 +293,7 @@ export default function TesterPage() {
                 {urlValidationError}
               </p>
             )}
-            <UrlLengthIndicator value={url} />
+            <UrlLengthIndicator value={url} maxLength={MAX_URL_LENGTH} />
             <TesterUrlValidationTip />
             <TesterUrlInputBehaviorNote />
             <TesterUrlLiveStatus value={url} />
@@ -1602,10 +1604,12 @@ function UrlPrivacyAudit({ url, onChangeUrl }) {
   );
 }
 
-function UrlLengthIndicator({ value }) {
+function UrlLengthIndicator({ value, maxLength }) {
   const length = value.length;
+  const formattedMaxLength = maxLength.toLocaleString("en-IN");
+  const isAtLimit = length >= maxLength;
   const isLong = length > 500;
-  const isVeryLong = length > 2000;
+  const isVeryLong = length > maxLength - 48;
 
   return (
     <div className="mt-2 flex flex-wrap items-start justify-between gap-2 px-1">
@@ -1619,7 +1623,9 @@ function UrlLengthIndicator({ value }) {
         }`}
         aria-live={isLong ? "polite" : "off"}
       >
-        {isVeryLong
+        {isAtLimit
+          ? "Maximum URL length reached. Remove characters before continuing."
+          : isVeryLong
           ? "This link is very long. Check for extra tracking or private data."
           : isLong
             ? "Long links can contain extra tracking or private data."
@@ -1634,10 +1640,13 @@ function UrlLengthIndicator({ value }) {
               : "text-slate-400"
         }`}
         id="test-url-length"
-        aria-label={`${length} characters in the address`}
+        aria-label={`${
+          isAtLimit ? "Maximum reached. " : ""
+        }${length} of ${formattedMaxLength} characters used in the address`}
         aria-live="off"
       >
-        {length.toLocaleString("en-IN")} characters
+        {length.toLocaleString("en-IN")} /{" "}
+        {formattedMaxLength} characters
       </span>
     </div>
   );
