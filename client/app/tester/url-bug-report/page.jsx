@@ -449,7 +449,7 @@ function UserPageContent() {
         </nav>
         {navigationStatus.message && (
           <div
-            id={!navigationStatus.isError ? NAVIGATION_STATUS_ID : undefined}
+            id={NAVIGATION_STATUS_ID}
             onKeyDown={handleNavigationStatusKeyDown}
             className={
               navigationStatus.isError
@@ -461,6 +461,9 @@ function UserPageContent() {
               role={navigationStatus.isError ? "alert" : "status"}
               aria-live={navigationStatus.isError ? "assertive" : "polite"}
               aria-atomic="true"
+              aria-describedby={
+                navigationStatus.isError ? "navigation-error-help" : undefined
+              }
               className={`flex min-w-0 flex-1 items-center gap-2 text-sm ${
                 navigationStatus.isError ? "text-amber-800" : "text-emerald-700"
               }`}
@@ -485,6 +488,7 @@ function UserPageContent() {
               <button
                 type="button"
                 onClick={dismissNavigationStatus}
+                aria-controls={NAVIGATION_STATUS_ID}
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
                 aria-keyshortcuts="Escape"
                 className={`rounded p-1 focus:outline focus:outline-2
@@ -521,6 +525,12 @@ function UserPageContent() {
               )}
             </div>
           </div>
+        )}
+        {navigationStatus.message && navigationStatus.isError && (
+          <span id="navigation-error-help" className="sr-only">
+            This error remains visible until dismissed. Press Escape while a
+            notice control is focused to dismiss it.
+          </span>
         )}
         {navigationStatus.message && !navigationStatus.isError && (
           <span id="navigation-notice-timer-help" className="sr-only">
