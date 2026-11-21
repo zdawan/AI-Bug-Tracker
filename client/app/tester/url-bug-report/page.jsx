@@ -550,6 +550,29 @@ function UserPageContent() {
           </p>
           <BugForm testUrl={finalUrl} />
         </div>
+        <nav
+          aria-label="Return to URL testing sections"
+          className="mt-6 flex flex-wrap justify-end gap-2"
+        >
+          <a
+            href={URL_CHECKLIST_HASH}
+            aria-controls={URL_CHECKLIST_ID}
+            className={getSectionLinkClass(
+              currentSectionHash === URL_CHECKLIST_HASH,
+            )}
+          >
+            Return to checklist
+          </a>
+          <a
+            href={URL_CONTEXT_HASH}
+            aria-controls={URL_CONTEXT_ID}
+            className={getSectionLinkClass(
+              currentSectionHash === URL_CONTEXT_HASH,
+            )}
+          >
+            Return to test URL
+          </a>
+        </nav>
       </div>
     </>
   );
