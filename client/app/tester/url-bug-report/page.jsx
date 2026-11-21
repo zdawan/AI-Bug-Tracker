@@ -519,7 +519,7 @@ function UserPageContent() {
                   hover:bg-emerald-50 focus:outline focus:outline-2
                   focus:outline-offset-2 focus:outline-emerald-700"
                 >
-                  {isNavigationNoticePaused ? "Resume" : "Pause"}
+                  {isNavigationNoticePaused ? "Resume timer" : "Pause timer"}
                 </button>
               )}
             </div>
