@@ -327,7 +327,7 @@ function UserPageContent() {
             </span>
           </p>
         </header>
-        <nav aria-label="Page section shortcuts">
+        <nav aria-label="Page section shortcuts; current section is marked">
           <a
             href={URL_CONTEXT_HASH}
             aria-controls={URL_CONTEXT_ID}
