@@ -344,7 +344,11 @@ function UserPageContent() {
             aria-current={
               currentSectionHash === URL_CONTEXT_HASH ? "location" : undefined
             }
-            className={SKIP_LINK_CLASS}
+            className={`${SKIP_LINK_CLASS} ${
+              currentSectionHash === URL_CONTEXT_HASH
+                ? "underline decoration-2 underline-offset-4"
+                : ""
+            }`}
           >
             Skip to test URL context
           </a>
@@ -354,7 +358,11 @@ function UserPageContent() {
             aria-current={
               currentSectionHash === URL_CHECKLIST_HASH ? "location" : undefined
             }
-            className={SKIP_LINK_CLASS}
+            className={`${SKIP_LINK_CLASS} ${
+              currentSectionHash === URL_CHECKLIST_HASH
+                ? "underline decoration-2 underline-offset-4"
+                : ""
+            }`}
           >
             Skip to URL testing checklist
           </a>
@@ -364,7 +372,11 @@ function UserPageContent() {
             aria-current={
               currentSectionHash === REPORT_FORM_HASH ? "location" : undefined
             }
-            className={SKIP_LINK_CLASS}
+            className={`${SKIP_LINK_CLASS} ${
+              currentSectionHash === REPORT_FORM_HASH
+                ? "underline decoration-2 underline-offset-4"
+                : ""
+            }`}
           >
             Skip to bug report form
           </a>
