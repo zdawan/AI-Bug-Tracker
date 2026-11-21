@@ -89,7 +89,11 @@ function UserPageContent() {
     EMPTY_NAVIGATION_STATUS,
   );
   const [navigationStatusSeconds, setNavigationStatusSeconds] = useState(0);
-  const [isNavigationNoticePaused, setIsNavigationNoticePaused] = useState(false);
+  const [isDocumentHidden, setIsDocumentHidden] = useState(false);
+  const [isCountdownManuallyPaused, setIsCountdownManuallyPaused] =
+    useState(false);
+  const isNavigationNoticePaused =
+    isDocumentHidden || isCountdownManuallyPaused;
   const navigationStatusSequence = useRef(0);
   const navigationStatusRemainingSeconds = useRef(5);
   const navigationCountdownId = useRef(null);
@@ -109,7 +113,7 @@ function UserPageContent() {
 
   useEffect(() => {
     const syncNoticeVisibility = () => {
-      setIsNavigationNoticePaused(document.visibilityState === "hidden");
+      setIsDocumentHidden(document.visibilityState === "hidden");
     };
 
     syncNoticeVisibility();
@@ -121,6 +125,7 @@ function UserPageContent() {
   const showNavigationStatus = (message, isError = false) => {
     navigationStatusSequence.current += 1;
     navigationStatusRemainingSeconds.current = 5;
+    setIsCountdownManuallyPaused(false);
     setNavigationStatusSeconds(isError ? 0 : 5);
     setNavigationStatus({
       message,
@@ -431,7 +436,7 @@ function UserPageContent() {
               <button
                 type="button"
                 onClick={() =>
-                  setIsNavigationNoticePaused((paused) => !paused)
+                  setIsCountdownManuallyPaused((paused) => !paused)
                 }
                 aria-label={
                   isNavigationNoticePaused
