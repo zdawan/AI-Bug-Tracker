@@ -569,7 +569,18 @@ function UserPageContent() {
               key={hash}
               href={hash}
               aria-current={currentSectionHash === hash ? "location" : undefined}
-              onClick={() => setIsSectionMenuOpen(false)}
+              onClick={(event) => {
+                if (
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                ) {
+                  return;
+                }
+                setIsSectionMenuOpen(false);
+              }}
               className={`block rounded-lg px-3 py-2 text-sm ${
                 currentSectionHash === hash
                   ? "bg-purple-50 font-semibold text-purple-950"
