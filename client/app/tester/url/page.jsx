@@ -243,11 +243,7 @@ export default function TesterPage() {
                   type="button"
                   onClick={clearUrlInput}
                   aria-controls="test-url"
-                  aria-describedby={
-                    urlValidationError
-                      ? "test-url-error test-url-hint"
-                      : "test-url-hint"
-                  }
+                  aria-describedby={urlInputDescription}
                   aria-label="Clear URL"
                   aria-keyshortcuts="Escape"
                   title="Clear URL"
