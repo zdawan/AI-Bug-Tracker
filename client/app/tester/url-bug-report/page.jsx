@@ -93,6 +93,7 @@ function UserPageContent() {
   const [navigationTarget, setNavigationTarget] = useState(null);
   const [currentSectionHash, setCurrentSectionHash] = useState("");
   const [pageScrollProgress, setPageScrollProgress] = useState(0);
+  const [isPageScrollable, setIsPageScrollable] = useState(false);
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
@@ -144,13 +145,13 @@ function UserPageContent() {
 
       frameId = window.requestAnimationFrame(() => {
         frameId = null;
-        const pageHeight = Math.max(
-          document.documentElement.scrollHeight,
-          document.body.scrollHeight,
-        );
+        const scrollElement =
+          document.scrollingElement || document.documentElement;
+        const pageHeight = scrollElement.scrollHeight;
         const maxScroll = pageHeight - window.innerHeight;
+        setIsPageScrollable(maxScroll > 0);
         const progress =
-          maxScroll > 0 ? (window.scrollY / maxScroll) * 100 : 100;
+          maxScroll > 0 ? (scrollElement.scrollTop / maxScroll) * 100 : 100;
         setPageScrollProgress(Math.min(100, Math.max(0, progress)));
       });
     };
@@ -378,7 +379,11 @@ function UserPageContent() {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(pageScrollProgress)}
-        aria-valuetext={`${Math.round(pageScrollProgress)}% of page scrolled`}
+        aria-valuetext={
+          isPageScrollable
+            ? `${Math.round(pageScrollProgress)}% of page scrolled`
+            : "Page fits in viewport"
+        }
         aria-live="off"
         className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 bg-purple-100"
       >
@@ -388,7 +393,7 @@ function UserPageContent() {
           style={{ width: `${pageScrollProgress}%` }}
         />
       </div>
-      {pageScrollProgress > 5 && (
+      {isPageScrollable && pageScrollProgress > 5 && (
         <button
           type="button"
           aria-controls={PAGE_TITLE_ID}
