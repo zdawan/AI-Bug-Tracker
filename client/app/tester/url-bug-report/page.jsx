@@ -487,11 +487,23 @@ function UserPageContent() {
               href={hash}
               aria-current={currentSectionHash === hash ? "location" : undefined}
               onClick={() => setIsSectionMenuOpen(false)}
-              className="block rounded-lg px-3 py-2 text-sm text-purple-900
-              hover:bg-purple-50 focus:outline focus:outline-2
-              focus:outline-offset-2 focus:outline-purple-700"
+              className={`block rounded-lg px-3 py-2 text-sm ${
+                currentSectionHash === hash
+                  ? "bg-purple-50 font-semibold text-purple-950"
+                  : "text-purple-900"
+              } hover:bg-purple-50 focus:outline focus:outline-2
+              focus:outline-offset-2 focus:outline-purple-700`}
             >
               {label}
+              {currentSectionHash === hash && (
+                <span
+                  aria-hidden="true"
+                  className="float-right ml-2 text-xs font-medium
+                  text-purple-700"
+                >
+                  Current
+                </span>
+              )}
             </a>
           ))}
         </nav>
