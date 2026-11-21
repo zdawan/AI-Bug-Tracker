@@ -184,6 +184,7 @@ function UserPageContent() {
     if (event.key !== "Escape") return;
 
     event.preventDefault();
+    event.stopPropagation();
     dismissNavigationStatus();
   };
 
