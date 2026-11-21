@@ -480,7 +480,7 @@ function UserPageContent() {
                 <span aria-hidden="true" className="text-[10px] tabular-nums">
                   {isNavigationNoticePaused
                     ? navigationPauseReason
-                    : `${navigationStatusSeconds}s`}
+                    : `${navigationStatusSeconds}s left`}
                 </span>
               )}
             </div>
