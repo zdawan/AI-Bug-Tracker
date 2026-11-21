@@ -556,6 +556,7 @@ function UserPageContent() {
         <nav
           id="tester-section-menu"
           aria-label="Page section navigation"
+          aria-keyshortcuts="Home End"
           hidden={!isSectionMenuOpen}
           className="mb-2 w-56 rounded-xl border border-purple-200
           bg-white p-2 shadow-lg"
@@ -568,6 +569,10 @@ function UserPageContent() {
             <a
               key={hash}
               href={hash}
+              aria-keyshortcuts="Home End"
+              aria-describedby={
+                currentSectionHash === hash ? "tester-section-menu-help" : undefined
+              }
               aria-current={currentSectionHash === hash ? "location" : undefined}
               onClick={(event) => {
                 if (
@@ -609,7 +614,9 @@ function UserPageContent() {
           aria-label={`${isSectionMenuOpen ? "Close" : "Open"} section navigation. Current section: ${currentSectionLabel}`}
           title={`Current section: ${currentSectionLabel}`}
           aria-describedby="tester-section-menu-help"
-          aria-keyshortcuts="Escape Home End"
+          aria-keyshortcuts={
+            isSectionMenuOpen ? "Escape Home End" : "Escape"
+          }
           onClick={() => setIsSectionMenuOpen((open) => !open)}
           className="inline-flex min-h-10 items-center gap-2 rounded-full
           bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg
@@ -645,6 +652,7 @@ function UserPageContent() {
       <span id="tester-section-menu-help" className="sr-only">
         When open, use Tab to move through sections, Enter to navigate, Home or
         End to focus the first or last section, and Escape to close the menu.
+        These shortcuts apply only while the section menu is open.
       </span>
       {isPageScrollable && pageScrollProgress > 5 && (
         <button
