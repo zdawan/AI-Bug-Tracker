@@ -92,6 +92,7 @@ function UserPageContent() {
   const [finalUrl, setFinalUrl] = useState(fullUrl);
   const [navigationTarget, setNavigationTarget] = useState(null);
   const [currentSectionHash, setCurrentSectionHash] = useState("");
+  const [pageScrollProgress, setPageScrollProgress] = useState(0);
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
@@ -134,6 +135,34 @@ function UserPageContent() {
     document.addEventListener("visibilitychange", syncNoticeVisibility);
     return () =>
       document.removeEventListener("visibilitychange", syncNoticeVisibility);
+  }, []);
+
+  useEffect(() => {
+    let frameId = null;
+    const updateScrollProgress = () => {
+      if (frameId !== null) return;
+
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        const pageHeight = Math.max(
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight,
+        );
+        const maxScroll = pageHeight - window.innerHeight;
+        const progress =
+          maxScroll > 0 ? (window.scrollY / maxScroll) * 100 : 100;
+        setPageScrollProgress(Math.min(100, Math.max(0, progress)));
+      });
+    };
+
+    updateScrollProgress();
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    window.addEventListener("resize", updateScrollProgress);
+    return () => {
+      window.removeEventListener("scroll", updateScrollProgress);
+      window.removeEventListener("resize", updateScrollProgress);
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+    };
   }, []);
 
   useEffect(() => {
@@ -334,6 +363,22 @@ function UserPageContent() {
 
   return (
     <>
+      <div
+        role="progressbar"
+        aria-label="Page scroll progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pageScrollProgress)}
+        aria-valuetext={`${Math.round(pageScrollProgress)}% of page scrolled`}
+        aria-live="off"
+        className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 bg-purple-100"
+      >
+        <div
+          aria-hidden="true"
+          className="h-full bg-purple-700 motion-reduce:transition-none"
+          style={{ width: `${pageScrollProgress}%` }}
+        />
+      </div>
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="relative z-10 max-w-3xl mx-auto">
         <header className="mb-8 text-center">
