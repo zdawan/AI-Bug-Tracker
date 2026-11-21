@@ -493,6 +493,18 @@ function UserPageContent() {
                     : `${navigationStatusSeconds}s left`}
                 </span>
               )}
+              {!navigationStatus.isError &&
+                !isNavigationNoticePaused &&
+                navigationStatusSeconds > 0 &&
+                navigationStatusSeconds <= 2 && (
+                  <span
+                    aria-hidden="true"
+                    className="shrink-0 rounded bg-amber-100 px-2 py-0.5
+                    text-[10px] font-semibold text-amber-900"
+                  >
+                    Closing soon
+                  </span>
+                )}
             </div>
             <div
               role="group"
