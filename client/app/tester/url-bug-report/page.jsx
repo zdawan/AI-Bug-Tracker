@@ -90,6 +90,20 @@ function UserPageContent() {
   );
   const [navigationStatusSeconds, setNavigationStatusSeconds] = useState(0);
   const navigationStatusSequence = useRef(0);
+  const navigationCountdownId = useRef(null);
+  const navigationTimeoutId = useRef(null);
+
+  useEffect(
+    () => () => {
+      if (navigationCountdownId.current !== null) {
+        window.clearInterval(navigationCountdownId.current);
+      }
+      if (navigationTimeoutId.current !== null) {
+        window.clearTimeout(navigationTimeoutId.current);
+      }
+    },
+    [],
+  );
 
   const showNavigationStatus = (message, isError = false) => {
     navigationStatusSequence.current += 1;
