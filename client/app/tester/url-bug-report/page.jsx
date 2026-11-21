@@ -156,6 +156,18 @@ function UserPageContent() {
   }, [isSectionMenuOpen]);
 
   useEffect(() => {
+    if (!isSectionMenuOpen) return;
+
+    const menu = sectionMenuRef.current;
+    if (!menu) return;
+
+    const activeLink =
+      menu.querySelector('[aria-current="location"]') ||
+      menu.querySelector("nav a");
+    activeLink?.focus({ preventScroll: true });
+  }, [isSectionMenuOpen]);
+
+  useEffect(() => {
     let frameId = null;
     const updateScrollProgress = () => {
       if (frameId !== null) return;
