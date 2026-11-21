@@ -173,8 +173,16 @@ function UserPageContent() {
     if (!isSectionMenuOpen) return undefined;
 
     const closeOnOutsidePointer = (event) => {
-      if (!sectionMenuRef.current?.contains(event.target)) {
-        setIsSectionMenuOpen(false);
+      const menu = sectionMenuRef.current;
+      if (!menu || menu.contains(event.target)) return;
+
+      const menuHadFocus = menu.contains(document.activeElement);
+      const clickedControl = event.target.closest(
+        "a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
+      );
+      setIsSectionMenuOpen(false);
+      if (menuHadFocus && !clickedControl) {
+        sectionMenuToggleRef.current?.focus({ preventScroll: true });
       }
     };
 
