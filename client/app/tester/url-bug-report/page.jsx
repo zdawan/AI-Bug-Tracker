@@ -531,7 +531,7 @@ function UserPageContent() {
                       ? "Resume the success notice countdown"
                       : "Pause the success notice countdown"
                   }
-                  className={`min-h-10 rounded border border-emerald-200 px-2 py-1
+                  className={`min-h-10 min-w-24 rounded border border-emerald-200 px-2 py-1
                   text-[10px] font-semibold text-emerald-800
                   ${
                     isNavigationNoticePaused ? "bg-emerald-100" : "bg-white"
