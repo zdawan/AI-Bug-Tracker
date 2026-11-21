@@ -231,6 +231,15 @@ function UserPageContent() {
     setNavigationTarget(REPORT_FORM_ID);
   };
 
+  const returnToPageStart = () => {
+    const pageTitle = document.getElementById(PAGE_TITLE_ID);
+    pageTitle?.scrollIntoView({
+      behavior: getScrollBehavior(),
+      block: "start",
+    });
+    pageTitle?.focus({ preventScroll: true });
+  };
+
   const dismissNavigationStatus = () => {
     resetNavigationStatus();
     window.requestAnimationFrame(() => {
@@ -379,6 +388,20 @@ function UserPageContent() {
           style={{ width: `${pageScrollProgress}%` }}
         />
       </div>
+      {pageScrollProgress > 5 && (
+        <button
+          type="button"
+          aria-controls={PAGE_TITLE_ID}
+          onClick={returnToPageStart}
+          className="fixed bottom-4 right-4 z-40 min-h-10 rounded-full
+          bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg
+          hover:bg-purple-800 focus:outline focus:outline-2
+          focus:outline-offset-2 focus:outline-purple-800
+          sm:bottom-6 sm:right-6"
+        >
+          Back to top
+        </button>
+      )}
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="relative z-10 max-w-3xl mx-auto">
         <header className="mb-8 text-center">
@@ -618,14 +641,7 @@ function UserPageContent() {
                 <button
                   type="button"
                   aria-controls={PAGE_TITLE_ID}
-                  onClick={() => {
-                    const pageTitle = document.getElementById(PAGE_TITLE_ID);
-                    pageTitle?.scrollIntoView({
-                      behavior: getScrollBehavior(),
-                      block: "start",
-                    });
-                    pageTitle?.focus({ preventScroll: true });
-                  }}
+                  onClick={returnToPageStart}
                   className="min-h-10 rounded px-2 text-xs font-semibold
                   text-amber-800 hover:bg-amber-100 focus:outline
                   focus:outline-2 focus:outline-offset-2
