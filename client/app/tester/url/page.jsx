@@ -49,7 +49,9 @@ export default function TesterPage() {
       position: "top-right",
       autoClose: 3000,
     });
-    urlInputRef.current?.focus();
+    window.requestAnimationFrame(() => {
+      urlInputRef.current?.focus();
+    });
   };
 
   const normalizeUrl = (value) => {
