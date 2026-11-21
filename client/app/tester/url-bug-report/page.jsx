@@ -591,6 +591,20 @@ function UserPageContent() {
             />
           </div>
         )}
+        {navigationStatus.message &&
+          !navigationStatus.isError &&
+          navigationStatusSeconds > 0 &&
+          navigationStatusSeconds <= 2 && (
+            <span className="sr-only" aria-live="polite" aria-atomic="true">
+              {isNavigationNoticePaused
+                ? `Navigation notice paused with ${formatRemainingTime(
+                    navigationStatusSeconds,
+                  )}.`
+                : `Navigation notice closes in ${navigationStatusSeconds} ${
+                    navigationStatusSeconds === 1 ? "second" : "seconds"
+                  }.`}
+            </span>
+          )}
         <div
           id={REPORT_FORM_ID}
           tabIndex={-1}
