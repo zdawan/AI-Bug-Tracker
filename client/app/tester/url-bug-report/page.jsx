@@ -449,7 +449,7 @@ function UserPageContent() {
         </nav>
         {navigationStatus.message && (
           <div
-            id={!navigationStatus.isError ? NAVIGATION_STATUS_ID : undefined}
+            id={NAVIGATION_STATUS_ID}
             onKeyDown={handleNavigationStatusKeyDown}
             className={
               navigationStatus.isError
@@ -488,6 +488,7 @@ function UserPageContent() {
               <button
                 type="button"
                 onClick={dismissNavigationStatus}
+                aria-controls={NAVIGATION_STATUS_ID}
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
                 aria-keyshortcuts="Escape"
                 className={`rounded p-1 focus:outline focus:outline-2
