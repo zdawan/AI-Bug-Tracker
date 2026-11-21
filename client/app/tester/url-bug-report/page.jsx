@@ -519,7 +519,7 @@ function UserPageContent() {
                   aria-controls={NAVIGATION_STATUS_ID}
                   aria-describedby="navigation-notice-timer-help"
                   aria-label={
-                    isNavigationNoticePaused
+                    isCountdownManuallyPaused
                       ? "Resume navigation notice countdown"
                       : "Pause navigation notice countdown"
                   }
@@ -530,7 +530,7 @@ function UserPageContent() {
                   } hover:bg-emerald-50 focus:outline focus:outline-2
                   focus:outline-offset-2 focus:outline-emerald-700`}
                 >
-                  {isNavigationNoticePaused ? "Resume timer" : "Pause timer"}
+                  {isCountdownManuallyPaused ? "Resume timer" : "Pause timer"}
                 </button>
               )}
             </div>
