@@ -493,9 +493,16 @@ function UserPageContent() {
                   Error
                 </span>
               )}
-              <span className="min-w-0 break-words">
-                {navigationStatus.message}
-              </span>
+              <div className="min-w-0 flex-1">
+                <span className="block break-words">
+                  {navigationStatus.message}
+                </span>
+                {navigationStatus.isError && (
+                  <span className="mt-1 block text-xs text-amber-900">
+                    This error remains visible until dismissed.
+                  </span>
+                )}
+              </div>
               {!navigationStatus.isError && (
                 <span
                   aria-hidden="true"
@@ -594,8 +601,8 @@ function UserPageContent() {
         )}
         {navigationStatus.message && navigationStatus.isError && (
           <span id="navigation-error-help" className="sr-only">
-            This error remains visible until dismissed. Press Escape while a
-            notice control is focused to dismiss it.
+            Press Escape while a notice control is focused to dismiss this
+            error.
           </span>
         )}
         {navigationStatus.message && !navigationStatus.isError && (
