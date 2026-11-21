@@ -478,17 +478,21 @@ function UserPageContent() {
           <span id="navigation-notice-timer-help" className="sr-only">
             This success notice closes after five seconds. Pause keeps it open;
             resume continues the remaining time. The countdown also pauses
-            while this tab is hidden.
+            while this tab is hidden. The progress bar shows elapsed time.
           </span>
         )}
         {navigationStatus.message && !navigationStatus.isError && (
           <div
             role="progressbar"
-            aria-label="Navigation notice time elapsed"
+            aria-label="Navigation notice dismissal progress"
+            aria-describedby="navigation-notice-timer-help"
+            aria-orientation="horizontal"
             aria-valuemin={0}
             aria-valuemax={5}
             aria-valuenow={5 - navigationStatusSeconds}
-            aria-valuetext={`${navigationStatusSeconds} seconds remaining`}
+            aria-valuetext={`${navigationStatusSeconds} seconds remaining${
+              isNavigationNoticePaused ? ", countdown paused" : ""
+            }`}
             aria-live="off"
             className="mb-3 h-1 overflow-hidden rounded-full bg-emerald-100"
           >
