@@ -258,7 +258,7 @@ function UserPageContent() {
               .find((section) => section.getBoundingClientRect().top <= markerY) ||
             sections[0];
           if (activeSection) {
-            setCurrentSectionHash(`#${activeSection.id}`);
+            updateCurrentSectionFromScroll(activeSection);
           }
         });
       };
@@ -308,7 +308,7 @@ function UserPageContent() {
           })[0];
         const currentSection = activeSection?.[0] || nearestSection;
         if (currentSection) {
-          setCurrentSectionHash(`#${currentSection.id}`);
+          updateCurrentSectionFromScroll(currentSection);
         }
       },
       { rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.1, 0.25] },
@@ -355,6 +355,17 @@ function UserPageContent() {
     replacePageHash(REPORT_FORM_HASH);
     setCurrentSectionHash(REPORT_FORM_HASH);
     setNavigationTarget(REPORT_FORM_ID);
+  };
+
+  const updateCurrentSectionFromScroll = (section) => {
+    const sectionHash = `#${section.id}`;
+    setCurrentSectionHash(sectionHash);
+    if (
+      (window.scrollY > 0 || window.location.hash) &&
+      window.location.hash !== sectionHash
+    ) {
+      replacePageHash(sectionHash);
+    }
   };
 
   const returnToPageStart = () => {
