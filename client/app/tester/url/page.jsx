@@ -185,7 +185,7 @@ export default function TesterPage() {
               Website name or URL
             </label>
 
-            <div className="flex h-14 items-center gap-3 rounded-2xl border border-[#d4d8e1] bg-white px-4 shadow-sm transition hover:border-gray-400 focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-100">
+            <div className="flex h-14 items-center gap-3 rounded-2xl border border-[#d4d8e1] bg-white px-4 shadow-sm transition hover:border-gray-400 focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-100 motion-reduce:transition-none">
               <Globe
                 size={20}
                 aria-hidden="true"
@@ -233,7 +233,12 @@ export default function TesterPage() {
                       clearUrlInput();
                     }
                   }}
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+                  className="flex h-10 w-10 cursor-pointer items-center
+                  justify-center rounded-lg text-slate-400 transition
+                  hover:bg-slate-100 hover:text-slate-700
+                  focus-visible:outline-none focus-visible:ring-2
+                  focus-visible:ring-purple-300
+                  motion-reduce:transition-none"
                 >
                   <span aria-hidden="true" className="text-2xl leading-none">
                     ×
@@ -316,7 +321,12 @@ export default function TesterPage() {
                 onClick={copyPreviewUrl}
                 aria-label={url.trim() ? "Copy entered URL" : "Copy example URL"}
                 title={url.trim() ? "Copy entered URL" : "Copy example URL"}
-                className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-violet-200 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+                className="shrink-0 rounded-lg border border-slate-200
+                bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600
+                transition hover:border-violet-200 hover:text-violet-700
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-violet-300
+                motion-reduce:transition-none"
               >
                 {url.trim() ? "Copy URL" : "Copy example"}
               </button>
