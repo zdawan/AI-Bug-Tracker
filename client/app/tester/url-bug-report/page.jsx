@@ -564,12 +564,22 @@ function UserPageContent() {
           aria-describedby="tester-section-menu-help"
           aria-keyshortcuts="Escape"
           onClick={() => setIsSectionMenuOpen((open) => !open)}
-          className="min-h-10 rounded-full bg-purple-700 px-4 py-2
-          text-sm font-semibold text-white shadow-lg hover:bg-purple-800
+          className="inline-flex min-h-10 items-center gap-2 rounded-full
+          bg-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg
+          hover:bg-purple-800
           focus:outline focus:outline-2 focus:outline-offset-2
           focus:outline-purple-800"
         >
           {isSectionMenuOpen ? "Close sections" : "Sections"}
+          {isPageScrollable && (
+            <span
+              aria-hidden="true"
+              className="rounded-full bg-purple-900 px-1.5 py-0.5
+              text-[10px] tabular-nums"
+            >
+              {Math.round(pageScrollProgress)}%
+            </span>
+          )}
         </button>
       </div>
       <span id="tester-section-menu-help" className="sr-only">
