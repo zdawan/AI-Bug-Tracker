@@ -327,7 +327,17 @@ function UserPageContent() {
             </span>
           </p>
         </header>
-        <nav aria-label="Page section shortcuts; current section is marked">
+        <nav
+          aria-label={`Page section shortcuts. Current section: ${
+            currentSectionHash === URL_CONTEXT_HASH
+              ? "test URL context"
+              : currentSectionHash === URL_CHECKLIST_HASH
+                ? "URL testing checklist"
+                : currentSectionHash === REPORT_FORM_HASH
+                  ? "bug report form"
+                  : "page overview"
+          }`}
+        >
           <a
             href={URL_CONTEXT_HASH}
             aria-controls={URL_CONTEXT_ID}
