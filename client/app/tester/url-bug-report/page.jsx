@@ -481,6 +481,26 @@ function UserPageContent() {
             while this tab is hidden.
           </span>
         )}
+        {navigationStatus.message && !navigationStatus.isError && (
+          <div
+            role="progressbar"
+            aria-label="Navigation notice time elapsed"
+            aria-valuemin={0}
+            aria-valuemax={5}
+            aria-valuenow={5 - navigationStatusSeconds}
+            aria-valuetext={`${navigationStatusSeconds} seconds remaining`}
+            aria-live="off"
+            className="mb-3 h-1 overflow-hidden rounded-full bg-emerald-100"
+          >
+            <div
+              aria-hidden="true"
+              className="h-full bg-emerald-600 transition-[width] duration-300 motion-reduce:transition-none"
+              style={{
+                width: `${((5 - navigationStatusSeconds) / 5) * 100}%`,
+              }}
+            />
+          </div>
+        )}
         <div
           id={REPORT_FORM_ID}
           tabIndex={-1}
