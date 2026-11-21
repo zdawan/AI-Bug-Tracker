@@ -89,7 +89,9 @@ function UserPageContent() {
     EMPTY_NAVIGATION_STATUS,
   );
   const [navigationStatusSeconds, setNavigationStatusSeconds] = useState(0);
+  const [isNavigationNoticePaused, setIsNavigationNoticePaused] = useState(false);
   const navigationStatusSequence = useRef(0);
+  const navigationStatusRemainingSeconds = useRef(5);
   const navigationCountdownId = useRef(null);
   const navigationTimeoutId = useRef(null);
 
@@ -105,8 +107,21 @@ function UserPageContent() {
     [],
   );
 
+  useEffect(() => {
+    const syncNoticeVisibility = () => {
+      setIsNavigationNoticePaused(document.visibilityState === "hidden");
+    };
+
+    syncNoticeVisibility();
+    document.addEventListener("visibilitychange", syncNoticeVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", syncNoticeVisibility);
+  }, []);
+
   const showNavigationStatus = (message, isError = false) => {
     navigationStatusSequence.current += 1;
+    navigationStatusRemainingSeconds.current = 5;
+    setNavigationStatusSeconds(isError ? 0 : 5);
     setNavigationStatus({
       message,
       isError,
@@ -202,29 +217,43 @@ function UserPageContent() {
   useEffect(() => {
     if (!navigationStatus.message || navigationStatus.isError) {
       setNavigationStatusSeconds(0);
+      setIsNavigationNoticePaused(document.visibilityState === "hidden");
       return undefined;
     }
 
     const statusSequence = navigationStatus.sequence;
-    setNavigationStatusSeconds(5);
-    let remainingSeconds = 5;
+    setNavigationStatusSeconds(navigationStatusRemainingSeconds.current);
+    if (isNavigationNoticePaused) {
+      setNavigationStatusSeconds(navigationStatusRemainingSeconds.current);
+      return undefined;
+    }
+    let remainingSeconds = navigationStatusRemainingSeconds.current;
     const countdownId = window.setInterval(() => {
       remainingSeconds = Math.max(0, remainingSeconds - 1);
+      navigationStatusRemainingSeconds.current = remainingSeconds;
       setNavigationStatusSeconds(remainingSeconds);
       if (remainingSeconds === 0) window.clearInterval(countdownId);
     }, 1000);
+    navigationCountdownId.current = countdownId;
     const timeoutId = window.setTimeout(() => {
       setNavigationStatus((current) =>
         current.sequence === statusSequence
           ? EMPTY_NAVIGATION_STATUS
           : current,
       );
-    }, 5000);
+    }, remainingSeconds * 1000);
+    navigationTimeoutId.current = timeoutId;
     return () => {
       window.clearInterval(countdownId);
       window.clearTimeout(timeoutId);
+      if (navigationCountdownId.current === countdownId) {
+        navigationCountdownId.current = null;
+      }
+      if (navigationTimeoutId.current === timeoutId) {
+        navigationTimeoutId.current = null;
+      }
     };
-  }, [navigationStatus]);
+  }, [isNavigationNoticePaused, navigationStatus]);
 
   return (
     <>
@@ -373,7 +402,9 @@ function UserPageContent() {
                   aria-hidden="true"
                   className="text-[10px] tabular-nums"
                 >
-                  {navigationStatusSeconds}s
+                  {isNavigationNoticePaused
+                    ? "Paused"
+                    : `${navigationStatusSeconds}s`}
                 </span>
               )}
             </div>
