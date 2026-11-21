@@ -559,7 +559,9 @@ function UserPageContent() {
           >
             <div
               aria-hidden="true"
-              className="h-full bg-emerald-600 transition-[width] duration-300 motion-reduce:transition-none"
+              className={`h-full ${
+                isNavigationNoticePaused ? "bg-emerald-400" : "bg-emerald-600"
+              } transition-[width] duration-300 motion-reduce:transition-none`}
               style={{
                 width: `${
                   ((NAVIGATION_NOTICE_SECONDS - navigationStatusSeconds) /
