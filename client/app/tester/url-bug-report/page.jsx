@@ -94,6 +94,7 @@ function UserPageContent() {
   const [currentSectionHash, setCurrentSectionHash] = useState("");
   const [pageScrollProgress, setPageScrollProgress] = useState(0);
   const [isPageScrollable, setIsPageScrollable] = useState(false);
+  const [isSectionMenuOpen, setIsSectionMenuOpen] = useState(false);
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
@@ -424,6 +425,45 @@ function UserPageContent() {
           className="h-full bg-purple-700 motion-reduce:transition-none"
           style={{ width: `${pageScrollProgress}%` }}
         />
+      </div>
+      <div className="fixed right-4 top-1/2 z-40 -translate-y-1/2">
+        <nav
+          id="tester-section-menu"
+          aria-label="Page section navigation"
+          hidden={!isSectionMenuOpen}
+          className="mb-2 w-56 rounded-xl border border-purple-200
+          bg-white p-2 shadow-lg"
+        >
+          {[
+            [URL_CONTEXT_HASH, "Test URL context"],
+            [URL_CHECKLIST_HASH, "URL testing checklist"],
+            [REPORT_FORM_HASH, "Bug report form"],
+          ].map(([hash, label]) => (
+            <a
+              key={hash}
+              href={hash}
+              aria-current={currentSectionHash === hash ? "location" : undefined}
+              onClick={() => setIsSectionMenuOpen(false)}
+              className="block rounded-lg px-3 py-2 text-sm text-purple-900
+              hover:bg-purple-50 focus:outline focus:outline-2
+              focus:outline-offset-2 focus:outline-purple-700"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+        <button
+          type="button"
+          aria-expanded={isSectionMenuOpen}
+          aria-controls="tester-section-menu"
+          onClick={() => setIsSectionMenuOpen((open) => !open)}
+          className="min-h-10 rounded-full bg-purple-700 px-4 py-2
+          text-sm font-semibold text-white shadow-lg hover:bg-purple-800
+          focus:outline focus:outline-2 focus:outline-offset-2
+          focus:outline-purple-800"
+        >
+          {isSectionMenuOpen ? "Close sections" : "Sections"}
+        </button>
       </div>
       {isPageScrollable && pageScrollProgress > 5 && (
         <button
