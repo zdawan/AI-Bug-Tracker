@@ -29,11 +29,26 @@ import TesterUrlReadinessChecklist from "./TesterUrlReadinessChecklist";
 export default function TesterPage() {
   const [url, setUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [urlValidationError, setUrlValidationError] = useState("");
   const urlInputRef = useRef(null);
   const router = useRouter();
 
+  const updateUrl = (value) => {
+    setUrl(value);
+    setUrlValidationError("");
+  };
+
   const clearUrlInput = () => {
-    setUrl("");
+    updateUrl("");
+    urlInputRef.current?.focus();
+  };
+
+  const reportUrlValidationError = (message) => {
+    setUrlValidationError(message);
+    toast.error(message, {
+      position: "top-right",
+      autoClose: 3000,
+    });
     urlInputRef.current?.focus();
   };
 
@@ -86,11 +101,7 @@ export default function TesterPage() {
     const enteredValue = url.trim();
 
     if (!enteredValue) {
-      toast.error("Please enter a website name.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      urlInputRef.current?.focus();
+      reportUrlValidationError("Please enter a website name.");
       return;
     }
 
@@ -99,11 +110,9 @@ export default function TesterPage() {
     try {
       parsedUrl = new URL(normalizeUrl(enteredValue));
     } catch {
-      toast.error("Please enter a valid website name, such as github.com.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      urlInputRef.current?.focus();
+      reportUrlValidationError(
+        "Please enter a valid website name, such as github.com.",
+      );
       return;
     }
 
@@ -115,11 +124,9 @@ export default function TesterPage() {
       parsedUrl.hostname.endsWith(".") ||
       /\s/.test(parsedUrl.hostname)
     ) {
-      toast.error("Please enter a valid website domain, such as github.com.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      urlInputRef.current?.focus();
+      reportUrlValidationError(
+        "Please enter a valid website domain, such as github.com.",
+      );
       return;
     }
 
@@ -203,11 +210,16 @@ export default function TesterPage() {
                 spellCheck={false}
                 enterKeyHint="go"
                 maxLength={2048}
-                aria-describedby="test-url-hint"
+                aria-invalid={urlValidationError ? true : undefined}
+                aria-describedby={
+                  urlValidationError
+                    ? "test-url-hint test-url-error"
+                    : "test-url-hint"
+                }
                 aria-keyshortcuts={url ? "Escape" : undefined}
                 placeholder="e.g. github.com"
                 value={url}
-                onChange={(event) => setUrl(event.target.value)}
+                onChange={(event) => updateUrl(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && url) {
                     event.preventDefault();
@@ -254,11 +266,19 @@ export default function TesterPage() {
               Enter a name like github.com or a full page URL. Press Escape to
               clear it when the field contains a URL.
             </p>
+            {urlValidationError && (
+              <p
+                id="test-url-error"
+                className="mt-1 px-1 text-sm leading-5 text-rose-700"
+              >
+                {urlValidationError}
+              </p>
+            )}
             <UrlLengthIndicator value={url} />
             <TesterUrlValidationTip />
             <TesterUrlInputBehaviorNote />
             <TesterUrlLiveStatus value={url} />
-            <TesterUrlQuickExamples onSelect={setUrl} />
+            <TesterUrlQuickExamples onSelect={updateUrl} />
           </div>
 
           <button
@@ -340,7 +360,7 @@ export default function TesterPage() {
           </div>
         </form>
 
-        <UrlReadinessGuide url={url} onUseExample={setUrl} />
+        <UrlReadinessGuide url={url} onUseExample={updateUrl} />
 
         <TesterUrlNextStepNote />
         <TesterUrlPrivacyDisclosure />
