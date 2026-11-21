@@ -193,12 +193,11 @@ function UserPageContent() {
 
     const statusSequence = navigationStatus.sequence;
     setNavigationStatusSeconds(5);
+    let remainingSeconds = 5;
     const countdownId = window.setInterval(() => {
-      setNavigationStatusSeconds((seconds) => {
-        const nextSeconds = Math.max(0, seconds - 1);
-        if (nextSeconds === 0) window.clearInterval(countdownId);
-        return nextSeconds;
-      });
+      remainingSeconds = Math.max(0, remainingSeconds - 1);
+      setNavigationStatusSeconds(remainingSeconds);
+      if (remainingSeconds === 0) window.clearInterval(countdownId);
     }, 1000);
     const timeoutId = window.setTimeout(() => {
       setNavigationStatus((current) =>
