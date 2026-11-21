@@ -136,6 +136,37 @@ function UserPageContent() {
       document.removeEventListener("visibilitychange", syncNoticeVisibility);
   }, []);
 
+  useEffect(() => {
+    const sectionIds = [URL_CONTEXT_ID, URL_CHECKLIST_ID, REPORT_FORM_ID];
+    const visibleSections = new Map();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            visibleSections.set(entry.target, entry.intersectionRatio);
+          } else {
+            visibleSections.delete(entry.target);
+          }
+        });
+
+        const [activeSection] = [...visibleSections.entries()].sort(
+          (left, right) => right[1] - left[1],
+        );
+        if (activeSection) {
+          setCurrentSectionHash(`#${activeSection[0].id}`);
+        }
+      },
+      { rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.1, 0.25] },
+    );
+
+    sectionIds.forEach((id) => {
+      const section = document.getElementById(id);
+      if (section) observer.observe(section);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const showNavigationStatus = (message, isError = false) => {
     navigationStatusSequence.current += 1;
     navigationStatusRemainingSeconds.current = NAVIGATION_NOTICE_SECONDS;
