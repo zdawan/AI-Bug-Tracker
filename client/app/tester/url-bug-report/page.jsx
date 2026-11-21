@@ -514,10 +514,12 @@ function UserPageContent() {
                       ? "Resume navigation notice countdown"
                       : "Pause navigation notice countdown"
                   }
-                  className="rounded border border-emerald-200 px-2 py-1
+                  className={`rounded border border-emerald-200 px-2 py-1
                   text-[10px] font-semibold text-emerald-800
-                  hover:bg-emerald-50 focus:outline focus:outline-2
-                  focus:outline-offset-2 focus:outline-emerald-700"
+                  ${
+                    isNavigationNoticePaused ? "bg-emerald-100" : "bg-white"
+                  } hover:bg-emerald-50 focus:outline focus:outline-2
+                  focus:outline-offset-2 focus:outline-emerald-700`}
                 >
                   {isNavigationNoticePaused ? "Resume timer" : "Pause timer"}
                 </button>
