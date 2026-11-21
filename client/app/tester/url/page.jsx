@@ -201,7 +201,7 @@ export default function TesterPage() {
                 enterKeyHint="go"
                 maxLength={2048}
                 aria-describedby="test-url-hint"
-                aria-keyshortcuts="Escape"
+                aria-keyshortcuts={url ? "Escape" : undefined}
                 placeholder="e.g. github.com"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
@@ -244,7 +244,7 @@ export default function TesterPage() {
               className="mt-2 px-1 text-sm leading-5 text-slate-500"
             >
               Enter a name like github.com or a full page URL. Press Escape to
-              clear it.
+              clear it when the field contains a URL.
             </p>
             <UrlLengthIndicator value={url} />
             <TesterUrlValidationTip />
