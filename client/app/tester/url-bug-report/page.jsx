@@ -491,7 +491,7 @@ function UserPageContent() {
                 aria-controls={NAVIGATION_STATUS_ID}
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
                 aria-keyshortcuts="Escape"
-                className={`rounded p-1 focus:outline focus:outline-2
+                className={`min-h-10 min-w-10 rounded p-1 focus:outline focus:outline-2
                 focus:outline-offset-2 ${
                   navigationStatus.isError
                     ? "text-amber-800 hover:bg-amber-100 focus:outline-amber-800"
@@ -514,7 +514,7 @@ function UserPageContent() {
                       ? "Resume navigation notice countdown"
                       : "Pause navigation notice countdown"
                   }
-                  className={`rounded border border-emerald-200 px-2 py-1
+                  className={`min-h-10 rounded border border-emerald-200 px-2 py-1
                   text-[10px] font-semibold text-emerald-800
                   ${
                     isNavigationNoticePaused ? "bg-emerald-100" : "bg-white"
