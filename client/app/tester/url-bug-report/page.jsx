@@ -19,6 +19,7 @@ const URL_CHECKLIST_HELP_ID = "tester-url-checklist-help";
 const URL_CONTEXT_ID = "tester-url-context";
 const URL_CONTEXT_HASH = `#${URL_CONTEXT_ID}`;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const NAVIGATION_NOTICE_SECONDS = 5;
 const EMPTY_NAVIGATION_STATUS = Object.freeze({
   message: "",
   isError: false,
@@ -96,7 +97,7 @@ function UserPageContent() {
   const isNavigationNoticePaused =
     isDocumentHidden || isCountdownManuallyPaused;
   const navigationStatusSequence = useRef(0);
-  const navigationStatusRemainingSeconds = useRef(5);
+  const navigationStatusRemainingSeconds = useRef(NAVIGATION_NOTICE_SECONDS);
   const navigationCountdownId = useRef(null);
   const navigationTimeoutId = useRef(null);
 
@@ -125,9 +126,11 @@ function UserPageContent() {
 
   const showNavigationStatus = (message, isError = false) => {
     navigationStatusSequence.current += 1;
-    navigationStatusRemainingSeconds.current = 5;
+    navigationStatusRemainingSeconds.current = NAVIGATION_NOTICE_SECONDS;
     setIsCountdownManuallyPaused(false);
-    setNavigationStatusSeconds(isError ? 0 : 5);
+    setNavigationStatusSeconds(
+      isError ? 0 : NAVIGATION_NOTICE_SECONDS,
+    );
     setNavigationStatus({
       message,
       isError,
@@ -138,7 +141,7 @@ function UserPageContent() {
   const resetNavigationStatus = useCallback(() => {
     navigationStatusSequence.current += 1;
     setNavigationStatus(EMPTY_NAVIGATION_STATUS);
-    navigationStatusRemainingSeconds.current = 5;
+    navigationStatusRemainingSeconds.current = NAVIGATION_NOTICE_SECONDS;
     setNavigationStatusSeconds(0);
     setIsCountdownManuallyPaused(false);
   }, []);
@@ -231,7 +234,7 @@ function UserPageContent() {
   useEffect(() => {
     if (!navigationStatus.message || navigationStatus.isError) {
       setNavigationStatusSeconds(0);
-      navigationStatusRemainingSeconds.current = 5;
+      navigationStatusRemainingSeconds.current = NAVIGATION_NOTICE_SECONDS;
       return undefined;
     }
 
@@ -476,7 +479,8 @@ function UserPageContent() {
         )}
         {navigationStatus.message && !navigationStatus.isError && (
           <span id="navigation-notice-timer-help" className="sr-only">
-            This success notice closes after five seconds. Pause keeps it open;
+            This success notice closes after {NAVIGATION_NOTICE_SECONDS} seconds.
+            Pause keeps it open;
             resume continues the remaining time. The countdown also pauses
             while this tab is hidden. The progress bar shows elapsed time.
           </span>
@@ -488,8 +492,10 @@ function UserPageContent() {
             aria-describedby="navigation-notice-timer-help"
             aria-orientation="horizontal"
             aria-valuemin={0}
-            aria-valuemax={5}
-            aria-valuenow={5 - navigationStatusSeconds}
+            aria-valuemax={NAVIGATION_NOTICE_SECONDS}
+            aria-valuenow={
+              NAVIGATION_NOTICE_SECONDS - navigationStatusSeconds
+            }
             aria-valuetext={`${navigationStatusSeconds} seconds remaining${
               isNavigationNoticePaused ? ", countdown paused" : ""
             }`}
@@ -500,7 +506,11 @@ function UserPageContent() {
               aria-hidden="true"
               className="h-full bg-emerald-600 transition-[width] duration-300 motion-reduce:transition-none"
               style={{
-                width: `${((5 - navigationStatusSeconds) / 5) * 100}%`,
+                width: `${
+                  ((NAVIGATION_NOTICE_SECONDS - navigationStatusSeconds) /
+                    NAVIGATION_NOTICE_SECONDS) *
+                  100
+                }%`,
               }}
             />
           </div>
