@@ -486,7 +486,9 @@ function UserPageContent() {
             </div>
             <div
               role="group"
-              aria-label="Navigation notice controls"
+              aria-label={`Navigation ${
+                navigationStatus.isError ? "error" : "success"
+              } notice controls`}
               className="flex shrink-0 items-center gap-1"
             >
               <button
