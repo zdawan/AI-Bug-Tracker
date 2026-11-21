@@ -95,6 +95,7 @@ function UserPageContent() {
   const [pageScrollProgress, setPageScrollProgress] = useState(0);
   const [isPageScrollable, setIsPageScrollable] = useState(false);
   const [isSectionMenuOpen, setIsSectionMenuOpen] = useState(false);
+  const sectionMenuToggleRef = useRef(null);
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
@@ -426,7 +427,16 @@ function UserPageContent() {
           style={{ width: `${pageScrollProgress}%` }}
         />
       </div>
-      <div className="fixed right-4 top-1/2 z-40 -translate-y-1/2">
+      <div
+        onKeyDown={(event) => {
+          if (event.key !== "Escape" || !isSectionMenuOpen) return;
+          event.preventDefault();
+          event.stopPropagation();
+          setIsSectionMenuOpen(false);
+          sectionMenuToggleRef.current?.focus();
+        }}
+        className="fixed right-4 top-1/2 z-40 -translate-y-1/2"
+      >
         <nav
           id="tester-section-menu"
           aria-label="Page section navigation"
@@ -454,8 +464,10 @@ function UserPageContent() {
         </nav>
         <button
           type="button"
+          ref={sectionMenuToggleRef}
           aria-expanded={isSectionMenuOpen}
           aria-controls="tester-section-menu"
+          aria-keyshortcuts="Escape"
           onClick={() => setIsSectionMenuOpen((open) => !open)}
           className="min-h-10 rounded-full bg-purple-700 px-4 py-2
           text-sm font-semibold text-white shadow-lg hover:bg-purple-800
