@@ -524,6 +524,11 @@ function UserPageContent() {
                       ? "Resume navigation notice countdown"
                       : "Pause navigation notice countdown"
                   }
+                  title={
+                    isCountdownManuallyPaused
+                      ? "Resume the success notice countdown"
+                      : "Pause the success notice countdown"
+                  }
                   className={`min-h-10 rounded border border-emerald-200 px-2 py-1
                   text-[10px] font-semibold text-emerald-800
                   ${
