@@ -557,6 +557,7 @@ function UserPageContent() {
           <a
             href={URL_CHECKLIST_HASH}
             aria-controls={URL_CHECKLIST_ID}
+            aria-current={currentSectionHash === URL_CHECKLIST_HASH ? "location" : undefined}
             className={getSectionLinkClass(
               currentSectionHash === URL_CHECKLIST_HASH,
             )}
@@ -566,6 +567,7 @@ function UserPageContent() {
           <a
             href={URL_CONTEXT_HASH}
             aria-controls={URL_CONTEXT_ID}
+            aria-current={currentSectionHash === URL_CONTEXT_HASH ? "location" : undefined}
             className={getSectionLinkClass(
               currentSectionHash === URL_CONTEXT_HASH,
             )}
