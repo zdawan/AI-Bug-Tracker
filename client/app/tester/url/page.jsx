@@ -321,9 +321,10 @@ export default function TesterPage() {
                 onClick={copyPreviewUrl}
                 aria-label={url.trim() ? "Copy entered URL" : "Copy example URL"}
                 title={url.trim() ? "Copy entered URL" : "Copy example URL"}
-                className="inline-flex min-h-10 shrink-0 items-center
+                className="inline-flex min-h-10 min-w-24 shrink-0 items-center
                 justify-center rounded-lg border border-slate-200 bg-white
-                px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition
+                whitespace-nowrap px-2.5 py-1.5 text-xs font-semibold
+                text-slate-600 transition
                 hover:border-violet-200 hover:text-violet-700
                 focus-visible:outline-none focus-visible:ring-2
                 focus-visible:ring-violet-300 motion-reduce:transition-none"
