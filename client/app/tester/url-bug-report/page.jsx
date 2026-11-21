@@ -507,7 +507,6 @@ function UserPageContent() {
                     setIsCountdownManuallyPaused((paused) => !paused)
                   }
                   aria-pressed={isCountdownManuallyPaused}
-                  aria-keyshortcuts="Escape"
                   aria-controls={NAVIGATION_STATUS_ID}
                   aria-describedby="navigation-notice-timer-help"
                   aria-label={
