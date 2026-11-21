@@ -558,7 +558,8 @@ function UserPageContent() {
           aria-label="Page section navigation"
           aria-keyshortcuts="Home End"
           hidden={!isSectionMenuOpen}
-          className="mb-2 w-56 rounded-xl border border-purple-200
+          className="mb-2 max-h-[60vh] w-56 overflow-y-auto
+          overscroll-contain rounded-xl border border-purple-200
           bg-white p-2 shadow-lg"
         >
           {[
@@ -586,18 +587,21 @@ function UserPageContent() {
                 }
                 setIsSectionMenuOpen(false);
               }}
-              className={`block rounded-lg px-3 py-2 text-sm ${
+              className={`flex min-h-10 items-center justify-between
+              rounded-lg px-3 py-2 text-sm ${
                 currentSectionHash === hash
                   ? "bg-purple-50 font-semibold text-purple-950"
                   : "text-purple-900"
-              } hover:bg-purple-50 focus:outline focus:outline-2
+              } transition-colors duration-150 hover:bg-purple-50
+              active:bg-purple-100 motion-reduce:transition-none
+              focus:outline focus:outline-2
               focus:outline-offset-2 focus:outline-purple-700`}
             >
               {label}
               {currentSectionHash === hash && (
                 <span
                   aria-hidden="true"
-                  className="float-right ml-2 text-xs font-medium
+                  className="ml-2 shrink-0 text-xs font-medium
                   text-purple-700"
                 >
                   Current
