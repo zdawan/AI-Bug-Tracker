@@ -228,12 +228,13 @@ function UserPageContent() {
     }
 
     const statusSequence = navigationStatus.sequence;
-    setNavigationStatusSeconds(navigationStatusRemainingSeconds.current);
+    const remainingAtStart = navigationStatusRemainingSeconds.current;
+    setNavigationStatusSeconds(remainingAtStart);
     if (isNavigationNoticePaused) {
-      setNavigationStatusSeconds(navigationStatusRemainingSeconds.current);
+      setNavigationStatusSeconds(remainingAtStart);
       return undefined;
     }
-    let remainingSeconds = navigationStatusRemainingSeconds.current;
+    let remainingSeconds = remainingAtStart;
     const countdownId = window.setInterval(() => {
       remainingSeconds = Math.max(0, remainingSeconds - 1);
       navigationStatusRemainingSeconds.current = remainingSeconds;
