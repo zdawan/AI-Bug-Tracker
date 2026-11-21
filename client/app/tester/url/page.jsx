@@ -126,14 +126,7 @@ export default function TesterPage() {
       return;
     }
 
-    if (
-      !["http:", "https:"].includes(parsedUrl.protocol) ||
-      (!parsedUrl.hostname.includes(".") &&
-        parsedUrl.hostname !== "localhost") ||
-      parsedUrl.hostname.startsWith(".") ||
-      parsedUrl.hostname.endsWith(".") ||
-      /\s/.test(parsedUrl.hostname)
-    ) {
+    if (!isValidTesterWebUrl(parsedUrl)) {
       reportUrlValidationError(
         "Please enter a valid website domain, such as github.com.",
       );
@@ -1747,14 +1740,7 @@ function inspectTesterUrl(value) {
     };
   }
 
-  const hasWebProtocol = ["http:", "https:"].includes(parsed.protocol);
-  const hasAcceptableHostname =
-    (parsed.hostname === "localhost" || parsed.hostname.includes(".")) &&
-    !parsed.hostname.startsWith(".") &&
-    !parsed.hostname.endsWith(".") &&
-    !/\s/.test(parsed.hostname);
-
-  if (!hasWebProtocol || !hasAcceptableHostname) {
+  if (!isValidTesterWebUrl(parsed)) {
     return {
       state: "invalid",
       normalized: parsed.href,
@@ -1787,6 +1773,27 @@ function inspectTesterUrl(value) {
       ? "This address uses HTTPS and is ready to continue."
       : "This address uses HTTP. That is common for local previews; check before using it for a public website.",
   };
+}
+
+function isValidTesterWebUrl(parsedUrl) {
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    return false;
+  }
+
+  const hostname = parsedUrl.hostname;
+  if (hostname === "localhost") {
+    return true;
+  }
+
+  if (!hostname.includes(".") || hostname.length > 253) {
+    return false;
+  }
+
+  return hostname.split(".").every(
+    (label) =>
+      label.length <= 63 &&
+      /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label),
+  );
 }
 
 function UrlGuideStatus({ state, message }) {
