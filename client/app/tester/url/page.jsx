@@ -280,7 +280,8 @@ export default function TesterPage() {
               className="mt-2 px-1 text-sm leading-5 text-slate-500"
             >
               Enter a name like github.com or a full page URL. Press Escape to
-              clear it when the field contains a URL.
+              clear it when the field contains a URL. URLs are limited to
+              2,048 characters.
             </p>
             {urlValidationError && (
               <p
