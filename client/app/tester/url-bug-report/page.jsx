@@ -499,6 +499,7 @@ function UserPageContent() {
                     : "navigation-notice-timer-help"
                 }
                 aria-label={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
+                title={`Dismiss navigation ${navigationStatus.isError ? "error" : "success"}`}
                 aria-keyshortcuts="Escape"
                 className={`min-h-10 min-w-10 rounded p-1 focus:outline focus:outline-2
                 focus:outline-offset-2 ${
@@ -522,6 +523,11 @@ function UserPageContent() {
                     isCountdownManuallyPaused
                       ? "Resume navigation notice countdown"
                       : "Pause navigation notice countdown"
+                  }
+                  title={
+                    isCountdownManuallyPaused
+                      ? "Resume the success notice countdown"
+                      : "Pause the success notice countdown"
                   }
                   className={`min-h-10 rounded border border-emerald-200 px-2 py-1
                   text-[10px] font-semibold text-emerald-800
