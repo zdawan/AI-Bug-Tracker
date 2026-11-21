@@ -88,6 +88,7 @@ function UserPageContent() {
   const [navigationStatus, setNavigationStatus] = useState(
     EMPTY_NAVIGATION_STATUS,
   );
+  const [navigationStatusSeconds, setNavigationStatusSeconds] = useState(0);
   const navigationStatusSequence = useRef(0);
 
   const showNavigationStatus = (message, isError = false) => {
@@ -186,10 +187,15 @@ function UserPageContent() {
 
   useEffect(() => {
     if (!navigationStatus.message || navigationStatus.isError) {
+      setNavigationStatusSeconds(0);
       return undefined;
     }
 
     const statusSequence = navigationStatus.sequence;
+    setNavigationStatusSeconds(5);
+    const countdownId = window.setInterval(() => {
+      setNavigationStatusSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
     const timeoutId = window.setTimeout(() => {
       setNavigationStatus((current) =>
         current.sequence === statusSequence
@@ -197,7 +203,10 @@ function UserPageContent() {
           : current,
       );
     }, 5000);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearInterval(countdownId);
+      window.clearTimeout(timeoutId);
+    };
   }, [navigationStatus]);
 
   return (
@@ -342,6 +351,14 @@ function UserPageContent() {
                 <CheckCircle2 size={16} aria-hidden="true" />
               )}
               <span>{navigationStatus.message}</span>
+              {!navigationStatus.isError && (
+                <span
+                  className="text-[10px] tabular-nums"
+                  aria-label={`Notice closes in ${navigationStatusSeconds} seconds`}
+                >
+                  {navigationStatusSeconds}s
+                </span>
+              )}
             </div>
             {navigationStatus.isError && (
               <button
