@@ -370,9 +370,12 @@ function UserPageContent() {
 
   const updateCurrentSectionFromScroll = (section) => {
     const sectionHash = `#${section.id}`;
+    const currentHashIsSection = NAVIGATION_TARGETS.some(
+      ({ hash }) => hash === window.location.hash,
+    );
     setCurrentSectionHash(sectionHash);
     if (
-      (window.scrollY > 0 || window.location.hash) &&
+      (window.scrollY > 0 || currentHashIsSection) &&
       window.location.hash !== sectionHash
     ) {
       replacePageHash(sectionHash);
