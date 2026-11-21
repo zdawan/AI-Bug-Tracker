@@ -124,6 +124,7 @@ function UserPageContent() {
     useState(false);
   const isNavigationNoticePaused =
     isDocumentHidden || isCountdownManuallyPaused;
+  const hasReachedPageStart = isPageScrollable && pageScrollProgress === 0;
   const hasReachedPageEnd = isPageScrollable && pageScrollProgress === 100;
   const navigationPauseReason = isDocumentHidden
     ? isCountdownManuallyPaused
@@ -509,7 +510,11 @@ function UserPageContent() {
         )}
         aria-live="off"
         className={`pointer-events-none fixed inset-x-0 top-0 z-50 h-1 ${
-          isPageScrollable ? "bg-purple-100" : "bg-slate-100"
+          !isPageScrollable
+            ? "bg-slate-100"
+            : hasReachedPageStart
+              ? "bg-slate-200"
+              : "bg-purple-100"
         }`}
       >
         <div
@@ -654,7 +659,13 @@ function UserPageContent() {
               px-1.5 py-0.5 text-center text-[10px]
               leading-none whitespace-nowrap tabular-nums
               transition-colors duration-150 motion-reduce:transition-none
-              ${hasReachedPageEnd ? "bg-emerald-800" : "bg-purple-900"}`}
+              ${
+                hasReachedPageEnd
+                  ? "bg-emerald-800"
+                  : hasReachedPageStart
+                    ? "bg-slate-800"
+                    : "bg-purple-900"
+              }`}
             >
               {pageScrollProgress}%
             </span>
