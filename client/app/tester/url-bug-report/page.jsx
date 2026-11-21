@@ -430,15 +430,15 @@ function UserPageContent() {
             onKeyDown={handleNavigationStatusKeyDown}
             className={
               navigationStatus.isError
-                ? "mb-3 flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-3 py-2"
-                : "mb-3 flex items-center justify-between gap-3 text-emerald-700"
+                ? "mb-3 flex items-start justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 sm:items-center sm:gap-3"
+                : "mb-3 flex items-start justify-between gap-2 text-emerald-700 sm:items-center sm:gap-3"
             }
           >
             <div
               role={navigationStatus.isError ? "alert" : "status"}
               aria-live={navigationStatus.isError ? "assertive" : "polite"}
               aria-atomic="true"
-              className={`flex min-w-0 items-center gap-2 text-sm ${
+              className={`flex min-w-0 flex-1 items-center gap-2 text-sm ${
                 navigationStatus.isError ? "text-amber-800" : "text-emerald-700"
               }`}
             >
@@ -447,7 +447,9 @@ function UserPageContent() {
               ) : (
                 <CheckCircle2 size={16} aria-hidden="true" />
               )}
-              <span>{navigationStatus.message}</span>
+              <span className="min-w-0 break-words">
+                {navigationStatus.message}
+              </span>
               {!navigationStatus.isError && (
                 <span aria-hidden="true" className="text-[10px] tabular-nums">
                   {isNavigationNoticePaused
