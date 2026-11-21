@@ -484,7 +484,11 @@ function UserPageContent() {
                 </span>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-1">
+            <div
+              role="group"
+              aria-label="Navigation notice controls"
+              className="flex shrink-0 items-center gap-1"
+            >
               <button
                 type="button"
                 onClick={dismissNavigationStatus}
